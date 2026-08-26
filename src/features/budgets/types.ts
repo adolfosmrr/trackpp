@@ -1,0 +1,32 @@
+export type BudgetCategory = {
+  id: string
+  name: string
+  icon: string | null
+}
+
+export type Budget = {
+  id: string
+  household_id: string
+  category_id: string
+  created_by: string
+  amount: number
+  month: string
+  created_at: string
+  updated_at: string
+  category: BudgetCategory
+}
+
+export type BudgetWithProgress = Budget & {
+  spent: number
+  remaining: number
+  percentage: number
+  progressPercentage: number
+}
+
+export type CreateBudgetInput = {
+  householdId: string
+  categoryId: string
+  userId: string
+  amount: number
+  month: string
+}

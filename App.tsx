@@ -1,20 +1,29 @@
-import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View } from 'react-native';
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
+import { useFonts } from "expo-font"
+
+import { AuthProvider } from "./src/features/auth/context/AuthContext"
+import { RootNavigator } from "./src/navigation/RootNavigator"
+import { NotificationObserver } from "./src/features/notifications/components/NotificationObserver"
+import "./src/features/notifications/services/notificationSetup"
+
+const queryClient = new QueryClient()
 
 export default function App() {
-  return (
-    <View style={styles.container}>
-      <Text>Open up App.tsx to start working on your app!</Text>
-      <StatusBar style="auto" />
-    </View>
-  );
-}
+  const [fontsLoaded] = useFonts({
+    "FamiljenGrotesk-Bold": require("./assets/fonts/FamiljenGrotesk-Bold.ttf"),
+    "FamiljenGrotesk-Medium": require("./assets/fonts/FamiljenGrotesk-Medium.ttf"),
+  })
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-});
+  if (!fontsLoaded) {
+    return null
+  }
+
+  return (
+    <QueryClientProvider client={queryClient}>
+      <AuthProvider>
+        <NotificationObserver />
+        <RootNavigator />
+      </AuthProvider>
+    </QueryClientProvider>
+  )
+}
