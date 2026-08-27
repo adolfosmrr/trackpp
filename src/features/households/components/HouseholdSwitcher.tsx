@@ -6,14 +6,18 @@ import {
     Modal,
   } from "react-native"
   import { useState } from "react"
+  import Animated, { interpolate, useAnimatedStyle, type SharedValue } from "react-native-reanimated"
   
   import { useHouseholds } from "../hooks/useHouseholds"
   import { useHouseholdStore } from "../../../store/householdStore"
 
   import { ChevronDownIcon } from "../../../components/icons/ChevronDownIcon"
+
+  const AnimatedPressable = Animated.createAnimatedComponent(Pressable)
   
-  export function HouseholdSwitcher({ compact = false }: { compact?: boolean }) {
+  export function HouseholdSwitcher({ compact = false, collapseProgress }: { compact?: boolean; collapseProgress?: SharedValue<number> }) {
     const [open, setOpen] = useState(false)
+    const compactAnimatedStyle = useCompactAnimatedStyle(collapseProgress)
   
     const selectedHouseholdId = useHouseholdStore(
       (state) => state.selectedHouseholdId
@@ -35,18 +39,22 @@ import {
   
     if (isLoading) {
       return (
-        <Text style={compact ? styles.compactLoading : styles.loading}>
-          Cargando...
-        </Text>
+        compact ? (
+          <Animated.Text style={[styles.compactLoading, compactAnimatedStyle]}>
+            Cargando...
+          </Animated.Text>
+        ) : (
+          <Text style={styles.loading}>Cargando...</Text>
+        )
       )
     }
   
     return (
       <>
-        <Pressable
+        <AnimatedPressable
           accessibilityLabel="Cambiar cuenta"
           accessibilityRole="button"
-          style={[styles.trigger, compact && styles.compactTrigger]}
+          style={[styles.trigger, compact && styles.compactTrigger, compact && compactAnimatedStyle]}
           onPress={() => setOpen(true)}
         >
           <Text style={[styles.triggerText, compact && styles.compactTriggerText]}>
@@ -54,7 +62,7 @@ import {
           </Text>
   
           {compact ? <ChevronDownIcon /> : <Text style={styles.chevron}>▼</Text>}
-        </Pressable>
+        </AnimatedPressable>
   
         <Modal
           visible={open}
@@ -138,6 +146,13 @@ import {
       </>
     )
   }
+
+  function useCompactAnimatedStyle(collapseProgress?: SharedValue<number>) {
+    return useAnimatedStyle(() => ({
+      height: interpolate(collapseProgress?.value ?? 0, [0, 1], [40, 24]),
+      paddingHorizontal: interpolate(collapseProgress?.value ?? 0, [0, 1], [20, 12]),
+    }))
+  }
   
   const styles = StyleSheet.create({
     loading: {
@@ -175,6 +190,7 @@ import {
       color: "#1C1C1C",
       fontFamily: "FamiljenGrotesk-Bold",
       fontSize: 16,
+      lineHeight: 16,
       fontWeight: undefined,
     },
   

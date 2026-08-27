@@ -1,7 +1,8 @@
-import { useEffect, useRef } from "react"
+import { useEffect, useRef, useState } from "react"
 import { useIsFocused } from "@react-navigation/native"
 
 import {
+  AccessibilityInfo,
   View,
   ScrollView,
   Text,
@@ -9,6 +10,13 @@ import {
   StyleSheet,
   ActivityIndicator,
 } from "react-native"
+import Animated, {
+  cancelAnimation,
+  interpolate,
+  useAnimatedStyle,
+  useSharedValue,
+  withTiming,
+} from "react-native-reanimated"
 
 import {
   useHouseholdStore,
@@ -39,11 +47,14 @@ import { TopSection } from "../../../components/layout/TopSection"
 import { TopSectionHeader } from "../../../components/layout/TopSectionHeader"
 import { TopSectionHandle } from "../../../components/layout/TopSectionHandle"
 import { HomeBalance } from "../components/HomeBalance"
+import { HomeGreeting } from "../components/HomeGreeting"
 import { HomeIncomeExpenseSummary } from "../components/HomeIncomeExpenseSummary"
 import { HomeInsightCard } from "../components/HomeInsightCard"
 import { HomeInsightSkeleton } from "../components/HomeInsightSkeleton"
 import { useHomeAiInsight } from "../hooks/useHomeAiInsight"
 import { useHomeInsightActionDetails } from "../hooks/useHomeInsightActionDetails"
+
+const INSIGHT_SLOT_HEIGHT = 112
 
 export function HomeScreen({
   navigation,
@@ -53,6 +64,46 @@ export function HomeScreen({
   const markedSeenForHousehold = useRef<string | null>(
     null
   )
+  const [isCollapsed, setIsCollapsed] = useState(false)
+  const [reduceMotionEnabled, setReduceMotionEnabled] = useState(false)
+  const collapseProgress = useSharedValue(0)
+
+  useEffect(() => {
+    let mounted = true
+
+    void AccessibilityInfo.isReduceMotionEnabled().then((enabled) => {
+      if (mounted) setReduceMotionEnabled(enabled)
+    })
+
+    const subscription = AccessibilityInfo.addEventListener(
+      "reduceMotionChanged",
+      setReduceMotionEnabled
+    )
+
+    return () => {
+      mounted = false
+      subscription.remove()
+    }
+  }, [])
+
+  const toggleCollapsed = () => {
+    const nextCollapsed = !isCollapsed
+    setIsCollapsed(nextCollapsed)
+    cancelAnimation(collapseProgress)
+    collapseProgress.value = reduceMotionEnabled
+      ? nextCollapsed ? 1 : 0
+      : withTiming(nextCollapsed ? 1 : 0, { duration: 290 })
+  }
+
+  const animatedInsightSlotStyle = useAnimatedStyle(() => ({
+    marginBottom: interpolate(collapseProgress.value, [0, 1], [60, 0]),
+    marginTop: interpolate(collapseProgress.value, [0, 1], [60, 0]),
+    height: interpolate(collapseProgress.value, [0, 1], [INSIGHT_SLOT_HEIGHT, 0]),
+  }))
+  const animatedInsightContentStyle = useAnimatedStyle(() => ({
+    opacity: interpolate(collapseProgress.value, [0, 1], [1, 0]),
+    transform: [{ translateY: interpolate(collapseProgress.value, [0, 1], [0, -12]) }],
+  }))
 
   const selectedHouseholdId =
     useHouseholdStore(
@@ -229,39 +280,39 @@ export function HomeScreen({
   return (
     <View style={styles.screen}>
       <TopSection>
-        <TopSectionHeader profile={profile} />
-        <View style={styles.greetingContainer}>
-          <Text style={styles.helloText}>Hola</Text>
-          {displayName ? (
-            <Text
-              adjustsFontSizeToFit
-              minimumFontScale={0.75}
-              numberOfLines={1}
-              style={styles.userNameText}
-            >
-              {displayName}
-            </Text>
-          ) : null}
-        </View>
-        <HomeBalance balance={dashboard?.balance ?? 0} />
+        <TopSectionHeader collapseProgress={collapseProgress} profile={profile} />
+        <HomeGreeting displayName={displayName} collapseProgress={collapseProgress} />
+        <HomeBalance balance={dashboard?.balance ?? 0} collapseProgress={collapseProgress} isCollapsed={isCollapsed} />
         <HomeIncomeExpenseSummary
+          collapseProgress={collapseProgress}
           expenses={dashboard?.expenses ?? 0}
           income={dashboard?.income ?? 0}
         />
         {homeInsightQuery.isLoading ? (
-          <View style={styles.insightContainer}>
-            <HomeInsightSkeleton />
-          </View>
-        ) : homeInsightQuery.data?.message ? (
-          <View style={styles.insightContainer}>
-            <HomeInsightCard
-              actionDetails={actionDetails}
-              insight={homeInsightQuery.data}
-              variant="plain"
-            />
-          </View>
+          <Animated.View
+            pointerEvents={isCollapsed ? "none" : "auto"}
+            style={[styles.insightSlot, animatedInsightSlotStyle]}
+          >
+            <Animated.View style={[styles.insightContent, animatedInsightContentStyle]}>
+              <HomeInsightSkeleton />
+            </Animated.View>
+          </Animated.View>
+        ) : homeInsightQuery.data?.intro || homeInsightQuery.data?.groups.length ? (
+          <Animated.View
+            pointerEvents={isCollapsed ? "none" : "auto"}
+            style={[styles.insightSlot, animatedInsightSlotStyle]}
+          >
+            <Animated.View style={[styles.insightContent, animatedInsightContentStyle]}>
+              <HomeInsightCard
+                actionDetails={actionDetails}
+                insight={homeInsightQuery.data}
+                isCollapsed={isCollapsed}
+                variant="plain"
+              />
+            </Animated.View>
+          </Animated.View>
         ) : null}
-        <TopSectionHandle />
+        <TopSectionHandle collapseProgress={collapseProgress} onPress={toggleCollapsed} />
       </TopSection>
       <ScreenContainer>
         <ScrollView style={styles.container}>
@@ -601,9 +652,21 @@ const styles =
       lineHeight: 44,
     },
 
-    insightContainer: {
+    insightSlot: {
+      height: INSIGHT_SLOT_HEIGHT,
       marginBottom: 60,
       marginTop: 60,
+      position: "relative",
+    },
+
+    insightContent: {
+      alignItems: "stretch",
+      height: INSIGHT_SLOT_HEIGHT,
+      justifyContent: "center",
+      left: 0,
+      position: "absolute",
+      right: 0,
+      top: 0,
     },
 
     balanceCard: {

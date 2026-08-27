@@ -1,26 +1,37 @@
 import { StyleSheet, Text, View } from "react-native"
+import Animated, { interpolate, useAnimatedStyle, type SharedValue } from "react-native-reanimated"
 
 type HomeIncomeExpenseSummaryProps = {
   income: number
   expenses: number
+  collapseProgress: SharedValue<number>
 }
 
 export function HomeIncomeExpenseSummary({
   income,
   expenses,
+  collapseProgress,
 }: HomeIncomeExpenseSummaryProps) {
+  const containerStyle = useAnimatedStyle(() => ({
+    marginBottom: interpolate(collapseProgress.value, [0, 1], [10, 30]),
+    marginTop: interpolate(collapseProgress.value, [0, 1], [30, 10]),
+  }))
   return (
-    <View style={styles.container}>
-      <SummaryItem label="Ingresos" amount={income} />
-      <SummaryItem label="Gastos" amount={expenses} />
-    </View>
+    <Animated.View style={[styles.container, containerStyle]}>
+      <SummaryItem collapseProgress={collapseProgress} label="Ingresos" amount={income} />
+      <SummaryItem collapseProgress={collapseProgress} label="Gastos" amount={expenses} />
+    </Animated.View>
   )
 }
 
-function SummaryItem({ label, amount }: { label: string; amount: number }) {
+function SummaryItem({ label, amount, collapseProgress }: { label: string; amount: number; collapseProgress: SharedValue<number> }) {
+  const labelStyle = useAnimatedStyle(() => ({
+    fontSize: interpolate(collapseProgress.value, [0, 1], [18, 16]),
+  }))
+
   return (
     <View style={styles.item}>
-      <Text style={styles.label}>{label}</Text>
+      <Animated.Text style={[styles.label, labelStyle]}>{label}</Animated.Text>
       <Text
         adjustsFontSizeToFit
         minimumFontScale={0.8}

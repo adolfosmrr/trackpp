@@ -7,6 +7,13 @@ export type HomeAiInsightAction = {
 }
 
 export type HomeAiInsight = {
+  intro: string
+  groups: HomeAiInsightGroup[]
   message: string
   actions: HomeAiInsightAction[]
+}
+export type HomeAiInsightGroup = {
+  id: string
+  text: string
+  actionIds: string[]
 }

@@ -1,21 +1,23 @@
-import { Image, StyleSheet, Text, View } from "react-native"
+import { StyleSheet, Text, type ViewStyle } from "react-native"
+import Animated, { type AnimatedStyle } from "react-native-reanimated"
 
 type ProfileAvatarProps = {
   name?: string | null
   uri?: string | null
+  style?: AnimatedStyle<Pick<ViewStyle, "borderRadius" | "height" | "width">>
 }
 
-export function ProfileAvatar({ name, uri }: ProfileAvatarProps) {
+export function ProfileAvatar({ name, uri, style }: ProfileAvatarProps) {
   const initials = name?.trim()
     ? name.trim().slice(0, 1).toUpperCase()
     : "?"
 
   return uri ? (
-    <Image accessibilityLabel="Avatar del perfil" source={{ uri }} style={styles.avatar} />
+    <Animated.Image accessibilityLabel="Avatar del perfil" source={{ uri }} style={[styles.avatar, style]} />
   ) : (
-    <View accessibilityLabel="Avatar del perfil" style={styles.avatar}>
+    <Animated.View accessibilityLabel="Avatar del perfil" style={[styles.avatar, style]}>
       <Text style={styles.initials}>{initials}</Text>
-    </View>
+    </Animated.View>
   )
 }
 

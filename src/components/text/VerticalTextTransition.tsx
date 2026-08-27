@@ -14,11 +14,14 @@ import Animated, {
   useAnimatedStyle,
   useSharedValue,
   withTiming,
+  type AnimatedStyle,
 } from "react-native-reanimated"
 
 type VerticalTextTransitionProps = {
   text: string
   style?: StyleProp<TextStyle>
+  animatedStyle?: AnimatedStyle<TextStyle>
+  fitContent?: boolean
   duration?: number
   distance?: number
   textProps?: Omit<TextProps, "children" | "style">
@@ -27,6 +30,8 @@ type VerticalTextTransitionProps = {
 export function VerticalTextTransition({
   text,
   style,
+  animatedStyle,
+  fitContent = false,
   duration = 220,
   distance = 16,
   textProps,
@@ -109,11 +114,11 @@ export function VerticalTextTransition({
   return (
     <View style={[styles.wrapper, lineHeight ? { height: lineHeight } : null]}>
       {previousText ? (
-        <Animated.Text {...textProps} style={[styles.layer, style, outgoingStyle]}>
+        <Animated.Text {...textProps} style={[fitContent ? styles.fitContentPreviousLayer : styles.layer, style, animatedStyle, outgoingStyle]}>
           {previousText}
         </Animated.Text>
       ) : null}
-      <Animated.Text {...textProps} style={[styles.layer, style, incomingStyle]}>
+      <Animated.Text {...textProps} style={[fitContent ? styles.fitContentIncomingLayer : styles.layer, style, animatedStyle, incomingStyle]}>
         {currentText}
       </Animated.Text>
     </View>
@@ -129,5 +134,13 @@ const styles = StyleSheet.create({
     left: 0,
     position: "absolute",
     right: 0,
+  },
+  fitContentPreviousLayer: {
+    left: 0,
+    position: "absolute",
+    right: 0,
+  },
+  fitContentIncomingLayer: {
+    position: "relative",
   },
 })
