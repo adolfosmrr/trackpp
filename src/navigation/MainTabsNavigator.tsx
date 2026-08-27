@@ -36,6 +36,7 @@ export function MainTabsNavigator() {
         <Tab.Navigator
             screenOptions={{
                 headerShown: false,
+                tabBarActiveTintColor: "#000000",
             }}
         >
             <Tab.Screen
@@ -43,6 +44,10 @@ export function MainTabsNavigator() {
                 component={HomeScreen}
                 options={{
                     title: "Inicio",
+                    tabBarIcon: ({ focused }) => ({
+                        type: "sfSymbol",
+                        name: focused ? "house.fill" : "house",
+                    }),
                 }}
             />
 
@@ -51,6 +56,12 @@ export function MainTabsNavigator() {
                 component={TransactionsScreen}
                 options={{
                     title: "Movimientos",
+                    tabBarIcon: ({ focused }) => ({
+                        type: "sfSymbol",
+                        name: focused
+                            ? "arrow.left.arrow.right.circle.fill"
+                            : "arrow.left.arrow.right.circle",
+                    }),
                 }}
             />
 
@@ -59,6 +70,10 @@ export function MainTabsNavigator() {
                 component={AiChatScreen}
                 options={{
                     title: "AI",
+                    tabBarIcon: ({ focused }) => ({
+                        type: "sfSymbol",
+                        name: focused ? "sparkles" : "sparkles",
+                    }),
                 }}
             />
 
@@ -67,6 +82,10 @@ export function MainTabsNavigator() {
                 component={BudgetsScreen}
                 options={{
                     title: "Presupuesto",
+                    tabBarIcon: ({ focused }) => ({
+                        type: "sfSymbol",
+                        name: focused ? "chart.pie.fill" : "chart.pie",
+                    }),
                 }}
             />
 
@@ -75,6 +94,12 @@ export function MainTabsNavigator() {
                 component={ProfileScreen}
                 options={{
                     title: "Perfil",
+                    tabBarIcon: ({ focused }) => ({
+                        type: "sfSymbol",
+                        name: focused
+                            ? "person.crop.circle.fill"
+                            : "person.crop.circle",
+                    }),
                 }}
             />
         </Tab.Navigator>
