@@ -2,7 +2,7 @@ import { createNativeBottomTabNavigator } from "@react-navigation/bottom-tabs/un
 
 import { HomeScreen } from "../features/home/screens/HomeScreen"
 import { TransactionsScreen } from "../features/transactions/screens/TransactionsScreen"
-import { CreateTransactionScreen } from "../features/transactions/screens/CreateTransactionScreen"
+import { AiChatScreen } from "../features/ai/screens/AiChatScreen"
 import { BudgetsScreen } from "../features/budgets/screens/BudgetsScreen"
 import { ProfileScreen } from "../features/profile/screens/ProfileScreen"
 import { useHouseholds } from "../features/households/hooks/useHouseholds"
@@ -13,7 +13,7 @@ import { useFixedExpenseNotificationSync } from "../features/fixedExpenses/hooks
 export type MainTabsParamList = {
     Home: undefined
     Transactions: undefined
-    CreateTransaction: undefined
+    AiChat: undefined
     Budgets: undefined
     Profile: undefined
 }
@@ -55,11 +55,10 @@ export function MainTabsNavigator() {
             />
 
             <Tab.Screen
-                name="CreateTransaction"
-                component={CreateTransactionScreen}
+                name="AiChat"
+                component={AiChatScreen}
                 options={{
-                    title: "",
-                    tabBarLabel: "",
+                    title: "AI",
                 }}
             />
 

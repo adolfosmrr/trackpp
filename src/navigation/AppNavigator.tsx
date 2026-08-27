@@ -21,9 +21,11 @@ import { CreateFixedExpenseScreen } from "../features/fixedExpenses/screens/Crea
 import { EditFixedExpenseScreen } from "../features/fixedExpenses/screens/EditFixedExpenseScreen"
 import { PayFixedExpensePeriodScreen } from "../features/fixedExpenses/screens/PayFixedExpensePeriodScreen"
 import { CorrectFixedExpensePaymentScreen } from "../features/fixedExpenses/screens/CorrectFixedExpensePaymentScreen"
+import { CreateTransactionScreen } from "../features/transactions/screens/CreateTransactionScreen"
 
 export type AppStackParamList = {
   Main: undefined
+  CreateTransaction: undefined
   CreateHousehold: undefined
   InviteMember: undefined
   Invitations: undefined
@@ -50,6 +52,12 @@ export function AppNavigator() {
         component={
           MainTabsNavigator
         }
+      />
+
+      <Stack.Screen
+        name="CreateTransaction"
+        component={CreateTransactionScreen}
+        options={{ title: "Nueva transacción" }}
       />
 
       <Stack.Screen
