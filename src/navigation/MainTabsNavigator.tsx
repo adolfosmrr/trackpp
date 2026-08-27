@@ -1,5 +1,4 @@
-import { createBottomTabNavigator } from "@react-navigation/bottom-tabs"
-import { Pressable, Text, View } from "react-native"
+import { createNativeBottomTabNavigator } from "@react-navigation/bottom-tabs/unstable"
 
 import { HomeScreen } from "../features/home/screens/HomeScreen"
 import { TransactionsScreen } from "../features/transactions/screens/TransactionsScreen"
@@ -19,7 +18,7 @@ export type MainTabsParamList = {
     Profile: undefined
 }
 
-const Tab = createBottomTabNavigator<MainTabsParamList>()
+const Tab = createNativeBottomTabNavigator<MainTabsParamList>()
 
 export function MainTabsNavigator() {
     const selectedHouseholdId = useHouseholdStore(
@@ -61,44 +60,6 @@ export function MainTabsNavigator() {
                 options={{
                     title: "",
                     tabBarLabel: "",
-                    tabBarButton: ({ onPress, accessibilityState }) => {
-                        const selected = accessibilityState?.selected
-
-                        return (
-                            <Pressable
-                                onPress={onPress}
-                                style={{
-                                    flex: 1,
-                                    alignItems: "center",
-                                    justifyContent: "center",
-                                }}
-                            >
-                                <View
-                                    style={{
-                                        width: 56,
-                                        height: 56,
-                                        borderRadius: 28,
-                                        backgroundColor: "#111",
-                                        alignItems: "center",
-                                        justifyContent: "center",
-                                        transform: [{ translateY: -10 }],
-                                        opacity: selected ? 0.9 : 1,
-                                    }}
-                                >
-                                    <Text
-                                        style={{
-                                            color: "#fff",
-                                            fontSize: 30,
-                                            lineHeight: 32,
-                                            fontWeight: "400",
-                                        }}
-                                    >
-                                        +
-                                    </Text>
-                                </View>
-                            </Pressable>
-                        )
-                    },
                 }}
             />
 

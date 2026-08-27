@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useRef, useState } from "react"
 import { Alert, Pressable, StyleSheet, Text, View } from "react-native"
 
 import { GridBackground } from "../../../components/layout/GridBackground"
@@ -6,14 +6,20 @@ import AnimatedText from "../../../components/text/AnimatedText"
 import { MeshGradient } from "../../../components/visual/MeshGradient"
 import { AuthToggle, type AuthMode } from "../components/AuthToggle"
 import { GoogleAuthButton } from "../components/GoogleAuthButton"
-import { LoginForm } from "../components/LoginForm"
-import { RegisterForm } from "../components/RegisterForm"
+import { LoginForm, type LoginFormHandle } from "../components/LoginForm"
+import {
+  RegisterForm,
+  type RegisterFormHandle,
+} from "../components/RegisterForm"
+import { PrimaryAuthButton } from "../components/PrimaryAuthButton"
 import { signInWithGoogle } from "../services/googleAuth"
 
 const SHOW_MESH_GRADIENT = false
 
 export function AuthScreen() {
   const [mode, setMode] = useState<AuthMode>("login")
+  const [authLoading, setAuthLoading] = useState(false)
+  const formRef = useRef<LoginFormHandle | RegisterFormHandle>(null)
   const [googleLoading, setGoogleLoading] = useState(false)
 
   function handleModeChange(nextMode: AuthMode) {
@@ -83,11 +89,19 @@ export function AuthScreen() {
           />
         </View>
         <AuthToggle value={mode} onChange={handleModeChange} />
-        {mode === "login" ? (
-          <LoginForm />
-        ) : (
-          <RegisterForm />
-        )}
+        <View style={styles.formArea}>
+          {mode === "login" ? (
+            <LoginForm ref={formRef} onLoadingChange={setAuthLoading} />
+          ) : (
+            <RegisterForm ref={formRef} onLoadingChange={setAuthLoading} />
+          )}
+          <PrimaryAuthButton
+            label={mode === "login" ? "Ingresar" : "Crear cuenta"}
+            loading={authLoading}
+            loadingLabel={mode === "login" ? "Ingresando..." : "Creando..."}
+            onPress={() => formRef.current?.submit()}
+          />
+        </View>
         <View style={styles.googleSection}>
           <View style={styles.separator}>
             <View style={styles.line} />
@@ -143,7 +157,8 @@ const styles = StyleSheet.create({
     fontFamily: "FamiljenGrotesk-Bold",
     fontSize: 45,
     lineHeight: 42,
-    color: "#8E8E8E",
+    color: "#000000",
+    opacity: 0.3
   },
   authMessageClip: {
     width: "100%",
@@ -153,6 +168,9 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   googleSection: {
+    width: "100%",
+  },
+  formArea: {
     width: "100%",
   },
   separator: {

@@ -1,19 +1,32 @@
-import { useState } from "react"
+import { forwardRef, useEffect, useImperativeHandle, useState } from "react"
 import {
   Alert,
-  Pressable,
   StyleSheet,
-  Text,
   TextInput,
   View,
 } from "react-native"
 
 import { supabase } from "../../../services/supabase"
 
-export function RegisterForm() {
+export type RegisterFormHandle = {
+  submit: () => void
+}
+
+type RegisterFormProps = {
+  onLoadingChange: (loading: boolean) => void
+}
+
+export const RegisterForm = forwardRef<RegisterFormHandle, RegisterFormProps>(
+  function RegisterForm({ onLoadingChange }, ref) {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [loading, setLoading] = useState(false)
+
+  useImperativeHandle(ref, () => ({ submit: handleRegister }), [email, password])
+
+  useEffect(() => {
+    onLoadingChange(loading)
+  }, [loading, onLoadingChange])
 
   async function handleRegister() {
     try {
@@ -40,8 +53,8 @@ export function RegisterForm() {
     }
   }
 
-  return (
-    <View style={styles.container}>
+    return (
+      <View style={styles.container}>
       <View style={styles.inputsContainer}>
         <TextInput
           style={styles.input}
@@ -63,19 +76,10 @@ export function RegisterForm() {
         />
       </View>
 
-      <Pressable
-        style={[styles.button, loading && styles.disabled]}
-        onPress={handleRegister}
-        disabled={loading}
-      >
-        <Text style={styles.buttonText}>
-          {loading ? "Creando..." : "Crear cuenta"}
-        </Text>
-      </Pressable>
-
     </View>
-  )
-}
+    )
+  }
+)
 
 const styles = StyleSheet.create({
   container: {
@@ -95,18 +99,5 @@ const styles = StyleSheet.create({
     fontSize: 16,
     paddingVertical: 14,
     paddingHorizontal: 20,
-  },
-  button: {
-    padding: 14,
-    borderRadius: 50,
-    backgroundColor: "#F3F3F3",
-    alignItems: "center",
-  },
-  disabled: { opacity: 0.6 },
-  buttonText: {
-    color: "#000000",
-    fontWeight: "600",
-    fontSize: 16,
-    fontFamily: "FamiljenGrotesk-Medium",
   },
 })

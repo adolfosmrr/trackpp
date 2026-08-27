@@ -1,19 +1,32 @@
-import { useState } from "react"
+import { forwardRef, useEffect, useImperativeHandle, useState } from "react"
 import {
   Alert,
-  Pressable,
   StyleSheet,
-  Text,
   TextInput,
   View,
 } from "react-native"
 
 import { supabase } from "../../../services/supabase"
 
-export function LoginForm() {
+export type LoginFormHandle = {
+  submit: () => void
+}
+
+type LoginFormProps = {
+  onLoadingChange: (loading: boolean) => void
+}
+
+export const LoginForm = forwardRef<LoginFormHandle, LoginFormProps>(
+  function LoginForm({ onLoadingChange }, ref) {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [loading, setLoading] = useState(false)
+
+  useImperativeHandle(ref, () => ({ submit: handleLogin }), [email, password])
+
+  useEffect(() => {
+    onLoadingChange(loading)
+  }, [loading, onLoadingChange])
 
   async function handleLogin() {
     try {
@@ -33,8 +46,8 @@ export function LoginForm() {
     }
   }
 
-  return (
-    <View style={styles.container}>
+    return (
+      <View style={styles.container}>
       <View style={styles.inputsContainer}>
         <TextInput
           style={styles.input}
@@ -55,19 +68,10 @@ export function LoginForm() {
           onChangeText={setPassword}
         />
       </View>
-      <Pressable
-        style={[styles.button, loading && styles.disabled]}
-        onPress={handleLogin}
-        disabled={loading}
-      >
-        <Text style={styles.buttonText}>
-          {loading ? "Ingresando..." : "Ingresar"}
-        </Text>
-      </Pressable>
-
     </View>
-  )
-}
+    )
+  }
+)
 
 const styles = StyleSheet.create({
   container: {
@@ -88,12 +92,4 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     paddingHorizontal: 20
   },
-  button: {
-    padding: 14,
-    borderRadius: 50,
-    backgroundColor: "#F3F3F3",
-    alignItems: "center",
-  },
-  disabled: { opacity: 0.6 },
-  buttonText: { color: "#000000", fontWeight: "600", fontSize: 16, fontFamily: "FamiljenGrotesk-Medium" },
 })
