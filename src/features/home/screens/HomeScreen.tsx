@@ -4,7 +4,6 @@ import { useIsFocused } from "@react-navigation/native"
 import {
   AccessibilityInfo,
   View,
-  ScrollView,
   Text,
   Pressable,
   StyleSheet,
@@ -13,6 +12,8 @@ import {
 import Animated, {
   cancelAnimation,
   interpolate,
+  runOnJS,
+  useAnimatedScrollHandler,
   useAnimatedStyle,
   useSharedValue,
   withTiming,
@@ -55,6 +56,7 @@ import { useHomeAiInsight } from "../hooks/useHomeAiInsight"
 import { useHomeInsightActionDetails } from "../hooks/useHomeInsightActionDetails"
 
 const INSIGHT_SLOT_HEIGHT = 112
+const SCROLL_TRIGGER_DELTA = 3
 
 export function HomeScreen({
   navigation,
@@ -67,6 +69,9 @@ export function HomeScreen({
   const [isCollapsed, setIsCollapsed] = useState(false)
   const [reduceMotionEnabled, setReduceMotionEnabled] = useState(false)
   const collapseProgress = useSharedValue(0)
+  const previousScrollY = useSharedValue(0)
+  const lastScrollY = useSharedValue(0)
+  const collapseTriggered = useSharedValue(false)
 
   useEffect(() => {
     let mounted = true
@@ -89,11 +94,45 @@ export function HomeScreen({
   const toggleCollapsed = () => {
     const nextCollapsed = !isCollapsed
     setIsCollapsed(nextCollapsed)
+    collapseTriggered.value = nextCollapsed
+    previousScrollY.value = lastScrollY.value
     cancelAnimation(collapseProgress)
     collapseProgress.value = reduceMotionEnabled
       ? nextCollapsed ? 1 : 0
       : withTiming(nextCollapsed ? 1 : 0, { duration: 290 })
   }
+
+  const syncCollapsedState = (collapsed: boolean) => {
+    setIsCollapsed(collapsed)
+  }
+
+  const scrollHandler = useAnimatedScrollHandler({
+    onBeginDrag: (event) => {
+      const currentY = Math.max(0, event.contentOffset.y)
+      previousScrollY.value = currentY
+      lastScrollY.value = currentY
+    },
+    onScroll: (event) => {
+      const currentY = Math.max(0, event.contentOffset.y)
+      const deltaY = currentY - previousScrollY.value
+      previousScrollY.value = currentY
+      lastScrollY.value = currentY
+
+      if (
+        currentY > 0 &&
+        deltaY > SCROLL_TRIGGER_DELTA &&
+        !collapseTriggered.value &&
+        collapseProgress.value < 1
+      ) {
+        collapseTriggered.value = true
+        cancelAnimation(collapseProgress)
+        collapseProgress.value = reduceMotionEnabled
+          ? 1
+          : withTiming(1, { duration: 290 })
+        runOnJS(syncCollapsedState)(true)
+      }
+    },
+  })
 
   const animatedInsightSlotStyle = useAnimatedStyle(() => ({
     marginBottom: interpolate(collapseProgress.value, [0, 1], [60, 0]),
@@ -315,7 +354,11 @@ export function HomeScreen({
         <TopSectionHandle collapseProgress={collapseProgress} onPress={toggleCollapsed} />
       </TopSection>
       <ScreenContainer>
-        <ScrollView style={styles.container}>
+        <Animated.ScrollView
+          onScroll={scrollHandler}
+          scrollEventThrottle={16}
+          style={styles.container}
+        >
       <View style={styles.balanceCard}>
         <Text style={styles.balanceLabel}>
           Balance del mes
@@ -576,7 +619,7 @@ export function HomeScreen({
           Agregar movimiento
         </Text>
       </Pressable>
-        </ScrollView>
+        </Animated.ScrollView>
       </ScreenContainer>
     </View>
   )
