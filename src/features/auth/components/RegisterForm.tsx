@@ -9,18 +9,11 @@ import {
 } from "react-native"
 
 import { supabase } from "../../../services/supabase"
-import { GoogleIcon } from "../../../components/icons/GoogleIcon"
-import { signInWithGoogle } from "../services/googleAuth"
 
-type RegisterFormProps = {
-  onRequestLogin: () => void
-}
-
-export function RegisterForm({ onRequestLogin }: RegisterFormProps) {
+export function RegisterForm() {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [loading, setLoading] = useState(false)
-  const [googleLoading, setGoogleLoading] = useState(false)
 
   async function handleRegister() {
     try {
@@ -44,22 +37,6 @@ export function RegisterForm({ onRequestLogin }: RegisterFormProps) {
       }
     } finally {
       setLoading(false)
-    }
-  }
-
-  async function handleGoogleLogin() {
-    try {
-      setGoogleLoading(true)
-      await signInWithGoogle()
-    } catch (error) {
-      const message =
-        error instanceof Error
-          ? error.message
-          : "No se pudo iniciar sesión con Google"
-
-      Alert.alert("Error", message)
-    } finally {
-      setGoogleLoading(false)
     }
   }
 
@@ -96,28 +73,6 @@ export function RegisterForm({ onRequestLogin }: RegisterFormProps) {
         </Text>
       </Pressable>
 
-      <View style={styles.separator}>
-        <View style={styles.line}></View>
-        <Text style={styles.separatorText}>O puedes</Text>
-        <View style={styles.line}></View>
-      </View>
-
-      <Pressable
-        style={[styles.googleButton, googleLoading && styles.disabled]}
-        onPress={handleGoogleLogin}
-        disabled={googleLoading}
-      >
-        <Text style={styles.googleButtonText}>
-          {googleLoading ? "Conectando..." : "Registrarse con Google"}
-        </Text>
-        <View style={styles.googleIconContainer}>
-          <GoogleIcon />
-        </View>
-      </Pressable>
-
-      <Pressable onPress={onRequestLogin}>
-        <Text style={styles.link}>¿Ya tienes cuenta? Inicia sesión</Text>
-      </Pressable>
     </View>
   )
 }
@@ -152,49 +107,6 @@ const styles = StyleSheet.create({
     color: "#000000",
     fontWeight: "600",
     fontSize: 16,
-    fontFamily: "FamiljenGrotesk-Medium",
-  },
-  separator: {
-    flexDirection: "row",
-    justifyContent: "center",
-    alignItems: "center",
-    gap: 12,
-    marginVertical: 20,
-  },
-  line: {
-    flex: 1,
-    height: 0.5,
-    backgroundColor: "#1c1c1c",
-  },
-  separatorText: {
-    color: "#1c1c1c",
-    fontFamily: "FamiljenGrotesk-Bold",
-    fontSize: 16,
-    lineHeight: 16,
-  },
-  googleButton: {
-    paddingVertical: 14,
-    paddingHorizontal: 20,
-    borderRadius: 9999,
-    borderWidth: 0,
-    backgroundColor: "#EAEAEA",
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
-  googleButtonText: {
-    color: "#1C1C1C",
-    fontFamily: "FamiljenGrotesk-Medium",
-    fontSize: 16,
-  },
-  googleIconContainer: {
-    width: 22,
-    height: 22,
-    flexShrink: 0,
-  },
-  link: {
-    textAlign: "center",
-    marginTop: 20,
     fontFamily: "FamiljenGrotesk-Medium",
   },
 })
