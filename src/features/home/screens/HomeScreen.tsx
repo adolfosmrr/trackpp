@@ -29,13 +29,21 @@ import {
 } from "../../dashboard/hooks/useDashboard"
 import { useDashboardInsights } from "../../dashboard/hooks/useDashboardInsights"
 
-import { HouseholdSwitcher } from "../../households/components/HouseholdSwitcher"
-
 import { ActivityItem } from "../../activity/components/ActivityItem"
 import { useActivity } from "../../activity/hooks/useActivity"
 import { useUnreadActivity } from "../../activity/hooks/useUnreadActivity"
 import { useFixedExpenseReminders } from "../../fixedExpenses/hooks/useFixedExpenseReminders"
 import type { FixedExpenseReminder } from "../../fixedExpenses/types/reminders"
+import { ScreenContainer } from "../../../components/layout/ScreenContainer"
+import { TopSection } from "../../../components/layout/TopSection"
+import { TopSectionHeader } from "../../../components/layout/TopSectionHeader"
+import { TopSectionHandle } from "../../../components/layout/TopSectionHandle"
+import { HomeBalance } from "../components/HomeBalance"
+import { HomeIncomeExpenseSummary } from "../components/HomeIncomeExpenseSummary"
+import { HomeInsightCard } from "../components/HomeInsightCard"
+import { HomeInsightSkeleton } from "../components/HomeInsightSkeleton"
+import { useHomeAiInsight } from "../hooks/useHomeAiInsight"
+import { useHomeInsightActionDetails } from "../hooks/useHomeInsightActionDetails"
 
 export function HomeScreen({
   navigation,
@@ -73,6 +81,7 @@ export function HomeScreen({
   const currentHousehold = memberships?.find(
     (membership) => membership.household.id === selectedHouseholdId
   )?.household
+  const displayName = profile?.name?.trim()
 
   const {
     data: activity,
@@ -92,6 +101,8 @@ export function HomeScreen({
     data: reminders,
     error: remindersError,
   } = useFixedExpenseReminders()
+  const homeInsightQuery = useHomeAiInsight()
+  const { actionDetails } = useHomeInsightActionDetails(homeInsightQuery.data)
 
   useEffect(() => {
     if (!isFocused || !isCoupleHousehold) {
@@ -216,20 +227,44 @@ export function HomeScreen({
   }
 
   return (
-    <ScrollView style={styles.container}>
-      <View style={styles.header}>
-        <View>
-          <Text style={styles.greeting}>
-            Hola
-            {profile?.name
-              ? `, ${profile.name}`
-              : ""}
-          </Text>
-
-          <HouseholdSwitcher />
+    <View style={styles.screen}>
+      <TopSection>
+        <TopSectionHeader profile={profile} />
+        <View style={styles.greetingContainer}>
+          <Text style={styles.helloText}>Hola</Text>
+          {displayName ? (
+            <Text
+              adjustsFontSizeToFit
+              minimumFontScale={0.75}
+              numberOfLines={1}
+              style={styles.userNameText}
+            >
+              {displayName}
+            </Text>
+          ) : null}
         </View>
-      </View>
-
+        <HomeBalance balance={dashboard?.balance ?? 0} />
+        <HomeIncomeExpenseSummary
+          expenses={dashboard?.expenses ?? 0}
+          income={dashboard?.income ?? 0}
+        />
+        {homeInsightQuery.isLoading ? (
+          <View style={styles.insightContainer}>
+            <HomeInsightSkeleton />
+          </View>
+        ) : homeInsightQuery.data?.message ? (
+          <View style={styles.insightContainer}>
+            <HomeInsightCard
+              actionDetails={actionDetails}
+              insight={homeInsightQuery.data}
+              variant="plain"
+            />
+          </View>
+        ) : null}
+        <TopSectionHandle />
+      </TopSection>
+      <ScreenContainer>
+        <ScrollView style={styles.container}>
       <View style={styles.balanceCard}>
         <Text style={styles.balanceLabel}>
           Balance del mes
@@ -490,7 +525,9 @@ export function HomeScreen({
           Agregar movimiento
         </Text>
       </Pressable>
-    </ScrollView>
+        </ScrollView>
+      </ScreenContainer>
+    </View>
   )
 }
 
@@ -528,8 +565,12 @@ const styles =
   StyleSheet.create({
     container: {
       flex: 1,
-      padding: 24,
+      paddingVertical: 24,
       gap: 24,
+    },
+
+    screen: {
+      flex: 1,
     },
 
     center: {
@@ -540,22 +581,29 @@ const styles =
       padding: 24,
     },
 
-    header: {
-      flexDirection: "row",
-      justifyContent:
-        "space-between",
-      alignItems: "center",
+    greetingContainer: {
+      alignItems: "flex-start",
+      marginTop: 20,
     },
 
-    greeting: {
-      fontSize: 26,
-      fontWeight: "700",
+    helloText: {
+      color: "#FFFFFF",
+      fontFamily: "FamiljenGrotesk-Regular",
+      fontSize: 30,
+      lineHeight: 34,
+      opacity: 0.5,
     },
 
-    household: {
-      marginTop: 4,
-      fontSize: 15,
-      color: "#777",
+    userNameText: {
+      color: "#FFFFFF",
+      fontFamily: "FamiljenGrotesk-Regular",
+      fontSize: 40,
+      lineHeight: 44,
+    },
+
+    insightContainer: {
+      marginBottom: 60,
+      marginTop: 60,
     },
 
     balanceCard: {

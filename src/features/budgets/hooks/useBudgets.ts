@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query"
 import { useHouseholdStore } from "../../../store/householdStore"
 import { getBudgets } from "../services/budgetService"
 
-export function useBudgets() {
+export function useBudgets(enabled = true) {
   const selectedHouseholdId = useHouseholdStore(
     (state) => state.selectedHouseholdId
   )
@@ -23,7 +23,7 @@ export function useBudgets() {
         month
       ),
 
-    enabled: !!selectedHouseholdId,
+    enabled: !!selectedHouseholdId && enabled,
   })
 }
 

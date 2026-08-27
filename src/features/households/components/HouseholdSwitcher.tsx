@@ -10,12 +10,9 @@ import {
   import { useHouseholds } from "../hooks/useHouseholds"
   import { useHouseholdStore } from "../../../store/householdStore"
 
-  import {
-    useNavigation,
-  } from "@react-navigation/native"
+  import { ChevronDownIcon } from "../../../components/icons/ChevronDownIcon"
   
-  export function HouseholdSwitcher() {
-    const navigation = useNavigation<any>()
+  export function HouseholdSwitcher({ compact = false }: { compact?: boolean }) {
     const [open, setOpen] = useState(false)
   
     const selectedHouseholdId = useHouseholdStore(
@@ -38,7 +35,7 @@ import {
   
     if (isLoading) {
       return (
-        <Text style={styles.loading}>
+        <Text style={compact ? styles.compactLoading : styles.loading}>
           Cargando...
         </Text>
       )
@@ -47,16 +44,16 @@ import {
     return (
       <>
         <Pressable
-          style={styles.trigger}
+          accessibilityLabel="Cambiar cuenta"
+          accessibilityRole="button"
+          style={[styles.trigger, compact && styles.compactTrigger]}
           onPress={() => setOpen(true)}
         >
-          <Text style={styles.triggerText}>
+          <Text style={[styles.triggerText, compact && styles.compactTriggerText]}>
             {currentHousehold?.name ?? "Seleccionar espacio"}
           </Text>
   
-          <Text style={styles.chevron}>
-            ▼
-          </Text>
+          {compact ? <ChevronDownIcon /> : <Text style={styles.chevron}>▼</Text>}
         </Pressable>
   
         <Modal
@@ -138,22 +135,6 @@ import {
             </Pressable>
           </Pressable>
         </Modal>
-        <Pressable
-  style={styles.createOption}
-  onPress={() => {
-    setOpen(false)
-
-    navigation.navigate(
-      "CreateHousehold"
-    )
-  }}
->
-  <Text
-    style={styles.createOptionText}
-  >
-    + Crear espacio compartido
-  </Text>
-</Pressable>
       </>
     )
   }
@@ -161,6 +142,12 @@ import {
   const styles = StyleSheet.create({
     loading: {
       color: "#777",
+    },
+
+    compactLoading: {
+      height: 40,
+      justifyContent: "center",
+      marginLeft: 15,
     },
   
     trigger: {
@@ -172,6 +159,23 @@ import {
     triggerText: {
       fontSize: 15,
       fontWeight: "600",
+    },
+
+    compactTrigger: {
+      alignItems: "center",
+      backgroundColor: "#FFFFFF",
+      borderRadius: 9999,
+      gap: 8,
+      height: 40,
+      marginLeft: 15,
+      paddingHorizontal: 20,
+    },
+
+    compactTriggerText: {
+      color: "#1C1C1C",
+      fontFamily: "FamiljenGrotesk-Bold",
+      fontSize: 16,
+      fontWeight: undefined,
     },
   
     chevron: {
@@ -238,13 +242,4 @@ import {
       fontSize: 18,
       fontWeight: "700",
     },
-    createOption: {
-        padding: 14,
-        alignItems: "center",
-        marginTop: 4,
-      },
-      
-      createOptionText: {
-        fontWeight: "700",
-      },
   })

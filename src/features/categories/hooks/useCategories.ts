@@ -6,7 +6,7 @@ import { getCategories } from "../services/categoryService"
 
 import type { CategoryType } from "../types"
 
-export function useCategories(type: CategoryType) {
+export function useCategories(type: CategoryType, enabled = true) {
   const selectedHouseholdId = useHouseholdStore(
     (state) => state.selectedHouseholdId
   )
@@ -16,6 +16,6 @@ export function useCategories(type: CategoryType) {
 
     queryFn: () => getCategories(selectedHouseholdId!, type),
 
-    enabled: !!selectedHouseholdId,
+    enabled: !!selectedHouseholdId && enabled,
   })
 }

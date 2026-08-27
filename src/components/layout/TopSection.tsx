@@ -17,6 +17,7 @@ export function TopSection({ children, style }: TopSectionProps) {
                 {
                     minHeight: insets.top + 120,
                     paddingTop: insets.top,
+                    paddingHorizontal: 20,
                 },
                 style,
             ]}
@@ -28,7 +29,7 @@ export function TopSection({ children, style }: TopSectionProps) {
 
 const styles = StyleSheet.create({
     container: {
-        backgroundColor: "#EAEAEA",
+        backgroundColor: "#000000",
         borderBottomLeftRadius: 60,
         borderBottomRightRadius: 60,
     },

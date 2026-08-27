@@ -12,6 +12,8 @@ export default function App() {
   const [fontsLoaded] = useFonts({
     "FamiljenGrotesk-Bold": require("./assets/fonts/FamiljenGrotesk-Bold.ttf"),
     "FamiljenGrotesk-Medium": require("./assets/fonts/FamiljenGrotesk-Medium.ttf"),
+    "FamiljenGrotesk-Regular": require("./assets/fonts/FamiljenGrotesk-Regular.ttf"),
+    "Satoshi-Regular": require("./assets/fonts/Satoshi-Regular.otf"),
   })
 
   if (!fontsLoaded) {
