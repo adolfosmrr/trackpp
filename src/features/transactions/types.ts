@@ -12,6 +12,16 @@ export type TransactionCreator = {
   avatar_url: string | null
 }
 
+export type FixedExpensePaymentReference = {
+  id: string
+  fixed_expense_period_id: string
+  fixed_expense_period: {
+    id: string
+    fixed_expense_id: string
+    name: string
+  } | null
+}
+
 export type Transaction = {
   id: string
   household_id: string
@@ -26,6 +36,7 @@ export type Transaction = {
   transaction_date: string
   created_at: string
   updated_at: string
+  fixedExpensePayment: FixedExpensePaymentReference | null
 }
 
 export type CreateTransactionInput = {

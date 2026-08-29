@@ -9,6 +9,7 @@ import { useContext } from "react"
 type ScreenContainerProps = {
     children: ReactNode
     style?: StyleProp<ViewStyle>
+    paddingHorizontal?: number
 }
 
 // Native Bottom Tabs does not expose BottomTabBarHeightContext, so its
@@ -16,19 +17,27 @@ type ScreenContainerProps = {
 export function ScreenContainer({
     children,
     style,
+    paddingHorizontal = 20,
 }: ScreenContainerProps) {
     const tabBarHeightContext = useContext(BottomTabBarHeightContext)
 
     if (tabBarHeightContext === undefined) {
         return (
-            <ScreenContainerView paddingBottom={0} style={style}>
+            <ScreenContainerView
+                paddingBottom={0}
+                paddingHorizontal={paddingHorizontal}
+                style={style}
+            >
                 {children}
             </ScreenContainerView>
         )
     }
 
     return (
-        <ScreenContainerWithTabBar style={style}>
+        <ScreenContainerWithTabBar
+            paddingHorizontal={paddingHorizontal}
+            style={style}
+        >
             {children}
         </ScreenContainerWithTabBar>
     )
@@ -37,11 +46,16 @@ export function ScreenContainer({
 function ScreenContainerWithTabBar({
     children,
     style,
+    paddingHorizontal,
 }: ScreenContainerProps) {
     const tabBarHeight = useBottomTabBarHeight()
 
     return (
-        <ScreenContainerView paddingBottom={tabBarHeight} style={style}>
+        <ScreenContainerView
+            paddingBottom={tabBarHeight}
+            paddingHorizontal={paddingHorizontal ?? 20}
+            style={style}
+        >
             {children}
         </ScreenContainerView>
     )
@@ -50,13 +64,14 @@ function ScreenContainerWithTabBar({
 function ScreenContainerView({
     children,
     paddingBottom,
+    paddingHorizontal,
     style,
 }: ScreenContainerProps & { paddingBottom: number }) {
     return (
         <View
             style={[
                 styles.container,
-                { paddingBottom },
+                { paddingBottom, paddingHorizontal },
                 style,
             ]}
         >

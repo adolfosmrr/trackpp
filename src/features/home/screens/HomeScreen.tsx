@@ -42,7 +42,6 @@ import { ActivityItem } from "../../activity/components/ActivityItem"
 import { useActivity } from "../../activity/hooks/useActivity"
 import { useUnreadActivity } from "../../activity/hooks/useUnreadActivity"
 import { useFixedExpenseReminders } from "../../fixedExpenses/hooks/useFixedExpenseReminders"
-import type { FixedExpenseReminder } from "../../fixedExpenses/types/reminders"
 import { ScreenContainer } from "../../../components/layout/ScreenContainer"
 import { TopSection } from "../../../components/layout/TopSection"
 import { TopSectionHeader } from "../../../components/layout/TopSectionHeader"
@@ -52,11 +51,31 @@ import { HomeGreeting } from "../components/HomeGreeting"
 import { HomeIncomeExpenseSummary } from "../components/HomeIncomeExpenseSummary"
 import { HomeInsightCard } from "../components/HomeInsightCard"
 import { HomeInsightSkeleton } from "../components/HomeInsightSkeleton"
+import {
+  HomeInfoCard,
+  type HomeInfoCardVariant,
+} from "../components/HomeInfoCard"
+import { HomeSectionTitle } from "../components/HomeSectionTitle"
+import { HomeSectionToggle } from "../components/HomeSectionToggle"
+import { MovementsSection } from "../components/MovementsSection"
+import { StackedCardList } from "../components/StackedCardList"
+import { InsightSectionIcon } from "../components/icons/InsightSectionIcon"
+import { UpcomingPaymentsSectionIcon } from "../components/icons/UpcomingPaymentsSectionIcon"
 import { useHomeAiInsight } from "../hooks/useHomeAiInsight"
 import { useHomeInsightActionDetails } from "../hooks/useHomeInsightActionDetails"
 
 const INSIGHT_SLOT_HEIGHT = 112
 const SCROLL_TRIGGER_DELTA = 3
+const INFO_CARD_VARIANTS: HomeInfoCardVariant[] = [
+  "darkGradientText",
+  "light",
+  "gradient",
+]
+const UPCOMING_PAYMENT_VARIANTS: HomeInfoCardVariant[] = [
+  "gradient",
+  "light",
+  "dark",
+]
 
 export function HomeScreen({
   navigation,
@@ -67,6 +86,8 @@ export function HomeScreen({
     null
   )
   const [isCollapsed, setIsCollapsed] = useState(false)
+  const [isExpanded, setIsExpanded] = useState(false)
+  const [isUpcomingPaymentsExpanded, setIsUpcomingPaymentsExpanded] = useState(false)
   const [reduceMotionEnabled, setReduceMotionEnabled] = useState(false)
   const collapseProgress = useSharedValue(0)
   const previousScrollY = useSharedValue(0)
@@ -106,6 +127,12 @@ export function HomeScreen({
     setIsCollapsed(collapsed)
   }
 
+  const syncHandleDragState = (collapsed: boolean) => {
+    setIsCollapsed(collapsed)
+    collapseTriggered.value = collapsed
+    previousScrollY.value = lastScrollY.value
+  }
+
   const scrollHandler = useAnimatedScrollHandler({
     onBeginDrag: (event) => {
       const currentY = Math.max(0, event.contentOffset.y)
@@ -136,7 +163,7 @@ export function HomeScreen({
 
   const animatedInsightSlotStyle = useAnimatedStyle(() => ({
     marginBottom: interpolate(collapseProgress.value, [0, 1], [60, 0]),
-    marginTop: interpolate(collapseProgress.value, [0, 1], [60, 0]),
+    marginTop: interpolate(collapseProgress.value, [0, 1], [30, 0]),
     height: interpolate(collapseProgress.value, [0, 1], [INSIGHT_SLOT_HEIGHT, 0]),
   }))
   const animatedInsightContentStyle = useAnimatedStyle(() => ({
@@ -351,104 +378,66 @@ export function HomeScreen({
             </Animated.View>
           </Animated.View>
         ) : null}
-        <TopSectionHandle collapseProgress={collapseProgress} onPress={toggleCollapsed} />
+        <TopSectionHandle
+          collapseProgress={collapseProgress}
+          onDragEnd={syncHandleDragState}
+          onPress={toggleCollapsed}
+          reduceMotionEnabled={reduceMotionEnabled}
+        />
       </TopSection>
-      <ScreenContainer>
+      <ScreenContainer paddingHorizontal={0}>
         <Animated.ScrollView
           onScroll={scrollHandler}
           scrollEventThrottle={16}
-          style={styles.container}
+          style={styles.scrollView}
+          contentContainerStyle={styles.scrollContent}
         >
-      <View style={styles.balanceCard}>
-        <Text style={styles.balanceLabel}>
-          Balance del mes
-        </Text>
-
-        <Text style={styles.balance}>
-          {formatCurrency(
-            dashboard?.balance ?? 0
-          )}
-        </Text>
-
-        <View style={styles.summaryRow}>
-          <View style={styles.summaryItem}>
-            <Text
-              style={styles.summaryLabel}
-            >
-              Ingresos
-            </Text>
-
-            <Text
-              style={styles.incomeAmount}
-            >
-              {formatCurrency(
-                dashboard?.income ?? 0
-              )}
-            </Text>
-          </View>
-
-          <View style={styles.summaryItem}>
-            <Text
-              style={styles.summaryLabel}
-            >
-              Gastos
-            </Text>
-
-            <Text
-              style={styles.expenseAmount}
-            >
-              {formatCurrency(
-                dashboard?.expenses ?? 0
-              )}
-            </Text>
-          </View>
-        </View>
-      </View>
-
       {insights?.length ? (
-        <View style={styles.insightsSection}>
-          <Text style={styles.insightsTitle}>
-            Para tener en cuenta
-          </Text>
+        <View>
+          <HomeSectionTitle
+            icon={<InsightSectionIcon />}
+            title="Para tener en cuenta"
+            rightElement={
+              <HomeSectionToggle
+                expanded={isExpanded}
+                onPress={() => setIsExpanded((expanded) => !expanded)}
+              />
+            }
+          />
 
-          <View style={styles.insightsList}>
-            {insights.map((insight) => (
-              <View
-                key={insight.id}
-                style={styles.insightRow}
-              >
-                <Text style={styles.insightMarker}>
-                  {insight.type === "budget_warning"
-                    ? "!"
-                    : "↑"}
-                </Text>
-                <Text style={styles.insightText}>
-                  {insight.message}
-                </Text>
-              </View>
-            ))}
-          </View>
+          <StackedCardList
+            items={insights}
+            expanded={isExpanded}
+            reduceMotionEnabled={reduceMotionEnabled}
+            renderItem={(insight, index) => (
+              <HomeInfoCard
+                icon={insight.categoryIcon}
+                message={insight.message}
+                variant={INFO_CARD_VARIANTS[index % INFO_CARD_VARIANTS.length]}
+              />
+            )}
+          />
         </View>
       ) : null}
 
-      <Pressable
-        style={styles.aiButton}
-        onPress={() => navigation.navigate("AiChat")}
-        disabled={!currentHousehold}
-      >
-        <Text style={styles.aiButtonText}>
-          Preguntar a IA
-        </Text>
-      </Pressable>
-
       {reminders?.length ? (
-        <View style={styles.remindersSection}>
-          <Text style={styles.sectionTitle}>Próximos pagos</Text>
-          <View style={styles.remindersList}>
-            {reminders.map((reminder) => (
-              <ReminderCard
-                key={reminder.id}
-                reminder={reminder}
+        <View>
+          <HomeSectionTitle
+            icon={<UpcomingPaymentsSectionIcon />}
+            title="Próximos pagos"
+            rightElement={
+              <HomeSectionToggle
+                expanded={isUpcomingPaymentsExpanded}
+                onPress={() => setIsUpcomingPaymentsExpanded((expanded) => !expanded)}
+              />
+            }
+          />
+          <StackedCardList
+            items={reminders}
+            expanded={isUpcomingPaymentsExpanded}
+            reduceMotionEnabled={reduceMotionEnabled}
+            renderItem={(reminder, index) => (
+              <Pressable
                 onPress={() => {
                   if (reminder.remaining > 0) {
                     navigation.navigate("PayFixedExpensePeriod", {
@@ -458,21 +447,17 @@ export function HomeScreen({
                     navigation.navigate("FixedExpenses")
                   }
                 }}
-              />
-            ))}
-          </View>
+              >
+                <HomeInfoCard
+                  icon={reminder.categoryIcon}
+                  message={reminder.message}
+                  variant={UPCOMING_PAYMENT_VARIANTS[index % UPCOMING_PAYMENT_VARIANTS.length]}
+                />
+              </Pressable>
+            )}
+          />
         </View>
       ) : null}
-
-      <Pressable
-        style={styles.secondaryButton}
-        onPress={() => navigation.navigate("FixedExpenses")}
-        disabled={!currentHousehold}
-      >
-        <Text style={styles.secondaryButtonText}>
-          Gastos fijos
-        </Text>
-      </Pressable>
 
       {isCoupleHousehold ? (
         <View style={styles.activitySection}>
@@ -511,155 +496,28 @@ export function HomeScreen({
           )}
         </View>
       ) : (
-        <>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>
-              Movimientos recientes
-            </Text>
-
-            <Pressable
-              onPress={() =>
-                navigation.navigate(
-                  "Transactions"
-                )
-              }
-            >
-              <Text style={styles.link}>
-                Ver todos
-              </Text>
-            </Pressable>
-          </View>
-
-          <View style={styles.transactions}>
-            {dashboard?.recentTransactions
-              .length ? (
-              dashboard.recentTransactions.map(
-                (transaction) => (
-                  <View
-                    key={transaction.id}
-                    style={
-                      styles.transaction
-                    }
-                  >
-                    <View
-                      style={
-                        styles.transactionInfo
-                      }
-                    >
-                      <Text
-                        style={
-                          styles.transactionTitle
-                        }
-                      >
-                        {transaction.title}
-                      </Text>
-
-                      <Text
-                        style={
-                          styles.transactionCategory
-                        }
-                      >
-                        {transaction.category
-                          ? `${
-                              transaction
-                                .category
-                                .icon ?? ""
-                            } ${
-                              transaction
-                                .category
-                                .name
-                            }`
-                          : "Sin categoría"}
-                      </Text>
-                    </View>
-
-                    <Text
-                      style={[
-                        styles.transactionAmount,
-                        transaction.type ===
-                        "expense"
-                          ? styles.expenseAmount
-                          : styles.incomeAmount,
-                      ]}
-                    >
-                      {transaction.type ===
-                      "expense"
-                        ? "-"
-                        : "+"}
-
-                      {formatCurrency(
-                        Number(
-                          transaction.amount
-                        )
-                      )}
-                    </Text>
-                  </View>
-                )
-              )
-            ) : (
-              <Text style={styles.empty}>
-                No hay movimientos recientes.
-              </Text>
-            )}
-          </View>
-        </>
+        <MovementsSection
+          transactions={dashboard?.recentTransactions ?? []}
+          onViewAll={() => navigation.navigate("Transactions")}
+        />
       )}
 
-      <Pressable
-        style={styles.primaryButton}
-        onPress={() =>
-          navigation.navigate(
-            "CreateTransaction"
-          )
-        }
-      >
-        <Text
-          style={styles.primaryButtonText}
-        >
-          Agregar movimiento
-        </Text>
-      </Pressable>
         </Animated.ScrollView>
       </ScreenContainer>
     </View>
   )
 }
 
-function ReminderCard({
-  reminder,
-  onPress,
-}: {
-  reminder: FixedExpenseReminder
-  onPress: () => void
-}) {
-  return (
-    <Pressable style={styles.reminderCard} onPress={onPress}>
-      <Text style={styles.reminderMarker}>
-        {reminder.type === "overdue" ? "!" : "•"}
-      </Text>
-      <Text style={styles.reminderText}>{reminder.message}</Text>
-    </Pressable>
-  )
-}
-
-function formatCurrency(
-  amount: number
-) {
-  return new Intl.NumberFormat(
-    "es-AR",
-    {
-      style: "currency",
-      currency: "ARS",
-      maximumFractionDigits: 2,
-    }
-  ).format(amount)
-}
-
 const styles =
   StyleSheet.create({
-    container: {
+    scrollView: {
       flex: 1,
-      paddingVertical: 24,
+    },
+
+    scrollContent: {
+      paddingHorizontal: 20,
+      paddingTop: 24,
+      paddingBottom: 0,
       gap: 24,
     },
 
@@ -712,14 +570,6 @@ const styles =
       top: 0,
     },
 
-    balanceCard: {
-      padding: 22,
-      borderWidth: 1,
-      borderColor: "#ddd",
-      borderRadius: 18,
-      gap: 16,
-    },
-
     activitySection: {
       gap: 12,
     },
@@ -732,40 +582,6 @@ const styles =
       color: "#777",
     },
 
-    balanceLabel: {
-      color: "#777",
-    },
-
-    balance: {
-      fontSize: 32,
-      fontWeight: "700",
-    },
-
-    summaryRow: {
-      flexDirection: "row",
-      gap: 16,
-    },
-
-    summaryItem: {
-      flex: 1,
-    },
-
-    summaryLabel: {
-      fontSize: 13,
-      color: "#777",
-      marginBottom: 4,
-    },
-
-    incomeAmount: {
-      color: "#067647",
-      fontWeight: "700",
-    },
-
-    expenseAmount: {
-      color: "#b42318",
-      fontWeight: "700",
-    },
-
     sectionHeader: {
       flexDirection: "row",
       justifyContent:
@@ -776,95 +592,6 @@ const styles =
     sectionTitle: {
       fontSize: 20,
       fontWeight: "700",
-    },
-
-    aiButton: {
-      borderWidth: 1,
-      borderColor: "#111",
-      borderRadius: 12,
-      padding: 14,
-      alignItems: "center",
-    },
-
-    aiButtonText: {
-      fontWeight: "700",
-    },
-
-    secondaryButton: {
-      padding: 16,
-      borderRadius: 10,
-      borderWidth: 1,
-      borderColor: "#111",
-      alignItems: "center",
-    },
-
-    secondaryButtonText: {
-      color: "#111",
-      fontWeight: "600",
-    },
-
-    remindersSection: {
-      gap: 10,
-    },
-
-    remindersList: {
-      gap: 8,
-    },
-
-    reminderCard: {
-      flexDirection: "row",
-      alignItems: "flex-start",
-      gap: 10,
-      padding: 14,
-      borderWidth: 1,
-      borderColor: "#eee",
-      borderRadius: 12,
-    },
-
-    reminderMarker: {
-      color: "#b42318",
-      fontWeight: "700",
-      fontSize: 18,
-      lineHeight: 20,
-    },
-
-    reminderText: {
-      flex: 1,
-      lineHeight: 20,
-    },
-
-    insightsSection: {
-      gap: 10,
-    },
-
-    insightsTitle: {
-      fontSize: 20,
-      fontWeight: "700",
-    },
-
-    insightsList: {
-      gap: 8,
-    },
-
-    insightRow: {
-      flexDirection: "row",
-      alignItems: "flex-start",
-      gap: 8,
-    },
-
-    insightMarker: {
-      width: 22,
-      height: 22,
-      borderRadius: 11,
-      backgroundColor: "#f1f1f1",
-      textAlign: "center",
-      lineHeight: 22,
-      fontWeight: "700",
-    },
-
-    insightText: {
-      flex: 1,
-      lineHeight: 21,
     },
 
     activityBadge: {
@@ -880,60 +607,10 @@ const styles =
       fontWeight: "700",
     },
 
-    link: {
-      fontWeight: "600",
-    },
-
-    transactions: {
-      gap: 12,
-    },
-
-    transaction: {
-      flexDirection: "row",
-      justifyContent:
-        "space-between",
-      alignItems: "center",
-      paddingVertical: 10,
-    },
-
-    transactionInfo: {
-      flex: 1,
-    },
-
-    transactionTitle: {
-      fontSize: 16,
-      fontWeight: "600",
-    },
-
-    transactionCategory: {
-      marginTop: 4,
-      color: "#777",
-    },
-
-    transactionAuthor: {
-      marginTop: 4,
-      color: "#777",
-    },
-
-    transactionAmount: {
-      fontSize: 16,
-    },
-
     empty: {
       color: "#777",
       textAlign: "center",
       paddingVertical: 24,
     },
 
-    primaryButton: {
-      padding: 16,
-      backgroundColor: "#111",
-      borderRadius: 12,
-      alignItems: "center",
-    },
-
-    primaryButtonText: {
-      color: "#fff",
-      fontWeight: "700",
-    },
   })

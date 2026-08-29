@@ -14,7 +14,7 @@ export function HomeIncomeExpenseSummary({
 }: HomeIncomeExpenseSummaryProps) {
   const containerStyle = useAnimatedStyle(() => ({
     marginBottom: interpolate(collapseProgress.value, [0, 1], [10, 30]),
-    marginTop: interpolate(collapseProgress.value, [0, 1], [30, 10]),
+    marginTop: interpolate(collapseProgress.value, [0, 1], [50, 10]),
   }))
   return (
     <Animated.View style={[styles.container, containerStyle]}>

@@ -13,6 +13,7 @@ export type FixedExpenseReminder = {
   fixedExpenseId: string
   type: FixedExpenseReminderType
   name: string
+  categoryIcon: string | null
   expectedAmount: number
   totalPaid: number
   remaining: number

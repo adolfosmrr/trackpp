@@ -138,6 +138,14 @@ begin
     raise exception 'Household membership required';
   end if;
 
+  if exists (
+    select 1
+      from public.fixed_expense_payments
+     where transaction_id = v_transaction.id
+  ) then
+    raise exception 'FIXED_EXPENSE_TRANSACTION_CANNOT_BE_DELETED';
+  end if;
+
   select * into v_category
     from public.categories
     where id = v_transaction.category_id

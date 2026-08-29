@@ -18,11 +18,20 @@ export async function getTransactions(
          icon
        ),
        creator:profiles!transactions_created_by_fkey(
-        id,
-        name,
-        avatar_url
-      )
-    `)
+         id,
+         name,
+         avatar_url
+       ),
+       fixedExpensePayment:fixed_expense_payments!fixed_expense_payments_transaction_fkey(
+         id,
+         fixed_expense_period_id,
+         fixed_expense_period:fixed_expense_periods(
+           id,
+           fixed_expense_id,
+           name
+         )
+       )
+     `)
     .eq("household_id", householdId)
     .order("transaction_date", {
       ascending: false,
@@ -35,7 +44,18 @@ export async function getTransactions(
     throw error
   }
 
-  return data as Transaction[]
+  const mappedTransactions = (data ?? []).map((transaction) => {
+    const payment = Array.isArray(transaction.fixedExpensePayment)
+      ? transaction.fixedExpensePayment[0] ?? null
+      : null
+
+    return {
+      ...transaction,
+      fixedExpensePayment: payment,
+    }
+  }) as Transaction[]
+
+  return mappedTransactions
 }
 
 export async function createTransaction(
@@ -126,6 +146,7 @@ function parseTransactionRpcResult(
     transaction_date: transactionDate,
     created_at: createdAt,
     updated_at: updatedAt,
+    fixedExpensePayment: null,
   }
 }
 

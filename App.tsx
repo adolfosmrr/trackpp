@@ -1,5 +1,6 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import { useFonts } from "expo-font"
+import { GestureHandlerRootView } from "react-native-gesture-handler"
 
 import { AuthProvider } from "./src/features/auth/context/AuthContext"
 import { RootNavigator } from "./src/navigation/RootNavigator"
@@ -21,11 +22,13 @@ export default function App() {
   }
 
   return (
-    <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <NotificationObserver />
-        <RootNavigator />
-      </AuthProvider>
-    </QueryClientProvider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <QueryClientProvider client={queryClient}>
+        <AuthProvider>
+          <NotificationObserver />
+          <RootNavigator />
+        </AuthProvider>
+      </QueryClientProvider>
+    </GestureHandlerRootView>
   )
 }

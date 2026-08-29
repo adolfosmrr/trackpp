@@ -71,15 +71,17 @@ import {
 
         Alert.alert(
           "Error",
-          error instanceof Error
-            ? error.message
-            : "No se pudo eliminar el movimiento."
+          isFixedExpenseDeleteError(error)
+            ? "Este movimiento pertenece a un gasto fijo y debe gestionarse desde Gastos fijos."
+            : error instanceof Error
+              ? error.message
+              : "No se pudo eliminar el movimiento."
         )
       } finally {
         setDeletingId(null)
       }
     }
-  
+
     if (isLoading) {
       return (
         <View style={styles.center}>
@@ -116,26 +118,31 @@ import {
               Todavía no hay movimientos.
             </Text>
           }
-          renderItem={({ item }) => (
-              <View style={styles.transaction}>
+           renderItem={({ item }) => (
+               <View style={styles.transaction}>
                <View style={styles.transactionInfo}>
                 <Text style={styles.transactionTitle}>
                   {item.title}
                 </Text>
-  
-                <Text style={styles.transactionMeta}>
-                  {item.category
-                    ? `${item.category.icon ?? ""} ${item.category.name}`
-                    : "Sin categoría"}
+
+                <Text style={styles.transactionDate}>
+                  {formatTransactionDate(item.transaction_date)}
                 </Text>
+
+                 <Text style={styles.transactionMeta}>
+                   {item.category
+                     ? `${item.category.icon ?? ""} ${item.category.name}`
+                     : "Sin categoría"}
+                   {item.fixedExpensePayment ? " · Gasto fijo" : ""}
+                 </Text>
 
                 {currentHousehold?.type === "couple" && (
                   <Text style={styles.transactionAuthor}>
                     Por {item.created_by === user?.id
                       ? "ti"
                       : item.creator?.name ?? "otro miembro"}
-                  </Text>
-                )}
+                   </Text>
+                 )}
               </View>
   
               <View style={styles.transactionActions}>
@@ -151,23 +158,41 @@ import {
                   ${Number(item.amount).toLocaleString("es-AR")}
                 </Text>
 
-                <Pressable
-                  style={styles.deleteButton}
-                  onPress={() => confirmDelete(item)}
-                  disabled={deletingId !== null}
-                >
-                  <Text style={styles.deleteButtonText}>
-                    {deletingId === item.id
-                      ? "Eliminando..."
-                      : "Eliminar"}
-                  </Text>
-                </Pressable>
+                {!item.fixedExpensePayment ? (
+                  <Pressable
+                    style={styles.deleteButton}
+                    onPress={() => confirmDelete(item)}
+                    disabled={deletingId !== null}
+                  >
+                    <Text style={styles.deleteButtonText}>
+                      {deletingId === item.id
+                        ? "Eliminando..."
+                        : "Eliminar"}
+                    </Text>
+                  </Pressable>
+                ) : null}
               </View>
-            </View>
-          )}
+             </View>
+           )}
         />
       </View>
     )
+  }
+
+  function isFixedExpenseDeleteError(error: unknown) {
+    return error instanceof Error && error.message.includes("FIXED_EXPENSE_TRANSACTION_CANNOT_BE_DELETED")
+  }
+
+  function formatTransactionDate(date: string) {
+    const dateValue = date.length === 10 ? `${date}T00:00:00` : date
+    return new Intl.DateTimeFormat("en-GB", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+    })
+      .format(new Date(dateValue))
+      .replace(/Sept/g, "Sep")
+      .replace(/,/g, "")
   }
   
   const styles = StyleSheet.create({
@@ -221,6 +246,12 @@ import {
     transactionTitle: {
       fontSize: 16,
       fontWeight: "600",
+    },
+
+    transactionDate: {
+      color: "#777",
+      fontSize: 12,
+      marginTop: 2,
     },
   
     transactionMeta: {

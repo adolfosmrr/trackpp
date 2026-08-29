@@ -14,7 +14,7 @@ import {
 import { PrimaryAuthButton } from "../components/PrimaryAuthButton"
 import { signInWithGoogle } from "../services/googleAuth"
 
-const SHOW_MESH_GRADIENT = false
+const SHOW_MESH_GRADIENT = true
 
 export function AuthScreen() {
   const [mode, setMode] = useState<AuthMode>("login")
@@ -46,7 +46,7 @@ export function AuthScreen() {
     <View style={styles.container}>
       {SHOW_MESH_GRADIENT ? (
         <MeshGradient
-          colors={["#00ABBB", "#FD9785", "#FFF", "#FFF"]}
+          colors={["#FFF", "#4F3B97", "#14044B", "#FFF"]}
           speed={0.5}
           blur={0.5}
           noise={0.3}
@@ -157,7 +157,7 @@ const styles = StyleSheet.create({
     fontFamily: "FamiljenGrotesk-Bold",
     fontSize: 45,
     lineHeight: 42,
-    color: "#000000",
+    color: "#FFF",
     opacity: 0.3
   },
   authMessageClip: {

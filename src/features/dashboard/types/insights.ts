@@ -11,4 +11,5 @@ export type FinancialInsight = {
   value?: number
   percentage?: number | null
   categoryName?: string
+  categoryIcon?: string | null
 }
