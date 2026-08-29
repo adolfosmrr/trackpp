@@ -65,6 +65,7 @@ import { InsightSectionIcon } from "../components/icons/InsightSectionIcon"
 import { UpcomingPaymentsSectionIcon } from "../components/icons/UpcomingPaymentsSectionIcon"
 import { useHomeAiInsight } from "../hooks/useHomeAiInsight"
 import { useHomeInsightActionDetails } from "../hooks/useHomeInsightActionDetails"
+import { useDelayedHomeAmounts } from "../hooks/useDelayedHomeAmounts"
 
 const INSIGHT_SLOT_HEIGHT = 112
 const SCROLL_TRIGGER_DELTA = 3
@@ -348,6 +349,15 @@ export function HomeScreen({
     isLoading: dashboardLoading,
     error: dashboardError,
   } = useDashboard()
+  const displayedHomeAmounts = useDelayedHomeAmounts(
+    {
+      balance: dashboard?.balance ?? 0,
+      income: dashboard?.income ?? 0,
+      expenses: dashboard?.expenses ?? 0,
+    },
+    isFocused,
+    !dashboardLoading && !!dashboard,
+  )
 
   const {
     data: insights,
@@ -548,11 +558,11 @@ export function HomeScreen({
       >
         <TopSectionHeader collapseProgress={collapseProgress} profile={profile} />
         <HomeGreeting displayName={displayName} collapseProgress={collapseProgress} />
-        <HomeBalance balance={dashboard?.balance ?? 0} collapseProgress={collapseProgress} isCollapsed={isCollapsed} />
+        <HomeBalance balance={displayedHomeAmounts.balance} collapseProgress={collapseProgress} isCollapsed={isCollapsed} />
         <HomeIncomeExpenseSummary
           collapseProgress={collapseProgress}
-          expenses={dashboard?.expenses ?? 0}
-          income={dashboard?.income ?? 0}
+          expenses={displayedHomeAmounts.expenses}
+          income={displayedHomeAmounts.income}
         />
         {homeInsightQuery.isLoading ? (
           <Animated.View

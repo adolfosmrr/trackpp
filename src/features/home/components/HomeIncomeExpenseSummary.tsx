@@ -1,5 +1,6 @@
 import { StyleSheet, Text, View } from "react-native"
 import Animated, { interpolate, useAnimatedStyle, type SharedValue } from "react-native-reanimated"
+import { AnimatedAmount } from "../../../components/animated/AnimatedAmount"
 
 type HomeIncomeExpenseSummaryProps = {
   income: number
@@ -32,14 +33,16 @@ function SummaryItem({ label, amount, collapseProgress }: { label: string; amoun
   return (
     <View style={styles.item}>
       <Animated.Text style={[styles.label, labelStyle]}>{label}</Animated.Text>
-      <Text
-        adjustsFontSizeToFit
-        minimumFontScale={0.8}
-        numberOfLines={1}
+      <AnimatedAmount
+        value={amount}
+        formatter={(value) => `$ ${formatAmount(value)}`}
+        textProps={{
+          adjustsFontSizeToFit: true,
+          minimumFontScale: 0.8,
+          numberOfLines: 1,
+        }}
         style={styles.amount}
-      >
-        $ {formatAmount(amount)}
-      </Text>
+      />
     </View>
   )
 }

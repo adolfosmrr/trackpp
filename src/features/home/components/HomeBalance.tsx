@@ -4,7 +4,7 @@ import Animated, { interpolate, useAnimatedStyle, type SharedValue } from "react
 
 import { BalanceHiddenIcon } from "../../../components/icons/BalanceHiddenIcon"
 import { BalanceVisibleIcon } from "../../../components/icons/BalanceVisibleIcon"
-import { VerticalTextTransition } from "../../../components/text/VerticalTextTransition"
+import { AnimatedAmount } from "../../../components/animated/AnimatedAmount"
 
 type HomeBalanceProps = {
   balance: number
@@ -60,10 +60,12 @@ export function HomeBalance({
       </Animated.View>
       <View style={styles.amountRow}>
         <Animated.View style={[styles.amountHolder, amountHolderStyle]}>
-          <VerticalTextTransition
-            text={displayBalance}
+          <AnimatedAmount
+            value={balance}
+            formatter={(value) => isBalanceVisible
+              ? `${currencySymbol} ${formatAmount(value)}`
+              : "******"}
             animatedStyle={amountStyle}
-            fitContent
             style={styles.amount}
             textProps={{
               adjustsFontSizeToFit: true,
@@ -85,6 +87,12 @@ export function HomeBalance({
       </View>
     </Animated.View>
   )
+}
+
+function formatAmount(amount: number) {
+  return new Intl.NumberFormat("es-AR", {
+    maximumFractionDigits: 0,
+  }).format(amount)
 }
 
 const styles = StyleSheet.create({
