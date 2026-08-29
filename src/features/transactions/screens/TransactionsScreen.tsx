@@ -21,6 +21,7 @@ import {
   import { HomeGreeting } from "../../home/components/HomeGreeting"
   import { HomeIncomeExpenseSummary } from "../../home/components/HomeIncomeExpenseSummary"
   import { TransactionCard } from "../components/TransactionCard"
+  import { FixedExpenseActions } from "../components/FixedExpenseActions"
   import { useTransactions } from "../hooks/useTransactions"
   import { useDeleteTransaction } from "../hooks/useDeleteTransaction"
   import type { Transaction } from "../types"
@@ -133,7 +134,15 @@ import {
           contentContainerStyle={styles.list}
           ListHeaderComponent={
             topSectionHeight > 0
-              ? <View style={{ height: topSectionHeight }} />
+              ? (
+                <View>
+                  <View style={{ height: topSectionHeight }} />
+                  <FixedExpenseActions
+                    onCreatePress={() => navigation.navigate("CreateFixedExpense")}
+                    onViewPress={() => navigation.navigate("FixedExpenses")}
+                  />
+                </View>
+              )
               : null
           }
           ListEmptyComponent={
