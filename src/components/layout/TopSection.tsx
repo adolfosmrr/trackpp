@@ -1,5 +1,11 @@
 import type { ReactNode } from "react"
-import { StyleProp, StyleSheet, View, ViewStyle } from "react-native"
+import {
+    LayoutChangeEvent,
+    StyleProp,
+    StyleSheet,
+    View,
+    ViewStyle,
+} from "react-native"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 
 import { GridBackground } from "./GridBackground"
@@ -16,13 +22,17 @@ const SHOW_TOP_SECTION_GRADIENT = false
 type TopSectionProps = {
     children?: ReactNode
     style?: StyleProp<ViewStyle>
+    onLayout?: (event: LayoutChangeEvent) => void
+    overlay?: boolean
 }
 
-export function TopSection({ children, style }: TopSectionProps) {
+export function TopSection({ children, style, onLayout, overlay = false }: TopSectionProps) {
     const insets = useSafeAreaInsets()
 
     return (
         <View
+            onLayout={onLayout}
+            pointerEvents={overlay ? "box-none" : "auto"}
             style={[
                 styles.container,
                 {
@@ -54,7 +64,6 @@ export function TopSection({ children, style }: TopSectionProps) {
 
 const styles = StyleSheet.create({
     container: {
-        backgroundColor: "#000000",
         borderBottomLeftRadius: 60,
         borderBottomRightRadius: 60,
     },
