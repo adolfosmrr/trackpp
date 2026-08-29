@@ -60,7 +60,7 @@ const styles = StyleSheet.create({
   },
   addButton: {
     alignItems: "center",
-    backgroundColor: "#1C1C1C",
+    backgroundColor: "#FFFFFF",
     borderRadius: 20,
     height: 40,
     justifyContent: "center",
@@ -70,7 +70,7 @@ const styles = StyleSheet.create({
     width: 40,
   },
   addText: {
-    color: "#FFFFFF",
+    color: "#1C1C1C",
     fontFamily: "FamiljenGrotesk-Bold",
     fontSize: 16,
     lineHeight: 16,

@@ -2,7 +2,7 @@ import {
   View,
   Text,
   FlatList,
-  Pressable,
+  LayoutChangeEvent,
   StyleSheet,
   ActivityIndicator,
   Alert,
@@ -10,17 +10,42 @@ import {
   import { useState } from "react"
 
   import { useAuth } from "../../auth/context/AuthContext"
+  import { useProfile } from "../../profile/hooks/useProfile"
+  import { useDashboard } from "../../dashboard/hooks/useDashboard"
   import { useHouseholds } from "../../households/hooks/useHouseholds"
   import { useHouseholdStore } from "../../../store/householdStore"
+  import { ScreenContainer } from "../../../components/layout/ScreenContainer"
+  import { TopSection } from "../../../components/layout/TopSection"
+  import { TopSectionHeader } from "../../../components/layout/TopSectionHeader"
+  import { HomeBalance } from "../../home/components/HomeBalance"
+  import { HomeGreeting } from "../../home/components/HomeGreeting"
+  import { HomeIncomeExpenseSummary } from "../../home/components/HomeIncomeExpenseSummary"
+  import { TransactionCard } from "../components/TransactionCard"
   import { useTransactions } from "../hooks/useTransactions"
   import { useDeleteTransaction } from "../hooks/useDeleteTransaction"
   import type { Transaction } from "../types"
 
   export function TransactionsScreen({ navigation }: any) {
     const [deletingId, setDeletingId] = useState<string | null>(null)
+    const [topSectionHeight, setTopSectionHeight] = useState(0)
     const deleteMutation = useDeleteTransaction()
 
+    function handleTopSectionLayout(event: LayoutChangeEvent) {
+      const height = event.nativeEvent.layout.height
+      setTopSectionHeight((current) => current || height)
+    }
+
     const { user } = useAuth()
+    const {
+      data: profile,
+      isLoading: profileLoading,
+      error: profileError,
+    } = useProfile()
+    const {
+      data: dashboard,
+      isLoading: dashboardLoading,
+      error: dashboardError,
+    } = useDashboard()
     const selectedHouseholdId = useHouseholdStore(
       (state) => state.selectedHouseholdId
     )
@@ -82,7 +107,7 @@ import {
       }
     }
 
-    if (isLoading) {
+    if (isLoading || profileLoading || dashboardLoading) {
       return (
         <View style={styles.center}>
           <ActivityIndicator size="large" />
@@ -90,7 +115,7 @@ import {
       )
     }
   
-    if (error) {
+    if (error || profileError || dashboardError) {
       return (
         <View style={styles.center}>
           <Text>No se pudieron cargar los movimientos.</Text>
@@ -99,81 +124,58 @@ import {
     }
   
     return (
-      <View style={styles.container}>
-        <Pressable
-          style={styles.button}
-          onPress={() => navigation.navigate("CreateTransaction")}
-        >
-          <Text style={styles.buttonText}>
-            Agregar movimiento
-          </Text>
-        </Pressable>
-  
+      <View style={styles.screenWrapper}>
+        <ScreenContainer paddingHorizontal={0}>
         <FlatList
           data={transactions}
           keyExtractor={(item) => item.id}
+          style={!topSectionHeight ? styles.hiddenList : undefined}
           contentContainerStyle={styles.list}
+          ListHeaderComponent={
+            topSectionHeight > 0
+              ? <View style={{ height: topSectionHeight }} />
+              : null
+          }
           ListEmptyComponent={
             <Text style={styles.empty}>
               Todavía no hay movimientos.
             </Text>
           }
            renderItem={({ item }) => (
-               <View style={styles.transaction}>
-               <View style={styles.transactionInfo}>
-                <Text style={styles.transactionTitle}>
-                  {item.title}
-                </Text>
-
-                <Text style={styles.transactionDate}>
-                  {formatTransactionDate(item.transaction_date)}
-                </Text>
-
-                 <Text style={styles.transactionMeta}>
-                   {item.category
-                     ? `${item.category.icon ?? ""} ${item.category.name}`
-                     : "Sin categoría"}
-                   {item.fixedExpensePayment ? " · Gasto fijo" : ""}
-                 </Text>
-
-                {currentHousehold?.type === "couple" && (
-                  <Text style={styles.transactionAuthor}>
-                    Por {item.created_by === user?.id
-                      ? "ti"
-                      : item.creator?.name ?? "otro miembro"}
-                   </Text>
-                 )}
-              </View>
-  
-              <View style={styles.transactionActions}>
-                <Text
-                  style={[
-                    styles.amount,
-                    item.type === "expense"
-                      ? styles.expense
-                      : styles.income,
-                  ]}
-                >
-                  {item.type === "expense" ? "-" : "+"}
-                  ${Number(item.amount).toLocaleString("es-AR")}
-                </Text>
-
-                {!item.fixedExpensePayment ? (
-                  <Pressable
-                    style={styles.deleteButton}
-                    onPress={() => confirmDelete(item)}
-                    disabled={deletingId !== null}
-                  >
-                    <Text style={styles.deleteButtonText}>
-                      {deletingId === item.id
-                        ? "Eliminando..."
-                        : "Eliminar"}
-                    </Text>
-                  </Pressable>
-                ) : null}
-              </View>
-             </View>
+             <TransactionCard
+               context="transactions"
+               householdType={currentHousehold?.type === "couple" ? "couple" : "personal"}
+               actorText={currentHousehold?.type === "couple"
+                 ? `Por ${item.created_by === user?.id ? "ti" : item.creator?.name ?? "otro miembro"}`
+                 : undefined}
+               deleting={deletingId === item.id}
+               onDelete={() => confirmDelete(item)}
+               transaction={item}
+             />
            )}
+         />
+        </ScreenContainer>
+        <TopSection
+          mode="collapsed"
+          overlay
+          onLayout={handleTopSectionLayout}
+          style={styles.topSectionOverlay}
+          renderContent={(collapseProgress) => (
+            <>
+              <TopSectionHeader collapseProgress={collapseProgress} profile={profile} />
+              <HomeGreeting displayName={profile?.name?.trim()} collapseProgress={collapseProgress} />
+              <HomeBalance
+                balance={dashboard?.balance ?? 0}
+                collapseProgress={collapseProgress}
+                isCollapsed
+              />
+              <HomeIncomeExpenseSummary
+                collapseProgress={collapseProgress}
+                expenses={dashboard?.expenses ?? 0}
+                income={dashboard?.income ?? 0}
+              />
+            </>
+          )}
         />
       </View>
     )
@@ -183,109 +185,34 @@ import {
     return error instanceof Error && error.message.includes("FIXED_EXPENSE_TRANSACTION_CANNOT_BE_DELETED")
   }
 
-  function formatTransactionDate(date: string) {
-    const dateValue = date.length === 10 ? `${date}T00:00:00` : date
-    return new Intl.DateTimeFormat("en-GB", {
-      day: "2-digit",
-      month: "short",
-      year: "numeric",
-    })
-      .format(new Date(dateValue))
-      .replace(/Sept/g, "Sep")
-      .replace(/,/g, "")
-  }
-  
   const styles = StyleSheet.create({
-    container: {
+    screenWrapper: {
       flex: 1,
-      padding: 20,
+      position: "relative",
     },
-  
+
+    topSectionOverlay: {
+      position: "absolute",
+      top: 0,
+      left: 0,
+      right: 0,
+      zIndex: 10,
+    },
+
+    hiddenList: {
+      opacity: 0,
+    },
+
     center: {
       flex: 1,
       alignItems: "center",
       justifyContent: "center",
     },
   
-    button: {
-      backgroundColor: "#111",
-      padding: 16,
-      borderRadius: 10,
-      alignItems: "center",
-    },
-  
-    buttonText: {
-      color: "#fff",
-      fontWeight: "600",
-    },
-  
     list: {
+      paddingHorizontal: 20,
       paddingTop: 20,
       gap: 12,
-    },
-  
-    transaction: {
-      flexDirection: "row",
-      justifyContent: "space-between",
-      alignItems: "center",
-      padding: 16,
-      borderWidth: 1,
-      borderColor: "#ddd",
-      borderRadius: 12,
-    },
-
-    transactionInfo: {
-      flex: 1,
-    },
-
-    transactionActions: {
-      alignItems: "flex-end",
-      gap: 8,
-    },
-  
-    transactionTitle: {
-      fontSize: 16,
-      fontWeight: "600",
-    },
-
-    transactionDate: {
-      color: "#777",
-      fontSize: 12,
-      marginTop: 2,
-    },
-  
-    transactionMeta: {
-      marginTop: 4,
-      color: "#777",
-    },
-
-    transactionAuthor: {
-      marginTop: 4,
-      color: "#777",
-    },
-  
-    amount: {
-      fontSize: 16,
-      fontWeight: "700",
-    },
-  
-    expense: {
-      color: "#b42318",
-    },
-  
-    income: {
-      color: "#067647",
-    },
-
-    deleteButton: {
-      paddingVertical: 4,
-      paddingHorizontal: 6,
-    },
-
-    deleteButtonText: {
-      color: "#b42318",
-      fontSize: 12,
-      fontWeight: "600",
     },
   
     empty: {

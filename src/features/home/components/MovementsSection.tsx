@@ -58,14 +58,7 @@ export function MovementsSection({ transactions, onViewAll }: MovementsSectionPr
                 </Text>
                 <View style={styles.transactions}>
                   {group.transactions.map((transaction) => (
-                    <MovementItem
-                      key={transaction.id}
-                      title={transaction.title}
-                      categoryIcon={transaction.category?.icon}
-                      categoryName={transaction.category?.name}
-                      amount={Number(transaction.amount)}
-                      type={transaction.type}
-                    />
+                    <MovementItem key={transaction.id} transaction={transaction} />
                   ))}
                 </View>
               </View>
@@ -106,14 +99,23 @@ function formatTransactionDate(date: string) {
     ? `${date}T00:00:00`
     : date
 
-  return new Intl.DateTimeFormat("en-GB", {
+  const weekday = new Intl.DateTimeFormat("es-ES", {
+    weekday: "short",
+  })
+    .format(new Date(dateValue))
+    .replace(/[.,]/g, "")
+    .slice(0, 3)
+
+  const formattedDate = new Intl.DateTimeFormat("en-GB", {
     day: "2-digit",
     month: "short",
     year: "numeric",
   })
     .format(new Date(dateValue))
-    .replace(/Sept/g, "Sep")
-    .replace(/,/g, "")
+
+  return `${weekday} • ${formattedDate}`
+    .replace(/[.,]/g, "")
+    .toUpperCase()
 }
 
 const styles = StyleSheet.create({
@@ -169,7 +171,7 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     fontSize: 16,
     lineHeight: 16,
-    fontFamily: "Satoshi-Regular",
+    fontFamily: "Satoshi-Bold",
     color: "#1C1C1C",
     opacity: 0.5,
   },

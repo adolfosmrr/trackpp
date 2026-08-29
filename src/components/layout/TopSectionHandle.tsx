@@ -14,6 +14,7 @@ type TopSectionHandleProps = {
   onPress?: () => void
   onDragEnd?: (collapsed: boolean) => void
   collapseProgress: SharedValue<number>
+  interactive?: boolean
   reduceMotionEnabled?: boolean
 }
 
@@ -24,6 +25,7 @@ export function TopSectionHandle({
   onPress,
   onDragEnd,
   collapseProgress,
+  interactive = true,
   reduceMotionEnabled = false,
 }: TopSectionHandleProps) {
   const startProgress = useSharedValue(0)
@@ -65,14 +67,21 @@ export function TopSectionHandle({
       if (success && onPress) runOnJS(onPress)()
     })
   const gesture = Gesture.Exclusive(pan, tap)
+  const handle = (
+    <Animated.View
+      accessibilityLabel={interactive ? "Control del panel superior" : undefined}
+      accessibilityRole={interactive ? "button" : undefined}
+      style={[styles.container, styles.handle, animatedStyle]}
+    />
+  )
+
+  if (!interactive) {
+    return handle
+  }
 
   return (
     <GestureDetector gesture={gesture}>
-      <Animated.View
-        accessibilityLabel="Control del panel superior"
-        accessibilityRole="button"
-        style={[styles.container, styles.handle, animatedStyle]}
-      />
+      {handle}
     </GestureDetector>
   )
 }

@@ -5,6 +5,7 @@ import {
 } from "react-native"
 
 import { formatRelativeTime } from "../../../utils/formatRelativeTime"
+import { TransactionCard } from "../../transactions/components/TransactionCard"
 
 import type { ActivityItem as ActivityItemData } from "../types"
 
@@ -17,6 +18,21 @@ export function ActivityItem({
   item,
   currentUserId,
 }: ActivityItemProps) {
+  if (item.type === "transaction_created" || item.type === "transaction_deleted") {
+    const transaction = getActivityTransaction(item)
+
+    if (transaction) {
+      return (
+        <TransactionCard
+          context="home"
+          householdType="couple"
+          actorText={getActivityMessage(item, currentUserId)}
+          transaction={transaction}
+        />
+      )
+    }
+  }
+
   const metadata = item.metadata
 
   return (
@@ -50,6 +66,27 @@ export function ActivityItem({
       </View>
     </View>
   )
+}
+
+function getActivityTransaction(item: ActivityItemData) {
+  const amount = getAmount(item)
+  const transactionType = item.metadata.transactionType
+
+  if (amount === null || (transactionType !== "expense" && transactionType !== "income")) {
+    return null
+  }
+
+  return {
+    title: getString(item.metadata.title) ?? "Actividad",
+    amount,
+    type: transactionType as "expense" | "income",
+    created_at: item.created_at,
+    fixedExpensePayment: null,
+    category: {
+      name: getString(item.metadata.categoryName) ?? "Sin categoría",
+      icon: getString(item.metadata.categoryIcon),
+    },
+  }
 }
 
 export function getActivityMessage(

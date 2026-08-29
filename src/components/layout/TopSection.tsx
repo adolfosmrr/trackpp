@@ -7,6 +7,7 @@ import {
     ViewStyle,
 } from "react-native"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
+import { useSharedValue, type SharedValue } from "react-native-reanimated"
 
 import { GridBackground } from "./GridBackground"
 import { MeshGradient } from "../visual/MeshGradient"
@@ -21,13 +22,25 @@ const SHOW_TOP_SECTION_GRADIENT = false
 
 type TopSectionProps = {
     children?: ReactNode
+    mode?: TopSectionMode
+    renderContent?: (collapseProgress: SharedValue<number>) => ReactNode
     style?: StyleProp<ViewStyle>
     onLayout?: (event: LayoutChangeEvent) => void
     overlay?: boolean
 }
 
-export function TopSection({ children, style, onLayout, overlay = false }: TopSectionProps) {
+export type TopSectionMode = "interactive" | "collapsed"
+
+export function TopSection({
+    children,
+    mode = "interactive",
+    renderContent,
+    style,
+    onLayout,
+    overlay = false,
+}: TopSectionProps) {
     const insets = useSafeAreaInsets()
+    const modeCollapseProgress = useSharedValue(mode === "collapsed" ? 1 : 0)
 
     return (
         <View
@@ -57,7 +70,7 @@ export function TopSection({ children, style, onLayout, overlay = false }: TopSe
                 )}
                 <GridBackground />
             </View>
-            {children}
+            {renderContent ? renderContent(modeCollapseProgress) : children}
         </View>
     )
 }

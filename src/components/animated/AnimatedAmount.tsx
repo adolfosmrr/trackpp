@@ -13,7 +13,7 @@ type AnimatedAmountProps = {
   value: number
   formatter: (value: number) => string
   style?: StyleProp<TextStyle>
-  animatedStyle?: AnimatedStyle<TextStyle>
+  animatedStyle?: AnimatedStyle<TextStyle> | AnimatedStyle<TextStyle>[]
   textProps?: Omit<TextProps, "children" | "style">
   duration?: number
 }

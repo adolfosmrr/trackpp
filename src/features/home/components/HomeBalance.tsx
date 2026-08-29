@@ -1,6 +1,14 @@
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { Pressable, StyleSheet, Text, View } from "react-native"
-import Animated, { interpolate, useAnimatedStyle, type SharedValue } from "react-native-reanimated"
+import Animated, {
+  Easing,
+  interpolate,
+  useAnimatedStyle,
+  useReducedMotion,
+  useSharedValue,
+  withTiming,
+  type SharedValue,
+} from "react-native-reanimated"
 
 import { BalanceHiddenIcon } from "../../../components/icons/BalanceHiddenIcon"
 import { BalanceVisibleIcon } from "../../../components/icons/BalanceVisibleIcon"
@@ -20,12 +28,8 @@ export function HomeBalance({
   isCollapsed,
 }: HomeBalanceProps) {
   const [isBalanceVisible, setIsBalanceVisible] = useState(true)
-  const formattedBalance = new Intl.NumberFormat("es-AR", {
-    maximumFractionDigits: 0,
-  }).format(balance)
-  const displayBalance = isBalanceVisible
-    ? `${currencySymbol} ${formattedBalance}`
-    : "******"
+  const reduceMotionEnabled = useReducedMotion()
+  const visibilityProgress = useSharedValue(1)
   const containerStyle = useAnimatedStyle(() => ({
     marginTop: interpolate(collapseProgress.value, [0, 1], [60, 20]),
   }))
@@ -43,6 +47,21 @@ export function HomeBalance({
     height: interpolate(collapseProgress.value, [0, 1], [22, 0]),
     opacity: interpolate(collapseProgress.value, [0, 0.4, 1], [1, 1, 0]),
   }))
+  const amountVisibilityStyle = useAnimatedStyle(() => ({
+    opacity: visibilityProgress.value,
+  }))
+  const hiddenAmountVisibilityStyle = useAnimatedStyle(() => ({
+    opacity: 1 - visibilityProgress.value,
+  }))
+
+  useEffect(() => {
+    visibilityProgress.value = reduceMotionEnabled
+      ? isBalanceVisible ? 1 : 0
+      : withTiming(isBalanceVisible ? 1 : 0, {
+          duration: 200,
+          easing: Easing.out(Easing.cubic),
+        })
+  }, [isBalanceVisible, reduceMotionEnabled, visibilityProgress])
 
   return (
     <Animated.View style={[styles.container, containerStyle]}>
@@ -62,10 +81,8 @@ export function HomeBalance({
         <Animated.View style={[styles.amountHolder, amountHolderStyle]}>
           <AnimatedAmount
             value={balance}
-            formatter={(value) => isBalanceVisible
-              ? `${currencySymbol} ${formatAmount(value)}`
-              : "******"}
-            animatedStyle={amountStyle}
+            formatter={(value) => `${currencySymbol} ${formatAmount(value)}`}
+            animatedStyle={[amountStyle, amountVisibilityStyle]}
             style={styles.amount}
             textProps={{
               adjustsFontSizeToFit: true,
@@ -73,6 +90,11 @@ export function HomeBalance({
               numberOfLines: 1,
             }}
           />
+          <Animated.Text
+            style={[styles.amount, amountStyle, styles.hiddenAmount, hiddenAmountVisibilityStyle]}
+          >
+            ******
+          </Animated.Text>
         </Animated.View>
         <Animated.View pointerEvents={isCollapsed ? "auto" : "none"} style={[styles.collapsedVisibility, collapsedVisibilityStyle]}>
           <Pressable
@@ -124,6 +146,12 @@ const styles = StyleSheet.create({
   },
   amountHolder: {
     overflow: "hidden",
+    position: "relative",
+  },
+  hiddenAmount: {
+    left: 0,
+    position: "absolute",
+    top: 0,
   },
   collapsedVisibility: {
     marginLeft: 15,
