@@ -20,8 +20,8 @@ import {
   import { HomeBalance } from "../../home/components/HomeBalance"
   import { HomeGreeting } from "../../home/components/HomeGreeting"
   import { HomeIncomeExpenseSummary } from "../../home/components/HomeIncomeExpenseSummary"
-  import { TransactionCard } from "../components/TransactionCard"
   import { FixedExpenseActions } from "../components/FixedExpenseActions"
+  import { TransactionsMovementsSection } from "../components/TransactionsMovementsSection"
   import { useTransactions } from "../hooks/useTransactions"
   import { useDeleteTransaction } from "../hooks/useDeleteTransaction"
   import type { Transaction } from "../types"
@@ -128,7 +128,7 @@ import {
       <View style={styles.screenWrapper}>
         <ScreenContainer paddingHorizontal={0}>
         <FlatList
-          data={transactions}
+          data={[{ id: "transactions-section" }]}
           keyExtractor={(item) => item.id}
           style={!topSectionHeight ? styles.hiddenList : undefined}
           contentContainerStyle={styles.list}
@@ -145,23 +145,15 @@ import {
               )
               : null
           }
-          ListEmptyComponent={
-            <Text style={styles.empty}>
-              Todavía no hay movimientos.
-            </Text>
-          }
-           renderItem={({ item }) => (
-             <TransactionCard
-               context="transactions"
-               householdType={currentHousehold?.type === "couple" ? "couple" : "personal"}
-               actorText={currentHousehold?.type === "couple"
-                 ? `Por ${item.created_by === user?.id ? "ti" : item.creator?.name ?? "otro miembro"}`
-                 : undefined}
-               deleting={deletingId === item.id}
-               onDelete={() => confirmDelete(item)}
-               transaction={item}
-             />
-           )}
+          renderItem={() => (
+            <TransactionsMovementsSection
+              transactions={transactions ?? []}
+              householdType={currentHousehold?.type === "couple" ? "couple" : "personal"}
+              userId={user?.id}
+              deletingId={deletingId}
+              onDelete={confirmDelete}
+            />
+          )}
          />
         </ScreenContainer>
         <TopSection
