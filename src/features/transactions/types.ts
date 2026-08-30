@@ -1,5 +1,37 @@
 export type TransactionType = "expense" | "income"
 
+export type TransactionTypeFilter = "all" | "income" | "expense" | "fixed"
+
+export type TransactionOrder =
+  | "newest"
+  | "oldest"
+  | "amount-desc"
+  | "amount-asc"
+
+export type TransactionDateFilter =
+  | { type: "any" }
+  | { type: "today" }
+  | { type: "this-month" }
+  | { type: "previous-month" }
+  | { type: "specific"; date: string }
+  | { type: "range"; from: string; to: string }
+
+export type TransactionFilters = {
+  type: TransactionTypeFilter
+  order: TransactionOrder
+  date: TransactionDateFilter
+  categoryId: string | null
+  creatorId: string | null
+}
+
+export const defaultTransactionFilters: TransactionFilters = {
+  type: "all",
+  order: "newest",
+  date: { type: "any" },
+  categoryId: null,
+  creatorId: null,
+}
+
 export type TransactionCategory = {
   id: string
   name: string

@@ -7,7 +7,7 @@ import {
   ActivityIndicator,
   Alert,
 } from "react-native"
-  import { useState } from "react"
+  import { useMemo, useState } from "react"
 
   import { useAuth } from "../../auth/context/AuthContext"
   import { useProfile } from "../../profile/hooks/useProfile"
@@ -22,13 +22,25 @@ import {
   import { HomeIncomeExpenseSummary } from "../../home/components/HomeIncomeExpenseSummary"
   import { FixedExpenseActions } from "../components/FixedExpenseActions"
   import { TransactionsMovementsSection } from "../components/TransactionsMovementsSection"
+  import { TransactionFiltersModal } from "../components/TransactionFiltersModal"
   import { useTransactions } from "../hooks/useTransactions"
   import { useDeleteTransaction } from "../hooks/useDeleteTransaction"
-  import type { Transaction } from "../types"
+  import {
+    defaultTransactionFilters,
+    type Transaction,
+    type TransactionFilters,
+  } from "../types"
+  import {
+    getTransactionCategories,
+    getTransactionCreators,
+  } from "../utils/transactionFilters"
 
   export function TransactionsScreen({ navigation }: any) {
     const [deletingId, setDeletingId] = useState<string | null>(null)
     const [topSectionHeight, setTopSectionHeight] = useState(0)
+    const [appliedFilters, setAppliedFilters] = useState(defaultTransactionFilters)
+    const [draftFilters, setDraftFilters] = useState(defaultTransactionFilters)
+    const [filtersVisible, setFiltersVisible] = useState(false)
     const deleteMutation = useDeleteTransaction()
 
     function handleTopSectionLayout(event: LayoutChangeEvent) {
@@ -60,6 +72,30 @@ import {
       isLoading,
       error,
     } = useTransactions()
+    const transactionList = transactions ?? []
+    const householdType = currentHousehold?.type === "couple" ? "couple" : "personal"
+    const categories = useMemo(
+      () => getTransactionCategories(transactionList),
+      [transactionList]
+    )
+    const creators = useMemo(
+      () => getTransactionCreators(transactionList),
+      [transactionList]
+    )
+    const activeFilterCount = getActiveFilterCount(appliedFilters, householdType)
+
+    function openFilters() {
+      setDraftFilters(appliedFilters)
+      setFiltersVisible(true)
+    }
+
+    function applyFilters() {
+      setAppliedFilters({
+        ...draftFilters,
+        creatorId: householdType === "couple" ? draftFilters.creatorId : null,
+      })
+      setFiltersVisible(false)
+    }
 
     function confirmDelete(transaction: Transaction) {
       Alert.alert(
@@ -148,14 +184,30 @@ import {
           renderItem={() => (
             <TransactionsMovementsSection
               transactions={transactions ?? []}
-              householdType={currentHousehold?.type === "couple" ? "couple" : "personal"}
+              householdType={householdType}
               userId={user?.id}
               deletingId={deletingId}
               onDelete={confirmDelete}
+              filters={householdType === "couple"
+                ? appliedFilters
+                : { ...appliedFilters, creatorId: null }}
+              activeFilterCount={activeFilterCount}
+              onOpenFilters={openFilters}
             />
           )}
          />
         </ScreenContainer>
+        <TransactionFiltersModal
+          visible={filtersVisible}
+          filters={draftFilters}
+          householdType={householdType}
+          categories={categories}
+          creators={creators}
+          onChange={setDraftFilters}
+          onClear={() => setDraftFilters(defaultTransactionFilters)}
+          onApply={applyFilters}
+          onCancel={() => setFiltersVisible(false)}
+        />
         <TopSection
           mode="collapsed"
           overlay
@@ -184,6 +236,17 @@ import {
 
   function isFixedExpenseDeleteError(error: unknown) {
     return error instanceof Error && error.message.includes("FIXED_EXPENSE_TRANSACTION_CANNOT_BE_DELETED")
+  }
+
+  function getActiveFilterCount(
+    filters: TransactionFilters,
+    householdType: "personal" | "couple",
+  ) {
+    return Number(filters.type !== "all")
+      + Number(filters.date.type !== "any")
+      + Number(filters.categoryId !== null)
+      + Number(householdType === "couple" && filters.creatorId !== null)
+      + Number(filters.order !== "newest")
   }
 
   const styles = StyleSheet.create({
