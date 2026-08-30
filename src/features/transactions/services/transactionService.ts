@@ -1,6 +1,7 @@
 import { supabase } from "../../../services/supabase"
 
 import type {
+  CreateLinkedTransactionsInput,
   CreateTransactionInput,
   Transaction,
 } from "../types"
@@ -83,6 +84,37 @@ export async function createTransaction(
   return parseTransactionRpcResult(data)
 }
 
+export async function createLinkedTransactions(
+  input: CreateLinkedTransactionsInput
+): Promise<Transaction[]> {
+  const { data, error } = await supabase.rpc(
+    "create_linked_transactions",
+    {
+      p_type: input.type,
+      p_title: input.title,
+      p_amount: input.amount,
+      p_description: input.description ?? null,
+      p_transaction_date:
+        input.transactionDate ??
+        new Date().toISOString().slice(0, 10),
+      p_targets: input.targets.map((target) => ({
+        householdId: target.householdId,
+        categoryId: target.categoryId,
+      })),
+    }
+  )
+
+  if (error) {
+    throw error
+  }
+
+  if (!Array.isArray(data)) {
+    throw new Error("La RPC devolvió una lista de transactions inválida.")
+  }
+
+  return data.map(parseTransactionRpcResult)
+}
+
 export async function deleteTransaction(
   transactionId: string
 ): Promise<void> {
@@ -135,6 +167,7 @@ function parseTransactionRpcResult(
   return {
     id,
     household_id: householdId,
+    linked_group_id: getNullableString(value.linked_group_id),
     created_by: createdBy,
     type,
     title,

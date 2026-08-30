@@ -1,8 +1,6 @@
-import { useQuery } from "@tanstack/react-query"
-
 import { useHouseholdStore } from "../../../store/householdStore"
 
-import { getCategories } from "../services/categoryService"
+import { useHouseholdCategories } from "./useHouseholdCategories"
 
 import type { CategoryType } from "../types"
 
@@ -11,11 +9,5 @@ export function useCategories(type: CategoryType, enabled = true) {
     (state) => state.selectedHouseholdId
   )
 
-  return useQuery({
-    queryKey: ["categories", selectedHouseholdId, type],
-
-    queryFn: () => getCategories(selectedHouseholdId!, type),
-
-    enabled: !!selectedHouseholdId && enabled,
-  })
+  return useHouseholdCategories(selectedHouseholdId, type, enabled)
 }

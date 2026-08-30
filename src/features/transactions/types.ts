@@ -57,6 +57,7 @@ export type FixedExpensePaymentReference = {
 export type Transaction = {
   id: string
   household_id: string
+  linked_group_id: string | null
   created_by: string
   type: TransactionType
   title: string
@@ -80,4 +81,18 @@ export type CreateTransactionInput = {
   amount: number
   categoryId?: string
   transactionDate?: string
+}
+
+export type LinkedTransactionTarget = {
+  householdId: string
+  categoryId: string | null
+}
+
+export type CreateLinkedTransactionsInput = {
+  type: TransactionType
+  title: string
+  description?: string
+  amount: number
+  transactionDate?: string
+  targets: LinkedTransactionTarget[]
 }
