@@ -10,14 +10,18 @@ import {
 } from "react-native"
 
 import { useCategories } from "../../categories/hooks/useCategories"
+import { SegmentedToggle } from "../../../components/inputs/SegmentedToggle"
 import { useCreateTransaction } from "../hooks/useCreateTransaction"
 
 type CreateTransactionFormProps = {
   onSuccess?: () => void
 }
 
+type CreateMovementMode = "income" | "expense" | "fixed"
+
 export function CreateTransactionForm({ onSuccess }: CreateTransactionFormProps) {
   const [type, setType] = useState<"expense" | "income">("expense")
+  const [mode, setMode] = useState<CreateMovementMode>("expense")
   const [title, setTitle] = useState("")
   const [amount, setAmount] = useState("")
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null)
@@ -29,10 +33,15 @@ export function CreateTransactionForm({ onSuccess }: CreateTransactionFormProps)
     isError: categoriesError,
   } = useCategories(type)
 
-  function handleTypeChange(newType: "expense" | "income") {
-    setType(newType)
+  function handleModeChange(newMode: CreateMovementMode) {
+    setMode(newMode)
     setSelectedCategoryId(null)
+    if (newMode !== "fixed") {
+      setType(newMode)
+    }
   }
+
+  const isFixedMode = mode === "fixed"
 
   async function handleCreate() {
     if (!title.trim()) {
@@ -69,24 +78,16 @@ export function CreateTransactionForm({ onSuccess }: CreateTransactionFormProps)
 
   return (
     <View style={styles.container}>
-      <View style={styles.typeContainer}>
-        <Pressable
-          style={[styles.typeButton, type === "expense" && styles.typeButtonSelected]}
-          onPress={() => handleTypeChange("expense")}
-        >
-          <Text style={[styles.typeText, type === "expense" && styles.typeTextSelected]}>
-            Gasto
-          </Text>
-        </Pressable>
-        <Pressable
-          style={[styles.typeButton, type === "income" && styles.typeButtonSelected]}
-          onPress={() => handleTypeChange("income")}
-        >
-          <Text style={[styles.typeText, type === "income" && styles.typeTextSelected]}>
-            Ingreso
-          </Text>
-        </Pressable>
-      </View>
+      <SegmentedToggle
+        value={mode}
+        options={[
+          { value: "income", label: "Ingreso" },
+          { value: "expense", label: "Gasto" },
+          { value: "fixed", label: "Gasto Fijo" },
+        ]}
+        onChange={handleModeChange}
+        width="100%"
+      />
 
       <TextInput
         style={styles.input}
@@ -134,9 +135,9 @@ export function CreateTransactionForm({ onSuccess }: CreateTransactionFormProps)
       </View>
 
       <Pressable
-        style={[styles.button, createTransactionMutation.isPending && styles.buttonDisabled]}
+        style={[styles.button, (createTransactionMutation.isPending || isFixedMode) && styles.buttonDisabled]}
         onPress={handleCreate}
-        disabled={createTransactionMutation.isPending}
+        disabled={createTransactionMutation.isPending || isFixedMode}
       >
         <Text style={styles.buttonText}>
           {createTransactionMutation.isPending ? "Guardando..." : "Guardar movimiento"}
@@ -148,18 +149,6 @@ export function CreateTransactionForm({ onSuccess }: CreateTransactionFormProps)
 
 const styles = StyleSheet.create({
   container: { padding: 24, gap: 16 },
-  typeContainer: { flexDirection: "row", gap: 10 },
-  typeButton: {
-    alignItems: "center",
-    borderColor: "#ccc",
-    borderRadius: 10,
-    borderWidth: 1,
-    flex: 1,
-    padding: 14,
-  },
-  typeButtonSelected: { backgroundColor: "#111", borderColor: "#111" },
-  typeText: { fontWeight: "600" },
-  typeTextSelected: { color: "#fff" },
   input: { borderColor: "#ccc", borderRadius: 10, borderWidth: 1, padding: 14 },
   categorySection: { gap: 10 },
   sectionTitle: { fontSize: 16, fontWeight: "600" },
