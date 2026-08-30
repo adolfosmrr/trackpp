@@ -1,11 +1,11 @@
 import { Pressable, StyleSheet, Text, View } from "react-native"
-import { useNavigation } from "@react-navigation/native"
 import Animated, { interpolate, useAnimatedStyle, type SharedValue } from "react-native-reanimated"
 
 import { PlusIcon } from "../icons/PlusIcon"
 import { ProfileAvatar } from "../profile/ProfileAvatar"
 import type { Profile } from "../../features/profile/services/profileService"
 import { HouseholdSwitcher } from "../../features/households/components/HouseholdSwitcher"
+import { useCreateTransactionSheet } from "../../features/transactions/components/CreateTransactionSheetProvider"
 
 type TopSectionHeaderProps = {
   profile?: Pick<Profile, "name" | "avatar_url"> | null
@@ -15,7 +15,7 @@ type TopSectionHeaderProps = {
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable)
 
 export function TopSectionHeader({ profile, collapseProgress }: TopSectionHeaderProps) {
-  const navigation = useNavigation<any>()
+  const { openCreateTransaction } = useCreateTransactionSheet()
   const avatarStyle = useAnimatedStyle(() => ({
     borderRadius: interpolate(collapseProgress.value, [0, 1], [20, 12]),
     height: interpolate(collapseProgress.value, [0, 1], [40, 24]),
@@ -40,7 +40,7 @@ export function TopSectionHeader({ profile, collapseProgress }: TopSectionHeader
       <AnimatedPressable
         accessibilityLabel="Agregar movimiento"
         accessibilityRole="button"
-        onPress={() => navigation.navigate("CreateTransaction")}
+        onPress={openCreateTransaction}
         style={[styles.addButton, addButtonStyle]}
       >
         <Animated.View style={addIconStyle}>
