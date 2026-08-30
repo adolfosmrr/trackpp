@@ -1,5 +1,5 @@
-import { forwardRef } from "react"
-import { Pressable, StyleSheet, Text, useWindowDimensions } from "react-native"
+import { forwardRef, useState } from "react"
+import { Pressable, StyleSheet, Text, useWindowDimensions, View } from "react-native"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import {
   BottomSheetModal,
@@ -25,6 +25,7 @@ export const HouseholdSelectorSheet = forwardRef<
 ) {
   const insets = useSafeAreaInsets()
   const { height } = useWindowDimensions()
+  const [hasScrolled, setHasScrolled] = useState(false)
 
   function toggleHousehold(householdId: string) {
     const isSelected = selectedHouseholdIds.includes(householdId)
@@ -42,6 +43,12 @@ export const HouseholdSelectorSheet = forwardRef<
   return (
     <BottomSheetModal
       ref={ref}
+      style={styles.sheetContainer}
+      onChange={(index) => {
+        if (index === -1) {
+          setHasScrolled(false)
+        }
+      }}
       enableDynamicSizing
       maxDynamicContentSize={height * 0.6}
       enablePanDownToClose
@@ -50,9 +57,24 @@ export const HouseholdSelectorSheet = forwardRef<
       backdropComponent={(props) => <TransactionBlurBackdrop {...props} />}
     >
       <BottomSheetScrollView
+        stickyHeaderIndices={[0]}
+        onScroll={(event) => {
+          const next = event.nativeEvent.contentOffset.y > 2
+
+          setHasScrolled((current) =>
+            current === next ? current : next,
+          )
+        }}
         contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 16 }]}
       >
-        <Text style={styles.title}>Añadir a</Text>
+        <View
+          style={[
+            styles.header,
+            hasScrolled && styles.headerShadow,
+          ]}
+        >
+          <Text style={styles.title}>Añadir a</Text>
+        </View>
         {memberships.map((membership) => {
           const household = membership.household
           const selected = selectedHouseholdIds.includes(household.id)
@@ -82,6 +104,11 @@ export const HouseholdSelectorSheet = forwardRef<
 })
 
 const styles = StyleSheet.create({
+  sheetContainer: {
+    borderTopLeftRadius: 60,
+    borderTopRightRadius: 60,
+    overflow: "hidden",
+  },
   background: {
     backgroundColor: "#E6E6E6",
     borderTopLeftRadius: 60,
@@ -89,7 +116,26 @@ const styles = StyleSheet.create({
   },
   content: {
     gap: 12,
-    padding: 24,
+    paddingBottom: 24,
+    paddingHorizontal: 0,
+    paddingTop: 0,
+  },
+  header: {
+    backgroundColor: "#E6E6E6",
+    paddingHorizontal: 24,
+    paddingTop: 24,
+    paddingBottom: 12,
+    zIndex: 10,
+  },
+  headerShadow: {
+    elevation: 8,
+    shadowColor: "#000000",
+    shadowOffset: {
+      width: 0,
+      height: 6,
+    },
+    shadowOpacity: 0.35,
+    shadowRadius: 10,
   },
   title: {
     fontSize: 18,
@@ -100,6 +146,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: StyleSheet.hairlineWidth,
     flexDirection: "row",
     gap: 8,
+    paddingHorizontal: 24,
     paddingVertical: 12,
   },
   optionText: {
@@ -119,6 +166,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#111",
     borderRadius: 8,
     marginTop: 8,
+    marginHorizontal: 24,
     padding: 14,
   },
   doneText: {
