@@ -76,29 +76,38 @@ export const CategorySelectorSheet = forwardRef<
         >
           <Text style={styles.title}>Categoría: {householdName}</Text>
         </View>
-        {isLoading ? (
-          <Text>Cargando categorías...</Text>
-        ) : hasError ? (
-          <Text>No se pudieron cargar las categorías.</Text>
-        ) : categories?.length ? (
-          categories.map((category) => (
-            <Pressable
-              key={category.id}
-              accessibilityRole="radio"
-              accessibilityState={{ selected: category.id === selectedCategoryId }}
-              onPress={() => onSelect(category)}
-              style={styles.option}
-            >
-              <Text style={styles.icon}>{category.icon ?? ""}</Text>
-              <Text style={styles.categoryName}>{category.name}</Text>
-              {category.id === selectedCategoryId ? (
-                <Text style={styles.check}>✓</Text>
-              ) : null}
-            </Pressable>
-          ))
-        ) : (
-          <Text>No hay categorías disponibles.</Text>
-        )}
+        <View style={styles.categoriesWrap}>
+          {isLoading ? (
+            <Text>Cargando categorías...</Text>
+          ) : hasError ? (
+            <Text>No se pudieron cargar las categorías.</Text>
+          ) : categories?.length ? (
+            categories.map((category) => (
+              <Pressable
+                key={category.id}
+                accessibilityRole="radio"
+                accessibilityState={{ selected: category.id === selectedCategoryId }}
+                onPress={() => onSelect(category)}
+                style={[
+                  styles.option,
+                  category.id === selectedCategoryId && styles.optionSelected,
+                ]}
+              >
+                <Text>{category.icon ?? ""}</Text>
+                <Text
+                  style={[
+                    styles.categoryName,
+                    category.id === selectedCategoryId && styles.categoryNameSelected,
+                  ]}
+                >
+                  {category.name}
+                </Text>
+              </Pressable>
+            ))
+          ) : (
+            <Text>No hay categorías disponibles.</Text>
+          )}
+        </View>
       </BottomSheetScrollView>
     </BottomSheetModal>
   )
@@ -120,6 +129,12 @@ const styles = StyleSheet.create({
     paddingBottom: 24,
     paddingHorizontal: 0,
     paddingTop: 0,
+  },
+  categoriesWrap: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 10,
+    paddingHorizontal: 20,
   },
   header: {
     backgroundColor: "#E6E6E6",
@@ -144,20 +159,23 @@ const styles = StyleSheet.create({
   },
   option: {
     alignItems: "center",
-    borderBottomWidth: StyleSheet.hairlineWidth,
+    backgroundColor: "#FFFFFF",
+    borderRadius: 999,
     flexDirection: "row",
     gap: 8,
-    paddingHorizontal: 24,
-    paddingVertical: 12,
+    paddingHorizontal: 20,
+    paddingVertical: 15,
   },
-  icon: {
-    width: 24,
+  optionSelected: {
+    backgroundColor: "#1C1C1C",
   },
   categoryName: {
-    flex: 1,
+    color: "#1C1C1C",
     fontSize: 16,
+    fontFamily: "FamiljenGrotesk-Bold",
+    lineHeight: 16,
   },
-  check: {
-    fontSize: 20,
+  categoryNameSelected: {
+    color: "#FFFFFF",
   },
 })
