@@ -1,9 +1,11 @@
-import { forwardRef, useState } from "react"
+import { forwardRef, useCallback, useState } from "react"
 import { Pressable, StyleSheet, Text, useWindowDimensions, View } from "react-native"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import {
+  BottomSheetFooter,
   BottomSheetModal,
   BottomSheetScrollView,
+  type BottomSheetFooterProps,
 } from "@gorhom/bottom-sheet"
 
 import type { HouseholdMembership } from "../../households/types"
@@ -40,6 +42,21 @@ export const HouseholdSelectorSheet = forwardRef<
     )
   }
 
+  const renderFooter = useCallback(
+    (props: BottomSheetFooterProps) => (
+      <BottomSheetFooter
+        {...props}
+        bottomInset={insets.bottom}
+        style={styles.footer}
+      >
+        <Pressable style={styles.doneButton} onPress={onDone}>
+          <Text style={styles.doneText}>Listo</Text>
+        </Pressable>
+      </BottomSheetFooter>
+    ),
+    [insets.bottom, onDone],
+  )
+
   return (
     <BottomSheetModal
       ref={ref}
@@ -55,9 +72,11 @@ export const HouseholdSelectorSheet = forwardRef<
       stackBehavior="push"
       backgroundStyle={styles.background}
       backdropComponent={(props) => <TransactionBlurBackdrop {...props} />}
+      footerComponent={renderFooter}
     >
       <BottomSheetScrollView
         stickyHeaderIndices={[0]}
+        enableFooterMarginAdjustment
         onScroll={(event) => {
           const next = event.nativeEvent.contentOffset.y > 2
 
@@ -65,7 +84,12 @@ export const HouseholdSelectorSheet = forwardRef<
             current === next ? current : next,
           )
         }}
-        contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 16 }]}
+        contentContainerStyle={StyleSheet.flatten([
+          styles.content,
+          {
+            paddingBottom: insets.bottom,
+          },
+        ])}
       >
         <View
           style={[
@@ -95,9 +119,6 @@ export const HouseholdSelectorSheet = forwardRef<
             </Pressable>
           )
         })}
-        <Pressable style={styles.doneButton} onPress={onDone}>
-          <Text style={styles.doneText}>Listo</Text>
-        </Pressable>
       </BottomSheetScrollView>
     </BottomSheetModal>
   )
@@ -116,9 +137,8 @@ const styles = StyleSheet.create({
   },
   content: {
     gap: 12,
-    paddingBottom: 24,
     paddingHorizontal: 0,
-    paddingTop: 0,
+    paddingTop: 0
   },
   header: {
     backgroundColor: "#E6E6E6",
@@ -136,6 +156,12 @@ const styles = StyleSheet.create({
     },
     shadowOpacity: 0.35,
     shadowRadius: 10,
+  },
+  footer: {
+    backgroundColor: "#E6E6E6",
+    paddingHorizontal: 24,
+    paddingTop: 20,
+    paddingBottom: 16,
   },
   title: {
     fontSize: 18,
@@ -164,9 +190,7 @@ const styles = StyleSheet.create({
   doneButton: {
     alignItems: "center",
     backgroundColor: "#111",
-    borderRadius: 8,
-    marginTop: 8,
-    marginHorizontal: 24,
+    borderRadius: 999,
     padding: 14,
   },
   doneText: {
