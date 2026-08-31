@@ -14,7 +14,9 @@ import { useHouseholdStore } from "../../../store/householdStore"
 import { useHouseholdCategories } from "../../categories/hooks/useHouseholdCategories"
 import { SegmentedToggle } from "../../../components/inputs/SegmentedToggle"
 import { FieldChevronIcon } from "../../../components/icons/FieldChevronIcon"
+import { useCategories } from "../../categories/hooks/useCategories"
 import { useCreateLinkedTransactions } from "../hooks/useCreateLinkedTransactions"
+import { useCreateFixedExpense } from "../../fixedExpenses/hooks/useCreateFixedExpense"
 import { CategorySelectorSheet } from "./CategorySelectorSheet"
 import { HouseholdSelectorSheet } from "./HouseholdSelectorSheet"
 
@@ -32,6 +34,9 @@ export function CreateTransactionForm({ onSuccess }: CreateTransactionFormProps)
   const [mode, setMode] = useState<CreateMovementMode>("expense")
   const [title, setTitle] = useState("")
   const [amount, setAmount] = useState("")
+  const [fixedCategoryId, setFixedCategoryId] = useState<string | null>(null)
+  const [chargeDay, setChargeDay] = useState("1")
+  const [dueDay, setDueDay] = useState("10")
   const selectedHouseholdId = useHouseholdStore(
     (state) => state.selectedHouseholdId
   )
@@ -46,6 +51,7 @@ export function CreateTransactionForm({ onSuccess }: CreateTransactionFormProps)
   const householdSelectorRef = useRef<BottomSheetModal>(null)
   const categorySelectorRef = useRef<BottomSheetModal>(null)
   const createTransactionMutation = useCreateLinkedTransactions()
+  const createFixedExpenseMutation = useCreateFixedExpense()
   const { data: memberships } = useHouseholds()
   const isFixedMode = mode === "fixed"
   const primaryTarget =
@@ -54,7 +60,6 @@ export function CreateTransactionForm({ onSuccess }: CreateTransactionFormProps)
   const additionalTargets = primaryTarget
     ? targets.filter((target) => target.householdId !== primaryTarget.householdId)
     : []
-
   const {
     data: categories,
     isLoading: categoriesLoading,
@@ -63,6 +68,14 @@ export function CreateTransactionForm({ onSuccess }: CreateTransactionFormProps)
     activeCategoryHouseholdId,
     type,
     Boolean(activeCategoryHouseholdId) && !isFixedMode,
+  )
+  const {
+    data: fixedCategories,
+    isLoading: fixedCategoriesLoading,
+    isError: fixedCategoriesError,
+  } = useCategories("expense", isFixedMode)
+  const selectedFixedCategory = fixedCategories?.find(
+    (category) => category.id === fixedCategoryId
   )
 
   useEffect(() => {
@@ -109,6 +122,7 @@ export function CreateTransactionForm({ onSuccess }: CreateTransactionFormProps)
       currentTargets.map((target) => ({ ...target, categoryId: null }))
     )
     setSelectedCategoriesByHousehold({})
+    setFixedCategoryId(null)
     if (newMode !== "fixed") {
       setType(newMode)
     } else {
@@ -125,6 +139,43 @@ export function CreateTransactionForm({ onSuccess }: CreateTransactionFormProps)
     const parsedAmount = Number(amount.replace(",", "."))
     if (!parsedAmount || parsedAmount <= 0) {
       Alert.alert("Error", "Escribe un monto válido.")
+      return
+    }
+
+    if (isFixedMode) {
+      if (title.trim().length < 1 || title.trim().length > 100) {
+        Alert.alert("Error", "El nombre debe tener entre 1 y 100 caracteres.")
+        return
+      }
+
+      if (!fixedCategoryId) {
+        Alert.alert("Error", "Selecciona una categoría.")
+        return
+      }
+
+      const parsedChargeDay = Number(chargeDay)
+      const parsedDueDay = Number(dueDay)
+      if (!isValidDay(parsedChargeDay) || !isValidDay(parsedDueDay)) {
+        Alert.alert("Error", "Los días deben estar entre 1 y 31.")
+        return
+      }
+
+      try {
+        await createFixedExpenseMutation.mutateAsync({
+          name: title.trim(),
+          amount: parsedAmount,
+          categoryId: fixedCategoryId,
+          chargeDay: parsedChargeDay,
+          dueDay: parsedDueDay,
+          isActive: true,
+        })
+        onSuccess?.()
+      } catch (error) {
+        const message = error instanceof Error
+          ? error.message
+          : "No se pudo crear el gasto fijo."
+        Alert.alert("Error", message)
+      }
       return
     }
 
@@ -186,6 +237,12 @@ export function CreateTransactionForm({ onSuccess }: CreateTransactionFormProps)
   function handleCategorySelect(category: Category) {
     if (!activeCategoryHouseholdId) return
 
+    if (isFixedMode) {
+      setFixedCategoryId(category.id)
+      categorySelectorRef.current?.dismiss()
+      return
+    }
+
     setTargets((currentTargets) =>
       currentTargets.map((target) =>
         target.householdId === activeCategoryHouseholdId
@@ -202,6 +259,12 @@ export function CreateTransactionForm({ onSuccess }: CreateTransactionFormProps)
 
   function openCategorySelector(householdId: string) {
     setActiveCategoryHouseholdId(householdId)
+    categorySelectorRef.current?.present()
+  }
+
+  function openFixedCategorySelector() {
+    if (!selectedHouseholdId) return
+    setActiveCategoryHouseholdId(selectedHouseholdId)
     categorySelectorRef.current?.present()
   }
 
@@ -231,6 +294,28 @@ export function CreateTransactionForm({ onSuccess }: CreateTransactionFormProps)
               {category.name}
             </Text>
           ) : null}
+          <FieldChevronIcon />
+        </View>
+      </Pressable>
+    )
+  }
+
+  function renderFixedCategoryField() {
+    return (
+      <Pressable
+        accessibilityRole="button"
+        onPress={openFixedCategorySelector}
+        style={[styles.field, styles.darkField]}
+      >
+        <Text style={styles.fieldLabel}>Categoría</Text>
+        <View style={styles.fieldValueGroup}>
+          <Text
+            numberOfLines={1}
+            ellipsizeMode="tail"
+            style={styles.fieldValue}
+          >
+            {selectedFixedCategory?.name ?? "Seleccionar categoría"}
+          </Text>
           <FieldChevronIcon />
         </View>
       </Pressable>
@@ -267,7 +352,29 @@ export function CreateTransactionForm({ onSuccess }: CreateTransactionFormProps)
         onChangeText={setAmount}
       />
 
-      {!isFixedMode ? (
+      {isFixedMode ? (
+        <>
+          {renderFixedCategoryField()}
+          <TextInput
+            style={[styles.field, styles.input]}
+            placeholder="Día de cobro"
+            placeholderTextColor="rgba(28, 28, 28, 0.5)"
+            keyboardType="number-pad"
+            maxLength={2}
+            value={chargeDay}
+            onChangeText={setChargeDay}
+          />
+          <TextInput
+            style={[styles.field, styles.input]}
+            placeholder="Día de vencimiento"
+            placeholderTextColor="rgba(28, 28, 28, 0.5)"
+            keyboardType="number-pad"
+            maxLength={2}
+            value={dueDay}
+            onChangeText={setDueDay}
+          />
+        </>
+      ) : (
         <>
           {primaryTarget ? renderCategoryField(primaryTarget) : null}
 
@@ -300,10 +407,10 @@ export function CreateTransactionForm({ onSuccess }: CreateTransactionFormProps)
             {additionalTargets.map(renderCategoryField)}
           </View>
         </>
-      ) : null}
+      )}
 
-      {!isFixedMode ? (
-        <View style={styles.categorySection}>
+      <View style={styles.categorySection}>
+        {!isFixedMode ? (
           <HouseholdSelectorSheet
             ref={householdSelectorRef}
             memberships={memberships ?? []}
@@ -311,37 +418,45 @@ export function CreateTransactionForm({ onSuccess }: CreateTransactionFormProps)
             onChange={handleHouseholdSelection}
             onDone={() => householdSelectorRef.current?.dismiss()}
           />
-          <CategorySelectorSheet
-            ref={categorySelectorRef}
-            householdName={
-              memberships?.find(
-                (membership) => membership.household_id === activeCategoryHouseholdId
-              )?.household.name ?? ""
-            }
-            categories={categories}
-            selectedCategoryId={
-              targets.find((target) => target.householdId === activeCategoryHouseholdId)
+        ) : null}
+        <CategorySelectorSheet
+          ref={categorySelectorRef}
+          householdName={
+            memberships?.find(
+              (membership) => membership.household_id === activeCategoryHouseholdId
+            )?.household.name ?? ""
+          }
+          categories={isFixedMode ? fixedCategories : categories}
+          selectedCategoryId={
+            isFixedMode
+              ? fixedCategoryId
+              : targets.find((target) => target.householdId === activeCategoryHouseholdId)
                 ?.categoryId ?? null
-            }
-            isLoading={categoriesLoading}
-            hasError={categoriesError}
-            onSelect={handleCategorySelect}
-          />
-        </View>
-      ) : null}
+          }
+          isLoading={isFixedMode ? fixedCategoriesLoading : categoriesLoading}
+          hasError={isFixedMode ? fixedCategoriesError : categoriesError}
+          onSelect={handleCategorySelect}
+        />
+      </View>
 
       <Pressable
-        style={[styles.button, (createTransactionMutation.isPending || isFixedMode) && styles.buttonDisabled]}
+        style={[styles.button, (createTransactionMutation.isPending || createFixedExpenseMutation.isPending) && styles.buttonDisabled]}
         onPress={handleCreate}
-        disabled={createTransactionMutation.isPending || isFixedMode}
+        disabled={createTransactionMutation.isPending || createFixedExpenseMutation.isPending}
       >
         <Text style={styles.buttonText}>
-          {createTransactionMutation.isPending ? "Guardando..." : "Guardar movimiento"}
+          {createTransactionMutation.isPending || createFixedExpenseMutation.isPending
+            ? "Guardando..."
+            : "Guardar movimiento"}
         </Text>
       </Pressable>
       </View>
     </View>
   )
+}
+
+function isValidDay(value: number) {
+  return Number.isInteger(value) && value >= 1 && value <= 31
 }
 
 const styles = StyleSheet.create({
