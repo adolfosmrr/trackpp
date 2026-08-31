@@ -355,24 +355,26 @@ export function CreateTransactionForm({ onSuccess }: CreateTransactionFormProps)
       {isFixedMode ? (
         <>
           {renderFixedCategoryField()}
-          <TextInput
-            style={[styles.field, styles.input]}
-            placeholder="Día de cobro"
-            placeholderTextColor="rgba(28, 28, 28, 0.5)"
-            keyboardType="number-pad"
-            maxLength={2}
-            value={chargeDay}
-            onChangeText={setChargeDay}
-          />
-          <TextInput
-            style={[styles.field, styles.input]}
-            placeholder="Día de vencimiento"
-            placeholderTextColor="rgba(28, 28, 28, 0.5)"
-            keyboardType="number-pad"
-            maxLength={2}
-            value={dueDay}
-            onChangeText={setDueDay}
-          />
+          <View style={[styles.field, styles.dayField]}>
+            <Text style={styles.dayFieldLabel}>Día de cobro</Text>
+            <TextInput
+              style={styles.dayInput}
+              keyboardType="number-pad"
+              maxLength={2}
+              value={chargeDay}
+              onChangeText={setChargeDay}
+            />
+          </View>
+          <View style={[styles.field, styles.dayField]}>
+            <Text style={styles.dayFieldLabel}>Día de vencimiento</Text>
+            <TextInput
+              style={styles.dayInput}
+              keyboardType="number-pad"
+              maxLength={2}
+              value={dueDay}
+              onChangeText={setDueDay}
+            />
+          </View>
         </>
       ) : (
         <>
@@ -472,6 +474,29 @@ const styles = StyleSheet.create({
   input: {
     backgroundColor: "#FFFFFF",
     fontFamily: "FamiljenGrotesk-Bold",
+    fontSize: 16,
+    lineHeight: 16,
+  },
+  dayField: {
+    alignItems: "center",
+    backgroundColor: "#FFFFFF",
+    flexDirection: "row",
+    justifyContent: "space-between",
+  },
+  dayFieldLabel: {
+    color: "rgba(28,28,28,0.5)",
+    fontFamily: "FamiljenGrotesk-Bold",
+    fontSize: 16,
+    lineHeight: 16,
+  },
+  dayInput: {
+    color: "#1C1C1C",
+    fontFamily: "FamiljenGrotesk-Bold",
+    fontSize: 16,
+    lineHeight: 16,
+    minWidth: 32,
+    padding: 0,
+    textAlign: "right",
   },
   darkField: {
     alignItems: "center",
@@ -483,6 +508,8 @@ const styles = StyleSheet.create({
     color: "#FFFFFF",
     fontFamily: "FamiljenGrotesk-Bold",
     flexShrink: 0,
+    fontSize: 16,
+    lineHeight: 16,
   },
   fieldValueGroup: {
     alignItems: "center",
@@ -498,6 +525,8 @@ const styles = StyleSheet.create({
     flex: 1,
     flexShrink: 1,
     fontFamily: "FamiljenGrotesk-Bold",
+    fontSize: 16,
+    lineHeight: 16,
     opacity: 0.5,
     textAlign: "right",
   },
