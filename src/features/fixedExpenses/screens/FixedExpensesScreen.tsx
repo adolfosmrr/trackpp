@@ -141,7 +141,6 @@ export function FixedExpensesScreen({ navigation }: any) {
             topSectionHeight > 0 ? (
               <View>
                 <View style={{ height: topSectionHeight }} />
-                <Text style={styles.sectionTitle}>Gastos Fijos</Text>
                 <NotificationPermissionBanner />
               </View>
             ) : null
@@ -254,10 +253,10 @@ export function FixedExpensesScreen({ navigation }: any) {
                         <Pressable
                           accessibilityLabel="Pago completado"
                           disabled={processingPeriodId !== null}
-                          style={[styles.actionButton, processingPeriodId !== null && styles.disabled]}
+                          style={[styles.actionButton, styles.gradientActionButton, processingPeriodId !== null && styles.disabled]}
                           onPress={() => confirmComplete(period)}
                         >
-                          <Text style={styles.actionButtonText}>
+                          <Text style={[styles.actionButtonText, styles.completeActionButtonText]}>
                             {processingPeriodId === period.id ? "Procesando..." : "Pago Completo"}
                           </Text>
                         </Pressable>
@@ -360,17 +359,19 @@ const styles = StyleSheet.create({
   hiddenList: { opacity: 0 },
   center: { flex: 1, alignItems: "center", justifyContent: "center", padding: 24 },
   list: { gap: 12, paddingHorizontal: 20, paddingTop: 20, paddingBottom: 24 },
-  sectionTitle: {
-    color: "#1C1C1C",
-    fontFamily: "FamiljenGrotesk-Bold",
-    fontSize: 40,
-    lineHeight: 40,
-  },
   primaryButtonText: { color: "#fff", fontWeight: "600" },
   card: {
-    backgroundColor: "#000000",
+    backgroundColor: "#EEEEEE",
     padding: 20,
     borderRadius: 20,
+    shadowColor: "#000000",
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 12,
+    elevation: 6,
   },
   cardHeader: {
     flexDirection: "row",
@@ -382,13 +383,13 @@ const styles = StyleSheet.create({
   name: {
     flex: 1,
     flexShrink: 1,
-    color: "#FFFFFF",
+    color: "#1C1C1C",
     fontFamily: "FamiljenGrotesk-Bold",
     fontSize: 24,
   },
   amount: {
     flexShrink: 1,
-    color: "#FFFFFF",
+    color: "#1C1C1C",
     fontFamily: "FamiljenGrotesk-Bold",
     fontSize: 24,
     lineHeight: 24,
@@ -397,7 +398,7 @@ const styles = StyleSheet.create({
   separator: {
     width: "100%",
     height: 1,
-    backgroundColor: "rgba(255,255,255,0.5)",
+    backgroundColor: "#000000",
   },
   infoGrid: {
     flexDirection: "row",
@@ -409,7 +410,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   infoText: {
-    color: "rgba(255,255,255,0.5)",
+    color: "rgba(28,28,28,0.7)",
     fontFamily: "Satoshi-Bold",
     fontSize: 12,
     lineHeight: 12,
@@ -419,7 +420,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   status: {
-    color: "rgba(255,255,255,0.5)",
+    color: "rgba(28,28,28,0.7)",
     fontFamily: "Satoshi-Bold",
     fontSize: 16,
     lineHeight: 16,
@@ -427,7 +428,7 @@ const styles = StyleSheet.create({
   disabled: { opacity: 0.55 },
   progressSection: { gap: 6 },
   progressLabel: {
-    color: "rgba(255,255,255,0.5)",
+    color: "rgba(28,28,28,0.7)",
     fontFamily: "Satoshi-Bold",
     fontSize: 12,
     lineHeight: 12,
@@ -436,12 +437,12 @@ const styles = StyleSheet.create({
     height: 8,
     overflow: "hidden",
     borderRadius: 4,
-    backgroundColor: "#252525",
+    backgroundColor: "#B6B6B6",
   },
   progressFill: {
     height: "100%",
     borderRadius: 4,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: "#000000",
   },
   actions: {
     flexDirection: "row",
@@ -455,13 +456,19 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     paddingHorizontal: 20,
     borderRadius: 999,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: "#000000",
   },
   actionButtonText: {
-    color: "#1C1C1C",
+    color: "#FFFFFF",
     fontFamily: "FamiljenGrotesk-Bold",
     fontSize: 12,
     lineHeight: 12,
+  },
+  gradientActionButton: {
+    backgroundColor: "transparent",
+  },
+  completeActionButtonText: {
+    color: "#1C1C1C",
   },
   gradientButton: {
     borderRadius: 999,
