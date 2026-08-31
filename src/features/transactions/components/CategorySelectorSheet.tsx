@@ -61,7 +61,12 @@ export const CategorySelectorSheet = forwardRef<
             current === next ? current : next,
           )
         }}
-        contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 16 }]}
+        contentContainerStyle={StyleSheet.flatten([
+          styles.content,
+          {
+            paddingBottom: insets.bottom + 16,
+          },
+        ])}
       >
         <View
           style={[
