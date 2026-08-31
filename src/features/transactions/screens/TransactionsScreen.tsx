@@ -22,7 +22,8 @@ import {
   import { HomeIncomeExpenseSummary } from "../../home/components/HomeIncomeExpenseSummary"
   import { FixedExpenseActions } from "../components/FixedExpenseActions"
   import { TransactionsMovementsSection } from "../components/TransactionsMovementsSection"
-  import { TransactionFiltersModal } from "../components/TransactionFiltersModal"
+import { TransactionFiltersModal } from "../components/TransactionFiltersModal"
+import { useCreateTransactionSheet } from "../components/CreateTransactionSheetProvider"
   import { useTransactions } from "../hooks/useTransactions"
   import { useDeleteTransaction } from "../hooks/useDeleteTransaction"
   import {
@@ -42,6 +43,7 @@ import {
     const [draftFilters, setDraftFilters] = useState(defaultTransactionFilters)
     const [filtersVisible, setFiltersVisible] = useState(false)
     const deleteMutation = useDeleteTransaction()
+    const { openCreateTransaction } = useCreateTransactionSheet()
 
     function handleTopSectionLayout(event: LayoutChangeEvent) {
       const height = event.nativeEvent.layout.height
@@ -174,7 +176,7 @@ import {
                 <View>
                   <View style={{ height: topSectionHeight }} />
                   <FixedExpenseActions
-                    onCreatePress={() => navigation.navigate("CreateFixedExpense")}
+                    onCreatePress={() => openCreateTransaction("fixed")}
                     onViewPress={() => navigation.navigate("FixedExpenses")}
                   />
                 </View>

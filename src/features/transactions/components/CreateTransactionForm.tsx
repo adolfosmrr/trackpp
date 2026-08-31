@@ -21,17 +21,19 @@ import { CategorySelectorSheet } from "./CategorySelectorSheet"
 import { HouseholdSelectorSheet } from "./HouseholdSelectorSheet"
 
 import type { Category } from "../../categories/types"
-import type { LinkedTransactionTarget } from "../types"
+import type { CreateMovementMode, LinkedTransactionTarget } from "../types"
 
 type CreateTransactionFormProps = {
   onSuccess?: () => void
+  initialMode?: CreateMovementMode
 }
 
-type CreateMovementMode = "income" | "expense" | "fixed"
-
-export function CreateTransactionForm({ onSuccess }: CreateTransactionFormProps) {
+export function CreateTransactionForm({
+  onSuccess,
+  initialMode,
+}: CreateTransactionFormProps) {
   const [type, setType] = useState<"expense" | "income">("expense")
-  const [mode, setMode] = useState<CreateMovementMode>("expense")
+  const [mode, setMode] = useState<CreateMovementMode>(initialMode ?? "expense")
   const [title, setTitle] = useState("")
   const [amount, setAmount] = useState("")
   const [fixedCategoryId, setFixedCategoryId] = useState<string | null>(null)

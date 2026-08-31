@@ -3,9 +3,10 @@ import type { ReactNode } from "react"
 import { BottomSheetModal } from "@gorhom/bottom-sheet"
 
 import { CreateTransactionBottomSheet } from "./CreateTransactionBottomSheet"
+import type { CreateMovementMode } from "../types"
 
 type CreateTransactionSheetContextValue = {
-  openCreateTransaction: () => void
+  openCreateTransaction: (initialMode?: CreateMovementMode) => void
 }
 
 const CreateTransactionSheetContext = createContext<CreateTransactionSheetContextValue | null>(null)
@@ -13,6 +14,7 @@ const CreateTransactionSheetContext = createContext<CreateTransactionSheetContex
 export function CreateTransactionSheetProvider({ children }: { children: ReactNode }) {
   const bottomSheetModalRef = useRef<BottomSheetModal>(null)
   const [mounted, setMounted] = useState(false)
+  const [initialMode, setInitialMode] = useState<CreateMovementMode>("expense")
 
   useEffect(() => {
     if (!mounted) return
@@ -21,7 +23,8 @@ export function CreateTransactionSheetProvider({ children }: { children: ReactNo
     return () => cancelAnimationFrame(frame)
   }, [mounted])
 
-  function openCreateTransaction() {
+  function openCreateTransaction(nextMode: CreateMovementMode = "expense") {
+    setInitialMode(nextMode)
     setMounted(true)
   }
 
@@ -35,6 +38,7 @@ export function CreateTransactionSheetProvider({ children }: { children: ReactNo
       {mounted ? (
         <CreateTransactionBottomSheet
           ref={bottomSheetModalRef}
+          initialMode={initialMode}
           onDismiss={handleDismiss}
           onSuccess={() => bottomSheetModalRef.current?.dismiss()}
         />

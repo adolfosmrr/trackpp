@@ -40,7 +40,7 @@ export function TopSectionHeader({ profile, collapseProgress }: TopSectionHeader
       <AnimatedPressable
         accessibilityLabel="Agregar movimiento"
         accessibilityRole="button"
-        onPress={openCreateTransaction}
+        onPress={() => openCreateTransaction()}
         style={[styles.addButton, addButtonStyle]}
       >
         <Animated.View style={addIconStyle}>

@@ -1,5 +1,7 @@
 export type TransactionType = "expense" | "income"
 
+export type CreateMovementMode = TransactionType | "fixed"
+
 export type TransactionTypeFilter = "all" | "income" | "expense" | "fixed"
 
 export type TransactionOrder =
