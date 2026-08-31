@@ -99,26 +99,42 @@ export const HouseholdSelectorSheet = forwardRef<
         >
           <Text style={styles.title}>Añadir a</Text>
         </View>
-        {memberships.map((membership) => {
-          const household = membership.household
-          const selected = selectedHouseholdIds.includes(household.id)
+        <View style={styles.householdsWrap}>
+          {memberships.map((membership) => {
+            const household = membership.household
+            const selected = selectedHouseholdIds.includes(household.id)
 
-          return (
-            <Pressable
-              key={household.id}
-              accessibilityRole="checkbox"
-              accessibilityState={{ checked: selected }}
-              onPress={() => toggleHousehold(household.id)}
-              style={styles.option}
-            >
-              <Text style={styles.optionText}>{household.name}</Text>
-              <Text style={styles.optionType}>
-                {household.type === "couple" ? "Compartido" : "Personal"}
-              </Text>
-              <Text style={styles.check}>{selected ? "✓" : "○"}</Text>
-            </Pressable>
-          )
-        })}
+            return (
+              <Pressable
+                key={household.id}
+                accessibilityRole="checkbox"
+                accessibilityState={{ checked: selected }}
+                onPress={() => toggleHousehold(household.id)}
+                style={[
+                  styles.option,
+                  selected && styles.optionSelected,
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.optionText,
+                    selected && styles.optionTextSelected,
+                  ]}
+                >
+                  {household.name}
+                </Text>
+                <Text
+                  style={[
+                    styles.optionType,
+                    selected && styles.optionTypeSelected,
+                  ]}
+                >
+                  {household.type === "couple" ? "Compartido" : "Personal"}
+                </Text>
+              </Pressable>
+            )
+          })}
+        </View>
       </BottomSheetScrollView>
     </BottomSheetModal>
   )
@@ -139,6 +155,12 @@ const styles = StyleSheet.create({
     gap: 12,
     paddingHorizontal: 0,
     paddingTop: 0
+  },
+  householdsWrap: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 10,
+    paddingHorizontal: 20,
   },
   header: {
     backgroundColor: "#E6E6E6",
@@ -169,23 +191,31 @@ const styles = StyleSheet.create({
   },
   option: {
     alignItems: "center",
-    borderBottomWidth: StyleSheet.hairlineWidth,
+    backgroundColor: "#FFFFFF",
+    borderRadius: 999,
     flexDirection: "row",
     gap: 8,
-    paddingHorizontal: 24,
-    paddingVertical: 12,
+    paddingHorizontal: 20,
+    paddingVertical: 15,
+  },
+  optionSelected: {
+    backgroundColor: "#1C1C1C",
   },
   optionText: {
-    flex: 1,
+    color: "#1C1C1C",
     fontSize: 16,
+    fontFamily: "FamiljenGrotesk-Bold",
+    lineHeight: 16,
+  },
+  optionTextSelected: {
+    color: "#FFFFFF",
   },
   optionType: {
     color: "#777",
     fontSize: 13,
   },
-  check: {
-    fontSize: 20,
-    width: 24,
+  optionTypeSelected: {
+    color: "rgba(255,255,255,0.65)",
   },
   doneButton: {
     alignItems: "center",
