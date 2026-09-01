@@ -1,6 +1,10 @@
 import { supabase } from "./supabase"
 
-const API_URL = "http://192.168.0.30:3000"
+const API_URL = process.env.EXPO_PUBLIC_API_URL
+
+if (!API_URL) {
+  throw new Error("Missing EXPO_PUBLIC_API_URL")
+}
 
 export class ApiError extends Error {
   constructor(

@@ -43,3 +43,4 @@ yarn-error.*
 #Supabase
 .env
 .env.*
+!.env.example
