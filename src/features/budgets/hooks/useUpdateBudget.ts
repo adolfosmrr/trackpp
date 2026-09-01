@@ -3,15 +3,11 @@ import {
     useQueryClient,
   } from "@tanstack/react-query"
   
-  import { useHouseholdStore } from "../../../store/householdStore"
-  import { updateBudget } from "../services/budgetService"
-  import { getCurrentMonth } from "./useBudgets"
-  
-  type UpdateBudgetValues = {
-    budgetId: string
-    amount: number
-  }
-  
+import { useHouseholdStore } from "../../../store/householdStore"
+import { updateBudget } from "../services/budgetService"
+import { getCurrentMonth } from "./useBudgets"
+import type { UpdateBudgetInput } from "../types"
+
   export function useUpdateBudget() {
     const queryClient = useQueryClient()
   
@@ -26,8 +22,9 @@ import {
       mutationFn: ({
         budgetId,
         amount,
-      }: UpdateBudgetValues) =>
-        updateBudget(budgetId, amount, month),
+        name,
+      }: UpdateBudgetInput) =>
+        updateBudget(budgetId, amount, month, name),
   
       onSuccess: () => {
         queryClient.invalidateQueries({

@@ -15,6 +15,7 @@ import {
   } from "./useBudgets"
   
   type CreateBudgetValues = {
+    name: string
     categoryId: string
     amount: number
   }
@@ -52,6 +53,7 @@ import {
           householdId:
             selectedHouseholdId,
           userId: user.id,
+          name: values.name,
           categoryId:
             values.categoryId,
           amount:

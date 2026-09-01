@@ -150,7 +150,7 @@ function BudgetsScreenContent() {
                   >
                     {budget.category.icon ??
                       ""}{" "}
-                    {budget.category.name}
+                    {budget.name}
                   </Text>
 
                   <Text

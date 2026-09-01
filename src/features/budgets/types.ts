@@ -8,6 +8,7 @@ export type BudgetConfig = {
   id: string
   household_id: string
   category_id: string
+  name: string
   amount: number
   is_active: boolean
   created_by: string
@@ -19,6 +20,7 @@ export type Budget = {
   id: string
   household_id: string
   category_id: string
+  name: string
   created_by: string
   amount: number
   month: string
@@ -42,6 +44,13 @@ export type CreateBudgetInput = {
   householdId: string
   categoryId: string
   userId: string
+  name: string
   amount: number
   month: string
+}
+
+export type UpdateBudgetInput = {
+  budgetId: string
+  name: string
+  amount: number
 }

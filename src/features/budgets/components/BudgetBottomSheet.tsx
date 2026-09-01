@@ -1,8 +1,7 @@
-import { forwardRef, useState } from "react"
+import { forwardRef, useRef, useState } from "react"
 import {
   Alert,
   Pressable,
-  ScrollView,
   StyleSheet,
   Text,
   TextInput,
@@ -16,9 +15,14 @@ import {
 } from "@gorhom/bottom-sheet"
 
 import { useCategories } from "../../categories/hooks/useCategories"
+import type { Category } from "../../categories/types"
+import { useHouseholds } from "../../households/hooks/useHouseholds"
+import { useHouseholdStore } from "../../../store/householdStore"
 import { useCreateBudget } from "../hooks/useCreateBudget"
 import { useUpdateBudget } from "../hooks/useUpdateBudget"
 import type { BudgetSheetRequest } from "../types"
+import { FieldChevronIcon } from "../../../components/icons/FieldChevronIcon"
+import { CategorySelectorSheet } from "../../transactions/components/CategorySelectorSheet"
 import { TransactionBlurBackdrop } from "../../transactions/components/TransactionBlurBackdrop"
 
 type BudgetBottomSheetProps = {
@@ -59,11 +63,23 @@ function BudgetForm({
   request,
   onSuccess,
 }: Pick<BudgetBottomSheetProps, "request" | "onSuccess">) {
-  const { data: categories } = useCategories("expense")
+  const selectedHouseholdId = useHouseholdStore(
+    (state) => state.selectedHouseholdId
+  )
+  const { data: memberships } = useHouseholds()
+  const {
+    data: categories,
+    isLoading: categoriesLoading,
+    isError: categoriesError,
+  } = useCategories("expense")
   const createBudgetMutation = useCreateBudget()
   const updateBudgetMutation = useUpdateBudget()
+  const categorySelectorRef = useRef<BottomSheetModal>(null)
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(
     request.kind === "create" ? null : request.budget.category_id
+  )
+  const [name, setName] = useState(
+    request.kind === "create" ? "" : request.budget.name
   )
   const [amount, setAmount] = useState(
     request.kind === "create" ? "" : String(request.budget.amount)
@@ -74,8 +90,21 @@ function BudgetForm({
     ? createBudgetMutation.isPending
     : updateBudgetMutation.isPending
 
+  const selectedCategory = categories?.find(
+    (category) => category.id === selectedCategoryId
+  )
+  const householdName = memberships?.find(
+    (membership) => membership.household_id === selectedHouseholdId
+  )?.household.name ?? ""
+
   async function handleSubmit() {
     const parsedAmount = Number(amount.replace(",", "."))
+    const trimmedName = name.trim()
+
+    if (!trimmedName || trimmedName.length > 100) {
+      Alert.alert("Error", "El nombre debe tener entre 1 y 100 caracteres.")
+      return
+    }
 
     if (isCreate && !selectedCategoryId) {
       Alert.alert("Error", "Selecciona una categoría.")
@@ -90,12 +119,14 @@ function BudgetForm({
     try {
       if (isCreate) {
         await createBudgetMutation.mutateAsync({
+          name: trimmedName,
           categoryId: selectedCategoryId!,
           amount: parsedAmount,
         })
       } else {
         await updateBudgetMutation.mutateAsync({
           budgetId: request.budget.id,
+          name: trimmedName,
           amount: parsedAmount,
         })
       }
@@ -112,72 +143,85 @@ function BudgetForm({
     }
   }
 
+  function openCategorySelector() {
+    categorySelectorRef.current?.present()
+  }
+
+  function handleCategorySelect(category: Category) {
+    setSelectedCategoryId(category.id)
+    categorySelectorRef.current?.dismiss()
+  }
+
   return (
     <View style={styles.content}>
       <Text style={styles.title}>
         {isCreate ? "Crear presupuesto" : "Editar presupuesto"}
       </Text>
 
+      <View style={styles.fieldsStack}>
+        <TextInput
+          style={[styles.field, styles.input]}
+          placeholder="Nombre del presupuesto"
+          placeholderTextColor="rgba(28, 28, 28, 0.5)"
+          value={name}
+          onChangeText={setName}
+        />
+
+        <Pressable
+          accessibilityRole="button"
+          accessibilityState={{ disabled: !isCreate }}
+          disabled={!isCreate}
+          onPress={openCategorySelector}
+          style={[styles.field, styles.darkField]}
+        >
+          <Text style={styles.fieldLabel}>Categoría</Text>
+          <View style={styles.fieldValueGroup}>
+            <Text
+              numberOfLines={1}
+              ellipsizeMode="tail"
+              style={styles.fieldValue}
+            >
+              {isCreate
+                ? selectedCategory?.name ?? "Seleccionar categoría"
+                : request.budget.category.name}
+            </Text>
+            <FieldChevronIcon />
+          </View>
+        </Pressable>
+
+        <TextInput
+          style={[styles.field, styles.input]}
+          placeholder={isCreate ? "Monto mensual" : "Nuevo monto"}
+          placeholderTextColor="rgba(28, 28, 28, 0.5)"
+          keyboardType="decimal-pad"
+          value={amount}
+          onChangeText={setAmount}
+        />
+
+        <Pressable
+          style={[styles.button, isPending && styles.buttonDisabled]}
+          onPress={handleSubmit}
+          disabled={isPending}
+        >
+          <Text style={styles.buttonText}>
+            {isCreate
+              ? isPending ? "Creando..." : "Crear presupuesto"
+              : isPending ? "Guardando..." : "Guardar cambios"}
+          </Text>
+        </Pressable>
+      </View>
+
       {isCreate ? (
-        <>
-          <Text style={styles.label}>Categoría</Text>
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.categories}
-          >
-            {categories?.map((category) => {
-              const selected = selectedCategoryId === category.id
-
-              return (
-                <Pressable
-                  key={category.id}
-                  style={[
-                    styles.category,
-                    selected && styles.categorySelected,
-                  ]}
-                  onPress={() => setSelectedCategoryId(category.id)}
-                >
-                  <Text
-                    style={[
-                      styles.categoryText,
-                      selected && styles.categoryTextSelected,
-                    ]}
-                  >
-                    {category.icon ? `${category.icon} ` : ""}
-                    {category.name}
-                  </Text>
-                </Pressable>
-              )
-            })}
-          </ScrollView>
-        </>
-      ) : (
-        <Text style={styles.modalCategory}>
-          {request.budget.category.icon ?? ""}{" "}
-          {request.budget.category.name}
-        </Text>
-      )}
-
-      <TextInput
-        style={styles.input}
-        placeholder={isCreate ? "Monto mensual" : "Nuevo monto"}
-        keyboardType="decimal-pad"
-        value={amount}
-        onChangeText={setAmount}
-      />
-
-      <Pressable
-        style={[styles.button, isPending && styles.buttonDisabled]}
-        onPress={handleSubmit}
-        disabled={isPending}
-      >
-        <Text style={styles.buttonText}>
-          {isCreate
-            ? isPending ? "Creando..." : "Crear presupuesto"
-            : isPending ? "Guardando..." : "Guardar cambios"}
-        </Text>
-      </Pressable>
+        <CategorySelectorSheet
+          ref={categorySelectorRef}
+          householdName={householdName}
+          categories={categories}
+          selectedCategoryId={selectedCategoryId}
+          isLoading={categoriesLoading}
+          hasError={categoriesError}
+          onSelect={handleCategorySelect}
+        />
+      ) : null}
     </View>
   )
 }
@@ -192,58 +236,71 @@ const styles = StyleSheet.create({
     backgroundColor: "#1c1c1c",
   },
   content: {
-    gap: 16,
-    padding: 20,
+    padding: 24,
+  },
+  fieldsStack: {
+    gap: 11,
+    marginTop: 40,
   },
   title: {
     fontSize: 22,
     fontWeight: "700",
   },
-  label: {
-    fontSize: 16,
-    fontWeight: "600",
-  },
-  categories: {
-    gap: 10,
-  },
-  category: {
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    borderWidth: 1,
-    borderColor: "#ccc",
+  field: {
+    width: "100%",
     borderRadius: 999,
-  },
-  categorySelected: {
-    backgroundColor: "#111",
-    borderColor: "#111",
-  },
-  categoryText: {
-    fontWeight: "500",
-  },
-  categoryTextSelected: {
-    color: "#fff",
+    paddingHorizontal: 20,
+    paddingVertical: 15,
   },
   input: {
-    borderWidth: 1,
-    borderColor: "#ccc",
-    borderRadius: 10,
-    padding: 14,
+    backgroundColor: "#FFFFFF",
+    fontFamily: "FamiljenGrotesk-Bold",
+    fontSize: 16,
+    lineHeight: 16,
+  },
+  darkField: {
+    alignItems: "center",
+    backgroundColor: "#000000",
+    flexDirection: "row",
+    justifyContent: "space-between",
+  },
+  fieldLabel: {
+    color: "#FFFFFF",
+    fontFamily: "FamiljenGrotesk-Bold",
+    flexShrink: 0,
+    fontSize: 16,
+    lineHeight: 16,
+  },
+  fieldValueGroup: {
+    alignItems: "center",
+    flexDirection: "row",
+    flex: 1,
+    gap: 10,
+    justifyContent: "flex-end",
+    marginLeft: 12,
+    minWidth: 0,
+  },
+  fieldValue: {
+    color: "#FFFFFF",
+    flex: 1,
+    flexShrink: 1,
+    fontFamily: "FamiljenGrotesk-Bold",
+    fontSize: 16,
+    lineHeight: 16,
+    opacity: 0.5,
+    textAlign: "right",
   },
   button: {
-    backgroundColor: "#111",
-    padding: 16,
-    borderRadius: 10,
     alignItems: "center",
+    backgroundColor: "#111",
+    borderRadius: 999,
+    padding: 16,
   },
   buttonDisabled: {
     opacity: 0.6,
   },
   buttonText: {
     color: "#fff",
-    fontWeight: "700",
-  },
-  modalCategory: {
-    fontSize: 16,
-    color: "#777",
+    fontFamily: "FamiljenGrotesk-Bold",
   },
 })

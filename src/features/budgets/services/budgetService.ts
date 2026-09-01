@@ -114,6 +114,7 @@ export async function createBudget(
     console.log("[Budget] create input:", {
       householdId: input.householdId,
       categoryId: input.categoryId,
+      name: input.name,
       amount: input.amount,
       month: input.month,
     })
@@ -124,6 +125,7 @@ export async function createBudget(
     {
       p_household_id: input.householdId,
       p_category_id: input.categoryId,
+      p_name: input.name,
       p_amount: input.amount,
       p_month: input.month,
     }
@@ -157,6 +159,7 @@ function parseBudgetRpcResult(value: unknown): Budget {
   const id = getString(value.id)
   const householdId = getString(value.household_id)
   const categoryId = getString(value.category_id)
+  const name = getString(value.name)
   const createdBy = getString(value.created_by)
   const month = getString(value.month)
   const createdAt = getString(value.created_at)
@@ -168,6 +171,7 @@ function parseBudgetRpcResult(value: unknown): Budget {
     !id ||
     !householdId ||
     !categoryId ||
+    !name ||
     !createdBy ||
     !month ||
     !createdAt ||
@@ -182,6 +186,7 @@ function parseBudgetRpcResult(value: unknown): Budget {
     id,
     household_id: householdId,
     category_id: categoryId,
+    name,
     created_by: createdBy,
     amount,
     month,
@@ -247,7 +252,8 @@ function getNextMonth(month: string) {
 export async function updateBudget(
   budgetId: string,
   amount: number,
-  month: string
+  month: string,
+  name: string
 ): Promise<Budget> {
   const { data, error } = await supabase.rpc(
     "update_budget_with_activity",
@@ -255,6 +261,7 @@ export async function updateBudget(
       p_budget_id: budgetId,
       p_amount: amount,
       p_month: month,
+      p_name: name,
     }
   )
 
