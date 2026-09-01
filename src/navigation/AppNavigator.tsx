@@ -16,6 +16,7 @@ import {
 
 import { InviteMemberScreen } from "../features/households/screens/InviteMemberScreen"
 import { AiChatScreen } from "../features/ai/screens/AiChatScreen"
+import { AiConversationScreen } from "../features/ai/screens/AiConversationScreen"
 import { FixedExpensesScreen } from "../features/fixedExpenses/screens/FixedExpensesScreen"
 import { CreateFixedExpenseScreen } from "../features/fixedExpenses/screens/CreateFixedExpenseScreen"
 import { EditFixedExpenseScreen } from "../features/fixedExpenses/screens/EditFixedExpenseScreen"
@@ -30,6 +31,7 @@ export type AppStackParamList = {
   InviteMember: undefined
   Invitations: undefined
   AiChat: undefined
+  AiConversation: { conversationId?: string }
   FixedExpenses: undefined
   CreateFixedExpense: undefined
   EditFixedExpense: { fixedExpenseId: string }
@@ -93,6 +95,11 @@ export function AppNavigator() {
         options={{
           title: "Asistente",
         }}
+      />
+      <Stack.Screen
+        name="AiConversation"
+        component={AiConversationScreen}
+        options={{ title: "Asistente" }}
       />
 
       <Stack.Screen

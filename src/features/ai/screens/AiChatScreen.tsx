@@ -1,303 +1,251 @@
-import { useEffect, useState } from "react"
-import {
-  ActivityIndicator,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
-} from "react-native"
+import { useState } from "react"
+import { Alert, FlatList, Pressable, StyleSheet, Text, View } from "react-native"
+import { useSafeAreaInsets } from "react-native-safe-area-context"
 
-import { useHouseholdStore } from "../../../store/householdStore"
-import { ApiError } from "../../../services/api"
+import { ScreenContainer } from "../../../components/layout/ScreenContainer"
+import { FieldChevronIcon } from "../../../components/icons/FieldChevronIcon"
+import { useAiConversationPreviews } from "../hooks/useAiConversationPreviews"
 import { useAiConversations } from "../hooks/useAiConversations"
-import { useFinancialChat } from "../hooks/useFinancialChat"
+import { useDeleteAiConversation } from "../hooks/useDeleteAiConversation"
+import type { AiConversation } from "../types"
 
-const suggestions = [
-  "¿Qué gastos fijos tengo pendientes?",
-  "¿Qué vence esta semana?",
-  "¿Cuánto me queda por pagar este mes?",
-  "¿Cuánto gastamos el mes pasado?",
-  "¿Gastamos más que el mes anterior?",
-  "¿Cómo evolucionó comida en 3 meses?",
-]
-
-export function AiChatScreen() {
-  const householdId = useHouseholdStore(
-    (state) => state.selectedHouseholdId
+export function AiChatScreen({ navigation }: any) {
+  const insets = useSafeAreaInsets()
+  const [deletingConversationId, setDeletingConversationId] = useState<string | null>(null)
+  const conversationsQuery = useAiConversations()
+  const deleteMutation = useDeleteAiConversation()
+  const conversations = [...(conversationsQuery.data ?? [])].sort(
+    (left, right) => Date.parse(right.updatedAt) - Date.parse(left.updatedAt)
   )
-  const [activeConversationId, setActiveConversationId] =
-    useState<string | null>(null)
-  const [shouldSelectRecent, setShouldSelectRecent] = useState(true)
-  const [input, setInput] = useState("")
-  const { data: conversations, isLoading: conversationsLoading } =
-    useAiConversations()
-
-  useEffect(() => {
-    setActiveConversationId(null)
-    setShouldSelectRecent(true)
-  }, [householdId])
-
-  useEffect(() => {
-    if (
-      shouldSelectRecent &&
-      conversations &&
-      conversations.length > 0
-    ) {
-      setActiveConversationId(conversations[0].id)
-      setShouldSelectRecent(false)
-    }
-  }, [conversations, shouldSelectRecent])
-
-  const {
-    messages,
-    sendMessage,
-    isPending,
-    error,
-    isLoadingMessages,
-  } = useFinancialChat(
-    activeConversationId,
-    setActiveConversationId
-  )
-  const errorMessage =
-    error instanceof ApiError &&
-    error.code === "AI_DAILY_LIMIT_REACHED"
-      ? "Estás haciendo demasiadas preguntas. Intenta nuevamente en un momento."
-      : "No se pudo obtener una respuesta. Inténtalo de nuevo."
-
-  function handleSend() {
-    if (sendMessage(input)) {
-      setInput("")
-    }
-  }
+  const { previews } = useAiConversationPreviews(conversations)
 
   function handleNewConversation() {
-    setActiveConversationId(null)
-    setShouldSelectRecent(false)
-    setInput("")
+    navigation.navigate("AiConversation")
+  }
+
+  function confirmDelete(conversationId: string) {
+    Alert.alert(
+      "¿Eliminar conversación?",
+      "Esta conversación y sus mensajes se eliminarán permanentemente.",
+      [
+        { text: "Cancelar", style: "cancel" },
+        {
+          text: "Eliminar",
+          style: "destructive",
+          onPress: () => void handleDelete(conversationId),
+        },
+      ]
+    )
+  }
+
+  async function handleDelete(conversationId: string) {
+    if (deletingConversationId === conversationId) return
+
+    setDeletingConversationId(conversationId)
+    try {
+      await deleteMutation.mutateAsync(conversationId)
+    } catch {
+      Alert.alert("Error", "No se pudo eliminar la conversación.")
+    } finally {
+      setDeletingConversationId(null)
+    }
   }
 
   return (
-    <View style={styles.container}>
-      <View style={styles.conversationsHeader}>
-        <Text style={styles.heading}>Conversaciones</Text>
-        <Pressable
-          style={styles.newButton}
-          onPress={handleNewConversation}
-          disabled={isPending}
-        >
-          <Text style={styles.newButtonText}>Nueva conversación</Text>
-        </Pressable>
-      </View>
-
-      {conversationsLoading ? (
-        <ActivityIndicator style={styles.conversationsLoading} />
-      ) : (
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.conversations}
-        >
-          {conversations?.map((conversation) => (
-            <Pressable
-              key={conversation.id}
-              style={[
-                styles.conversation,
-                conversation.id === activeConversationId &&
-                  styles.conversationSelected,
-              ]}
-              onPress={() => {
-                setShouldSelectRecent(false)
-                setActiveConversationId(conversation.id)
-              }}
-              disabled={isPending}
-            >
-              <Text
-                style={[
-                  styles.conversationText,
-                  conversation.id === activeConversationId &&
-                    styles.conversationTextSelected,
-                ]}
-                numberOfLines={1}
-              >
-                {conversation.title ?? "Sin título"}
-              </Text>
+    <ScreenContainer>
+      <FlatList
+        data={conversations}
+        keyExtractor={(conversation) => conversation.id}
+        contentContainerStyle={[
+          styles.listContent,
+          { paddingTop: Math.max(100, insets.top + 20) },
+        ]}
+        ItemSeparatorComponent={() => <View style={styles.conversationGap} />}
+        ListHeaderComponent={(
+          <View>
+            <Text style={styles.title}>AIsistente</Text>
+            <Pressable style={styles.newConversationButton} onPress={handleNewConversation}>
+              <Text style={styles.newConversationText}>Nueva conversación</Text>
+              <FieldChevronIcon />
             </Pressable>
-          ))}
-        </ScrollView>
-      )}
-
-      <ScrollView
-        style={styles.messages}
-        contentContainerStyle={styles.messagesContent}
-        keyboardShouldPersistTaps="handled"
-      >
-        {!activeConversationId && !messages.length && (
-          <View style={styles.emptyState}>
-            <Text style={styles.subtitle}>
-              Pregunta sobre los movimientos y presupuestos del espacio seleccionado.
-            </Text>
-
-            <View style={styles.suggestions}>
-              {suggestions.map((suggestion) => (
-                <Pressable
-                  key={suggestion}
-                  style={styles.suggestion}
-                  onPress={() => {
-                    setInput(suggestion)
-                    sendMessage(suggestion)
-                  }}
-                  disabled={isPending || !householdId}
-                >
-                  <Text style={styles.suggestionText}>{suggestion}</Text>
-                </Pressable>
-              ))}
-            </View>
-          </View>
-        )}
-
-        {isLoadingMessages && activeConversationId && (
-          <ActivityIndicator />
-        )}
-
-        {messages.map((message) => (
-          <View
-            key={message.id}
-            style={[
-              styles.message,
-              message.role === "user"
-                ? styles.userMessage
-                : styles.assistantMessage,
-            ]}
-          >
-            <Text style={styles.messageRole}>
-              {message.role === "user" ? "Tú" : "IA"}
-            </Text>
-            <Text
-              style={
-                message.role === "user"
-                  ? styles.userMessageContent
-                  : styles.messageContent
-              }
-            >
-              {message.content}
+            <Text style={styles.recentConversationsTitle}>
+              Conversaciones{"\n"}recientes
             </Text>
           </View>
-        ))}
-
-        {isPending && (
-          <View style={styles.thinking}>
-            <ActivityIndicator size="small" />
-            <Text>Pensando...</Text>
-          </View>
         )}
-
-        {error && (
-          <Text style={styles.error}>{errorMessage}</Text>
+        ListEmptyComponent={
+          conversationsQuery.isLoading ? (
+            <Text style={styles.loadingText}>Cargando conversaciones...</Text>
+          ) : conversationsQuery.error ? (
+            <Text style={styles.errorText}>No se pudieron cargar las conversaciones.</Text>
+          ) : (
+            <Text style={styles.emptyText}>Aún no tienes conversaciones.</Text>
+          )
+        }
+        ListFooterComponent={<View style={styles.listFooter} />}
+        renderItem={({ item, index }) => (
+          <ConversationCard
+            conversation={item}
+            preview={previews[index] ?? item.title ?? "Sin título"}
+            onPress={() => navigation.navigate("AiConversation", {
+              conversationId: item.id,
+            })}
+            onDelete={() => confirmDelete(item.id)}
+            isDeleting={deletingConversationId === item.id}
+          />
         )}
-      </ScrollView>
-
-      <View style={styles.inputRow}>
-        <TextInput
-          style={styles.input}
-          value={input}
-          onChangeText={setInput}
-          placeholder="Pregunta algo sobre tus finanzas"
-          multiline
-          maxLength={500}
-          editable={!isPending && Boolean(householdId)}
-          onSubmitEditing={handleSend}
-        />
-        <Pressable
-          style={[
-            styles.sendButton,
-            (!input.trim() || isPending || !householdId) && styles.disabled,
-          ]}
-          onPress={handleSend}
-          disabled={!input.trim() || isPending || !householdId}
-        >
-          <Text style={styles.sendText}>Enviar</Text>
-        </Pressable>
-      </View>
-    </View>
+      />
+    </ScreenContainer>
   )
 }
 
+function ConversationCard({
+  conversation,
+  preview,
+  onPress,
+  onDelete,
+  isDeleting,
+}: {
+  conversation: AiConversation
+  preview: string
+  onPress: () => void
+  onDelete: () => void
+  isDeleting: boolean
+}) {
+  return (
+    <Pressable style={styles.conversationCard} onPress={onPress}>
+      <View style={styles.conversationHeader}>
+        <Text style={styles.preview} numberOfLines={1}>
+          {getConversationPreview(preview)}
+        </Text>
+        <FieldChevronIcon />
+      </View>
+
+      <View style={styles.separator} />
+
+      <View style={styles.conversationFooter}>
+        <Text style={styles.date}>{formatConversationDate(conversation.updatedAt)}</Text>
+        <Pressable
+          onPress={(event) => {
+            event.stopPropagation()
+            onDelete()
+          }}
+          hitSlop={8}
+        >
+          <Text style={styles.deleteText}>{isDeleting ? "Eliminando..." : "Eliminar"}</Text>
+        </Pressable>
+      </View>
+    </Pressable>
+  )
+}
+
+export function getConversationPreview(value: string) {
+  const normalized = value.trim()
+
+  if (normalized.length <= 20) {
+    return normalized
+  }
+
+  return `${normalized.slice(0, 20)}...`
+}
+
+export function formatConversationDate(value: string) {
+  const date = new Date(value)
+  const weekday = new Intl.DateTimeFormat("es-ES", {
+    weekday: "short",
+    timeZone: "UTC",
+  }).format(date).replaceAll(".", "").toUpperCase()
+  const month = new Intl.DateTimeFormat("es-ES", {
+    month: "short",
+    timeZone: "UTC",
+  }).format(date).replaceAll(".", "").toUpperCase().replace("SEPT", "SEP")
+  const day = String(date.getUTCDate()).padStart(2, "0")
+
+  return `${weekday} ${day} ${month} ${date.getUTCFullYear()}`
+}
+
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#fff" },
-  conversationsHeader: {
-    flexDirection: "row",
+  listContent: { flexGrow: 1 },
+  listFooter: { height: 20 },
+  title: {
+    color: "#1C1C1C",
+    fontFamily: "FamiljenGrotesk-Bold",
+    fontSize: 40,
+    lineHeight: 40,
+  },
+  newConversationButton: {
     alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: 20,
-    paddingTop: 16,
-    gap: 12,
-  },
-  heading: { fontSize: 16, fontWeight: "700" },
-  newButton: { paddingVertical: 8 },
-  newButtonText: { fontWeight: "700", color: "#111" },
-  conversationsLoading: { margin: 12 },
-  conversations: { paddingHorizontal: 20, paddingVertical: 12, gap: 8 },
-  conversation: {
-    maxWidth: 220,
-    borderWidth: 1,
-    borderColor: "#ddd",
-    borderRadius: 12,
-    paddingHorizontal: 12,
-    paddingVertical: 9,
-  },
-  conversationSelected: { backgroundColor: "#111", borderColor: "#111" },
-  conversationText: { fontSize: 13 },
-  conversationTextSelected: { color: "#fff" },
-  messages: { flex: 1 },
-  messagesContent: { padding: 20, gap: 12 },
-  emptyState: { gap: 16 },
-  subtitle: { color: "#777", lineHeight: 21 },
-  suggestions: { gap: 10 },
-  suggestion: {
-    borderWidth: 1,
-    borderColor: "#ddd",
-    borderRadius: 12,
-    padding: 13,
-  },
-  suggestionText: { fontWeight: "600" },
-  message: {
-    maxWidth: "88%",
-    borderRadius: 14,
-    padding: 13,
-    gap: 4,
-  },
-  userMessage: { alignSelf: "flex-end", backgroundColor: "#111" },
-  assistantMessage: { alignSelf: "flex-start", backgroundColor: "#f1f1f1" },
-  messageRole: { fontSize: 12, fontWeight: "700", color: "#777" },
-  messageContent: { lineHeight: 21 },
-  userMessageContent: { lineHeight: 21, color: "#fff" },
-  thinking: { flexDirection: "row", alignItems: "center", gap: 8 },
-  error: { color: "#b42318" },
-  inputRow: {
+    backgroundColor: "#000000",
+    borderRadius: 20,
     flexDirection: "row",
-    alignItems: "flex-end",
-    gap: 8,
-    padding: 12,
-    borderTopWidth: 1,
-    borderTopColor: "#eee",
+    justifyContent: "space-between",
+    marginTop: 20,
+    paddingHorizontal: 20,
+    paddingVertical: 15,
+    width: "100%",
   },
-  input: {
+  newConversationText: {
+    color: "#FFFFFF",
+    fontFamily: "FamiljenGrotesk-Bold",
+    fontSize: 18,
+    lineHeight: 18,
+  },
+  recentConversationsTitle: {
+    color: "rgba(28,28,28,0.5)",
+    fontFamily: "FamiljenGrotesk-Bold",
+    fontSize: 40,
+    lineHeight: 40,
+    marginBottom: 20,
+    marginTop: 40,
+  },
+  conversationGap: { height: 10 },
+  conversationCard: {
+    backgroundColor: "#000000",
+    borderRadius: 20,
+    paddingHorizontal: 20,
+    paddingVertical: 15,
+    width: "100%",
+  },
+  conversationHeader: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: 12,
+    justifyContent: "space-between",
+  },
+  preview: {
+    color: "#FFFFFF",
     flex: 1,
-    maxHeight: 100,
-    borderWidth: 1,
-    borderColor: "#ddd",
-    borderRadius: 12,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
+    flexShrink: 1,
+    fontFamily: "FamiljenGrotesk-Regular",
+    fontSize: 18,
+    lineHeight: 18,
   },
-  sendButton: {
-    backgroundColor: "#111",
-    borderRadius: 12,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
+  separator: {
+    backgroundColor: "rgba(255,255,255,0.5)",
+    height: 1,
+    marginVertical: 15,
+    width: "100%",
   },
-  disabled: { opacity: 0.4 },
-  sendText: { color: "#fff", fontWeight: "700" },
+  conversationFooter: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: 12,
+    justifyContent: "space-between",
+  },
+  date: {
+    color: "rgba(255,255,255,0.5)",
+    fontFamily: "Satoshi-Bold",
+    fontSize: 14,
+    lineHeight: 14,
+    textTransform: "uppercase",
+  },
+  deleteText: {
+    color: "#FF2F2F",
+    fontFamily: "FamiljenGrotesk-Regular",
+    fontSize: 12,
+    lineHeight: 12,
+  },
+  loadingText: { color: "rgba(28,28,28,0.5)", marginTop: 20 },
+  errorText: { color: "#B42318", marginTop: 20 },
+  emptyText: { color: "rgba(28,28,28,0.5)", marginTop: 20 },
 })

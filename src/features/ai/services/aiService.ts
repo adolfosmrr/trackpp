@@ -41,3 +41,10 @@ export function getAiMessages(conversationId: string) {
     `/ai/conversations/${encodeURIComponent(conversationId)}/messages`
   )
 }
+
+export async function deleteAiConversation(conversationId: string) {
+  await apiFetch(
+    `/ai/conversations/${encodeURIComponent(conversationId)}`,
+    { method: "DELETE" }
+  )
+}
