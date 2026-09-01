@@ -4,6 +4,8 @@ import { useSafeAreaInsets } from "react-native-safe-area-context"
 
 import { ScreenContainer } from "../../../components/layout/ScreenContainer"
 import { FieldChevronIcon } from "../../../components/icons/FieldChevronIcon"
+import { GridBackground } from "../../../components/layout/GridBackground"
+import { MeshGradient } from "../../../components/visual/MeshGradient"
 import { useAiConversationPreviews } from "../hooks/useAiConversationPreviews"
 import { useAiConversations } from "../hooks/useAiConversations"
 import { useDeleteAiConversation } from "../hooks/useDeleteAiConversation"
@@ -52,7 +54,17 @@ export function AiChatScreen({ navigation }: any) {
   }
 
   return (
-    <ScreenContainer>
+    <ScreenContainer style={styles.container}>
+      <MeshGradient
+        colors={["#FFF", "#4F3B97", "#14044B", "#FFF"]}
+        speed={0.5}
+        blur={0.5}
+        noise={0.3}
+        intensity={1}
+        animated
+        style={styles.meshBackground}
+      />
+      <GridBackground />
       <FlatList
         data={conversations}
         keyExtractor={(conversation) => conversation.id}
@@ -165,6 +177,16 @@ export function formatConversationDate(value: string) {
 }
 
 const styles = StyleSheet.create({
+  container: {
+    backgroundColor: "#FFFFFF",
+  },
+  meshBackground: {
+    bottom: 0,
+    left: 0,
+    position: "absolute",
+    right: 0,
+    top: 0,
+  },
   listContent: { flexGrow: 1 },
   listFooter: { height: 20 },
   title: {
