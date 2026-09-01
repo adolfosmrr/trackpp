@@ -68,6 +68,9 @@ import {
             month,
           ],
         })
+        queryClient.invalidateQueries({
+          queryKey: ["budgets", selectedHouseholdId],
+        })
 
         queryClient.invalidateQueries({
           queryKey: [

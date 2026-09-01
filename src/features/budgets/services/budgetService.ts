@@ -12,6 +12,8 @@ export async function getBudgets(
 ): Promise<BudgetWithProgress[]> {
   const nextMonth = getNextMonth(month)
 
+  await ensureBudgetSnapshots(householdId, month)
+
   const { data: budgetsData, error: budgetsError } =
     await supabase
       .from("budgets")
@@ -86,6 +88,23 @@ export async function getBudgets(
       progressPercentage,
     }
   })
+}
+
+export async function ensureBudgetSnapshots(
+  householdId: string,
+  month: string
+): Promise<void> {
+  const { error } = await supabase.rpc(
+    "ensure_budget_snapshots",
+    {
+      p_household_id: householdId,
+      p_month: month,
+    }
+  )
+
+  if (error) {
+    throw error
+  }
 }
 
 export async function createBudget(
@@ -227,13 +246,15 @@ function getNextMonth(month: string) {
 
 export async function updateBudget(
   budgetId: string,
-  amount: number
+  amount: number,
+  month: string
 ): Promise<Budget> {
   const { data, error } = await supabase.rpc(
     "update_budget_with_activity",
     {
       p_budget_id: budgetId,
       p_amount: amount,
+      p_month: month,
     }
   )
 
@@ -245,12 +266,14 @@ export async function updateBudget(
 }
   
 export async function deleteBudget(
-  budgetId: string
+  budgetId: string,
+  month: string
 ): Promise<void> {
   const { error } = await supabase.rpc(
     "delete_budget_with_activity",
     {
       p_budget_id: budgetId,
+      p_month: month,
     }
   )
 

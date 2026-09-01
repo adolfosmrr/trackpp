@@ -18,7 +18,7 @@ import {
     const month = getCurrentMonth()
   
     return useMutation({
-      mutationFn: deleteBudget,
+      mutationFn: (budgetId: string) => deleteBudget(budgetId, month),
   
       onSuccess: () => {
         queryClient.invalidateQueries({
@@ -27,6 +27,9 @@ import {
             selectedHouseholdId,
             month,
           ],
+        })
+        queryClient.invalidateQueries({
+          queryKey: ["budgets", selectedHouseholdId],
         })
 
         queryClient.invalidateQueries({

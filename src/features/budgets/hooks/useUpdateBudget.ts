@@ -27,7 +27,7 @@ import {
         budgetId,
         amount,
       }: UpdateBudgetValues) =>
-        updateBudget(budgetId, amount),
+        updateBudget(budgetId, amount, month),
   
       onSuccess: () => {
         queryClient.invalidateQueries({
@@ -36,6 +36,9 @@ import {
             selectedHouseholdId,
             month,
           ],
+        })
+        queryClient.invalidateQueries({
+          queryKey: ["budgets", selectedHouseholdId],
         })
 
         queryClient.invalidateQueries({

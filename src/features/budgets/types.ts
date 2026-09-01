@@ -4,6 +4,17 @@ export type BudgetCategory = {
   icon: string | null
 }
 
+export type BudgetConfig = {
+  id: string
+  household_id: string
+  category_id: string
+  amount: number
+  is_active: boolean
+  created_by: string
+  created_at: string
+  updated_at: string
+}
+
 export type Budget = {
   id: string
   household_id: string
