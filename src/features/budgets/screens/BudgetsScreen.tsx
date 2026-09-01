@@ -10,6 +10,7 @@ import {
   Alert,
   LayoutChangeEvent,
 } from "react-native"
+import { useSafeAreaInsets } from "react-native-safe-area-context"
 
 import { useBudgets } from "../hooks/useBudgets"
 import { useDeleteBudget } from "../hooks/useDeleteBudget"
@@ -33,6 +34,7 @@ export function BudgetsScreen() {
 }
 
 function BudgetsScreenContent() {
+  const insets = useSafeAreaInsets()
   const [topSectionHeight, setTopSectionHeight] = useState(0)
   const { data: profile, isLoading: profileLoading, error: profileError } = useProfile()
   const { data: dashboard, isLoading: dashboardLoading, error: dashboardError } = useDashboard()
@@ -117,7 +119,14 @@ function BudgetsScreenContent() {
         >
           <View style={{ height: topSectionHeight }} />
           <View style={styles.budgetSection}>
-            <View style={styles.budgetContent}>
+            <View
+              style={[
+                styles.budgetContent,
+                {
+                  paddingBottom: Math.max(insets.bottom, 0) + 66,
+                },
+              ]}
+            >
         <Text style={styles.title}>
           Presupuesto{'\n'}del mes
         </Text>
@@ -145,17 +154,15 @@ function BudgetsScreenContent() {
                 >
                   <Text
                     style={
-                      styles.categoryName
+                      styles.cardTitle
                     }
                   >
-                    {budget.category.icon ??
-                      ""}{" "}
                     {budget.name}
                   </Text>
 
                   <Text
                     style={
-                      styles.percentage
+                      styles.cardPercentage
                     }
                   >
                     {formatPercentage(
@@ -180,67 +187,71 @@ function BudgetsScreenContent() {
                   />
                 </View>
 
-                <View
-                  style={styles.amountRow}
-                >
-                  <Text>
-                    Gastado:{" "}
-                    {formatCurrency(
-                      budget.spent
-                    )}
-                  </Text>
+                <View style={styles.cardSeparator} />
 
-                  <Text>
-                    de{" "}
-                    {formatCurrency(
-                      budget.amount
-                    )}
-                  </Text>
+                <View style={styles.statsRow}>
+                  <View style={styles.statsLeft}>
+                    <View style={styles.statItem}>
+                      <Text style={styles.statsText}>Gastado</Text>
+                      <Text style={styles.statsText}>
+                        {formatCurrency(budget.spent)}
+                      </Text>
+                    </View>
+
+                    <View style={styles.statItem}>
+                      <Text style={styles.statsText}>
+                        Restante
+                      </Text>
+                      <Text style={styles.statsText}>
+                        {formatCurrency(Math.abs(budget.remaining))}
+                      </Text>
+                    </View>
+                  </View>
+                  
+                  <View style={styles.statItem}>
+                    <Text style={styles.statsText}>De</Text>
+                    <Text style={styles.statsText}>
+                      {formatCurrency(budget.amount)}
+                    </Text>
+                  </View>
                 </View>
 
-                <Text
-                  style={styles.remaining}
-                >
-                  {budget.remaining >= 0
-                    ? "Restante:"
-                    : "Excedido:"}{" "}
-                  {formatCurrency(
-                    Math.abs(budget.remaining)
-                  )}
-                </Text>
+                <View style={styles.cardSeparator} />
 
                 <View
                   style={styles.actions}
                 >
-                  <Pressable
-                    onPress={() =>
-                      openEditBudget(budget)
-                    }
-                  >
-                    <Text
-                      style={
-                        styles.editText
+                    <Pressable
+                      style={styles.actionsButtons}
+                      onPress={() =>
+                        openEditBudget(budget)
                       }
                     >
-                      Editar
-                    </Text>
-                  </Pressable>
+                      <Text
+                        style={
+                          styles.editText
+                        }
+                      >
+                        Editar
+                      </Text>
+                    </Pressable>
 
-                  <Pressable
-                    onPress={() =>
-                      handleDeleteBudget(
-                        budget.id
-                      )
-                    }
-                  >
-                    <Text
-                      style={
-                        styles.deleteText
+                    <Pressable
+                      style={styles.actionsButtons}
+                      onPress={() =>
+                        handleDeleteBudget(
+                          budget.id
+                        )
                       }
                     >
-                      Eliminar
-                    </Text>
-                  </Pressable>
+                      <Text
+                        style={
+                          styles.deleteText
+                        }
+                      >
+                        Eliminar
+                      </Text>
+                    </Pressable>
                 </View>
               </View>
             ))
@@ -330,13 +341,14 @@ const styles =
     },
 
     content: {
-      paddingBottom: 40,
+      flexGrow: 1,
     },
 
     budgetSection: {
       backgroundColor: "#E6E6E6",
       borderTopLeftRadius: 60,
       borderTopRightRadius: 60,
+      flexGrow: 1,
       paddingTop: 50,
     },
 
@@ -380,11 +392,18 @@ const styles =
     },
 
     card: {
-      padding: 18,
-      borderWidth: 1,
-      borderColor: "#ddd",
-      borderRadius: 16,
+      backgroundColor: "#FFFFFF",
+      borderRadius: 20,
+      elevation: 6,
       gap: 12,
+      padding: 20,
+      shadowColor: "#000",
+      shadowOffset: {
+        width: 0,
+        height: 4,
+      },
+      shadowOpacity: 0.25,
+      shadowRadius: 12,
     },
 
     cardHeader: {
@@ -392,50 +411,89 @@ const styles =
       justifyContent: "space-between",
     },
 
-    categoryName: {
-      fontSize: 16,
-      fontWeight: "700",
+    cardTitle: {
+      color: "#1C1C1C",
+      fontFamily: "FamiljenGrotesk-Bold",
+      fontSize: 24,
+      lineHeight: 24,
     },
 
-    percentage: {
-      fontWeight: "700",
+    cardPercentage: {
+      color: "#1C1C1C",
+      fontFamily: "FamiljenGrotesk-Bold",
+      fontSize: 24,
+      lineHeight: 24,
     },
 
     progressBackground: {
       height: 8,
-      backgroundColor: "#eee",
+      backgroundColor: "#B6B6B6",
       borderRadius: 999,
       overflow: "hidden",
     },
 
     progress: {
       height: "100%",
-      backgroundColor: "#111",
+      backgroundColor: "#000000",
     },
 
-    amountRow: {
+    cardSeparator: {
+      width: "100%",
+      height: 1,
+      backgroundColor: "#000000",
+      opacity: 0.5,
+      marginVertical: 15,
+    },
+
+    statsLeft: {
+      gap: 8
+    },
+
+    statsRow: {
+      flex: 1,
       flexDirection: "row",
-      justifyContent: "space-between",
+      justifyContent: 'space-between',
     },
 
-    remaining: {
-      color: "#777",
+    statItem: {
+      gap: 5,
+      flexDirection: 'row'
+    },
+
+    statsText: {
+      color: "#1C1C1C",
+      fontFamily: "Satoshi-Bold",
+      fontSize: 14,
+      lineHeight: 14,
+      opacity: 0.7,
     },
 
     actions: {
       flexDirection: "row",
-      justifyContent: "flex-end",
-      gap: 20,
-      marginTop: 4,
+      justifyContent: 'flex-end',
+      gap: 10,
+      flexWrap: "wrap",
+    },
+
+    actionsButtons: {
+      backgroundColor: "#000000",
+      borderRadius: 999,
+      paddingHorizontal: 20,
+      paddingVertical: 10,
     },
 
     editText: {
-      fontWeight: "600",
+      color: "#FFFFFF",
+      fontFamily: "FamiljenGrotesk-Bold",
+      fontSize: 12,
+      lineHeight: 12,
     },
 
     deleteText: {
-      color: "#b42318",
-      fontWeight: "600",
+      color: "#FF2F2F",
+      fontFamily: "FamiljenGrotesk-Bold",
+      fontSize: 12,
+      lineHeight: 12,
     },
 
     empty: {
