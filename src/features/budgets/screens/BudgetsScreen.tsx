@@ -10,6 +10,7 @@ import {
   ActivityIndicator,
   Alert,
   Modal,
+  LayoutChangeEvent,
 } from "react-native"
 
 import { useBudgets } from "../hooks/useBudgets"
@@ -20,8 +21,19 @@ import { useDeleteBudget } from "../hooks/useDeleteBudget"
 import { useCategories } from "../../categories/hooks/useCategories"
 
 import type { BudgetWithProgress } from "../types"
+import { useProfile } from "../../profile/hooks/useProfile"
+import { useDashboard } from "../../dashboard/hooks/useDashboard"
+import { ScreenContainer } from "../../../components/layout/ScreenContainer"
+import { TopSection } from "../../../components/layout/TopSection"
+import { TopSectionHeader } from "../../../components/layout/TopSectionHeader"
+import { HomeBalance } from "../../home/components/HomeBalance"
+import { HomeGreeting } from "../../home/components/HomeGreeting"
+import { HomeIncomeExpenseSummary } from "../../home/components/HomeIncomeExpenseSummary"
 
 export function BudgetsScreen() {
+  const [topSectionHeight, setTopSectionHeight] = useState(0)
+  const { data: profile, isLoading: profileLoading, error: profileError } = useProfile()
+  const { data: dashboard, isLoading: dashboardLoading, error: dashboardError } = useDashboard()
   const {
     data: budgets,
     isLoading: budgetsLoading,
@@ -47,6 +59,11 @@ export function BudgetsScreen() {
 
   const [editingAmount, setEditingAmount] =
     useState("")
+
+  function handleTopSectionLayout(event: LayoutChangeEvent) {
+    const height = event.nativeEvent.layout.height
+    setTopSectionHeight((current) => current || height)
+  }
 
   async function handleCreateBudget() {
     if (!selectedCategoryId) {
@@ -178,7 +195,9 @@ export function BudgetsScreen() {
 
   if (
     budgetsLoading ||
-    categoriesLoading
+    categoriesLoading ||
+    profileLoading ||
+    dashboardLoading
   ) {
     return (
       <View style={styles.center}>
@@ -187,7 +206,7 @@ export function BudgetsScreen() {
     )
   }
 
-  if (budgetsError) {
+  if (budgetsError || profileError || dashboardError) {
     return (
       <View style={styles.center}>
         <Text>
@@ -198,11 +217,13 @@ export function BudgetsScreen() {
   }
 
   return (
-    <>
-      <ScrollView
-        style={styles.container}
-        contentContainerStyle={styles.content}
-      >
+    <View style={styles.screenWrapper}>
+      <ScreenContainer paddingHorizontal={0}>
+        <ScrollView
+          style={[styles.container, !topSectionHeight && styles.hiddenList]}
+          contentContainerStyle={styles.content}
+        >
+          <View style={{ height: topSectionHeight }} />
         <Text style={styles.title}>
           Presupuesto del mes
         </Text>
@@ -406,7 +427,8 @@ export function BudgetsScreen() {
             </Text>
           )}
         </View>
-      </ScrollView>
+        </ScrollView>
+      </ScreenContainer>
 
       <Modal
         visible={!!editingBudget}
@@ -485,7 +507,30 @@ export function BudgetsScreen() {
           </View>
         </View>
       </Modal>
-    </>
+
+      <TopSection
+        mode="collapsed"
+        overlay
+        onLayout={handleTopSectionLayout}
+        style={styles.topSectionOverlay}
+        renderContent={(collapseProgress) => (
+          <>
+            <TopSectionHeader collapseProgress={collapseProgress} profile={profile} />
+            <HomeGreeting displayName={profile?.name?.trim()} collapseProgress={collapseProgress} />
+            <HomeBalance
+              balance={dashboard?.balance ?? 0}
+              collapseProgress={collapseProgress}
+              isCollapsed
+            />
+            <HomeIncomeExpenseSummary
+              collapseProgress={collapseProgress}
+              expenses={dashboard?.expenses ?? 0}
+              income={dashboard?.income ?? 0}
+            />
+          </>
+        )}
+      />
+    </View>
   )
 }
 
@@ -514,6 +559,23 @@ function formatPercentage(
 
 const styles =
   StyleSheet.create({
+    screenWrapper: {
+      flex: 1,
+      position: "relative",
+    },
+
+    topSectionOverlay: {
+      left: 0,
+      position: "absolute",
+      right: 0,
+      top: 0,
+      zIndex: 10,
+    },
+
+    hiddenList: {
+      opacity: 0,
+    },
+
     container: {
       flex: 1,
     },
