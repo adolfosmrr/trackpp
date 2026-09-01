@@ -125,14 +125,29 @@ export function AiConversationScreen({ route }: any) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#fff" },
+  container: { flex: 1, backgroundColor: "#000000" },
   messages: { flex: 1 },
-  messagesContent: { padding: 20, gap: 12 },
+  messagesContent: { gap: 12, padding: 20, paddingTop: 80 },
   emptyState: { gap: 16 },
-  subtitle: { color: "#777", lineHeight: 21 },
+  subtitle: {
+    color: "#FFFFFF",
+    fontFamily: "FamiljenGrotesk-Bold",
+    fontSize: 20,
+    lineHeight: 20,
+  },
   suggestions: { gap: 10 },
-  suggestion: { borderColor: "#ddd", borderRadius: 12, borderWidth: 1, padding: 13 },
-  suggestionText: { fontWeight: "600" },
+  suggestion: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 999,
+    paddingHorizontal: 20,
+    paddingVertical: 15,
+  },
+  suggestionText: {
+    color: "#1C1C1C",
+    fontFamily: "FamiljenGrotesk-Bold",
+    fontSize: 16,
+    lineHeight: 16,
+  },
   message: { borderRadius: 14, gap: 4, maxWidth: "88%", padding: 13 },
   userMessage: { alignSelf: "flex-end", backgroundColor: "#111" },
   assistantMessage: { alignSelf: "flex-start", backgroundColor: "#f1f1f1" },
