@@ -31,6 +31,12 @@
       "expo-notifications",
       "expo-font",
       "expo-asset"
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "8a0b5193-1b75-4991-b831-b5ddd61ab55f"
+      }
+    },
+    "owner": "adolfosmre"
   }
 }
