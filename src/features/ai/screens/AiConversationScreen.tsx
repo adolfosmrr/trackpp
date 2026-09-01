@@ -8,6 +8,14 @@ import {
   TextInput,
   View,
 } from "react-native"
+import { useSafeAreaInsets } from "react-native-safe-area-context"
+import Svg, {
+  Defs,
+  LinearGradient,
+  Path,
+  Rect,
+  Stop,
+} from "react-native-svg"
 
 import { ApiError } from "../../../services/api"
 import { useHouseholdStore } from "../../../store/householdStore"
@@ -23,6 +31,7 @@ const suggestions = [
 ]
 
 export function AiConversationScreen({ route }: any) {
+  const insets = useSafeAreaInsets()
   const householdId = useHouseholdStore((state) => state.selectedHouseholdId)
   const [conversationId, setConversationId] = useState<string | null>(
     route.params?.conversationId ?? null
@@ -101,24 +110,50 @@ export function AiConversationScreen({ route }: any) {
         {error ? <Text style={styles.error}>{errorMessage}</Text> : null}
       </ScrollView>
 
-      <View style={styles.inputRow}>
-        <TextInput
-          style={styles.input}
-          value={input}
-          onChangeText={setInput}
-          placeholder="Pregunta algo sobre tus finanzas"
-          multiline
-          maxLength={500}
-          editable={!isPending && Boolean(householdId)}
-          onSubmitEditing={handleSend}
-        />
-        <Pressable
-          style={[styles.sendButton, (!input.trim() || isPending || !householdId) && styles.disabled]}
-          onPress={handleSend}
-          disabled={!input.trim() || isPending || !householdId}
-        >
-          <Text style={styles.sendText}>Enviar</Text>
-        </Pressable>
+      <View style={[styles.composerWrapper, { paddingBottom: Math.max(insets.bottom, 8) }]}>
+        <View style={styles.composer}>
+          <TextInput
+            style={styles.input}
+            value={input}
+            onChangeText={setInput}
+            placeholder="Pregunta algo sobre tus finanzas"
+            multiline
+            maxLength={500}
+            editable={!isPending && Boolean(householdId)}
+            onSubmitEditing={handleSend}
+          />
+          <Pressable
+            style={[styles.sendButton, (!input.trim() || isPending || !householdId) && styles.disabled]}
+            onPress={handleSend}
+            disabled={!input.trim() || isPending || !householdId}
+          >
+            <Svg pointerEvents="none" style={StyleSheet.absoluteFill}>
+              <Defs>
+                <LinearGradient
+                  id="ai-send-button-gradient"
+                  x1="0%"
+                  y1="0%"
+                  x2="100%"
+                  y2="100%"
+                >
+                  <Stop offset="0" stopColor="#BFFFC7" />
+                  <Stop offset="1" stopColor="#18A5A7" />
+                </LinearGradient>
+              </Defs>
+              <Rect
+                width="100%"
+                height="100%"
+                fill="url(#ai-send-button-gradient)"
+              />
+            </Svg>
+            <Svg width={15} height={15} viewBox="0 0 15 15" fill="none">
+              <Path
+                d="M8.36399 14.9999L6.36399 14.9999L6.36399 3.41394L1.70677 8.07117C1.31622 8.46139 0.683131 8.46159 0.292705 8.07117C-0.0977202 7.68074 -0.0975223 7.04765 0.292705 6.6571L6.65696 0.292846C7.04749 -0.0976787 7.6805 -0.0976787 8.07103 0.292846L14.4353 6.6571C14.8255 7.04765 14.8257 7.68074 14.4353 8.07117C14.0449 8.46159 13.4118 8.46139 13.0212 8.07117L8.36399 3.41394L8.36399 14.9999Z"
+                fill="black"
+              />
+            </Svg>
+          </Pressable>
+        </View>
       </View>
     </View>
   )
@@ -140,7 +175,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#FFFFFF",
     borderRadius: 999,
     paddingHorizontal: 20,
-    paddingVertical: 15,
+    paddingVertical: 10,
   },
   suggestionText: {
     color: "#1C1C1C",
@@ -156,9 +191,37 @@ const styles = StyleSheet.create({
   userMessageContent: { color: "#fff", lineHeight: 21 },
   thinking: { alignItems: "center", flexDirection: "row", gap: 8 },
   error: { color: "#b42318" },
-  inputRow: { alignItems: "flex-end", borderTopColor: "#eee", borderTopWidth: 1, flexDirection: "row", gap: 8, padding: 12 },
-  input: { borderColor: "#ddd", borderRadius: 12, borderWidth: 1, flex: 1, maxHeight: 100, paddingHorizontal: 12, paddingVertical: 10 },
-  sendButton: { backgroundColor: "#111", borderRadius: 12, paddingHorizontal: 14, paddingVertical: 12 },
+  composerWrapper: {
+    paddingHorizontal: 20,
+    width: "100%",
+  },
+  composer: {
+    alignItems: "center",
+    backgroundColor: "#FFFFFF",
+    borderRadius: 999,
+    flexDirection: "row",
+    gap: 12,
+    paddingLeft: 20,
+    paddingRight: 6,
+    paddingVertical: 6,
+    width: "100%",
+  },
+  input: {
+    backgroundColor: "transparent",
+    color: "#1C1C1C",
+    flex: 1,
+    fontFamily: "FamiljenGrotesk-Regular",
+    fontSize: 16,
+    maxHeight: 100,
+    padding: 0,
+  },
+  sendButton: {
+    alignItems: "center",
+    borderRadius: 21,
+    height: 42,
+    justifyContent: "center",
+    overflow: "hidden",
+    width: 42,
+  },
   disabled: { opacity: 0.4 },
-  sendText: { color: "#fff", fontWeight: "700" },
 })
