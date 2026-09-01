@@ -140,12 +140,18 @@ export async function updateFixedExpensePayment(
 
 export async function updateFixedExpense(
   fixedExpenseId: string,
-  input: FixedExpenseInput
+  input: FixedExpenseInput,
+  period: string
 ) {
+  if (__DEV__) {
+    console.log("[FixedExpenses] update", { fixedExpenseId, period })
+  }
+
   const { data, error } = await supabase.rpc(
     "update_fixed_expense_with_activity",
     {
       p_fixed_expense_id: fixedExpenseId,
+      p_period: period,
       p_name: input.name,
       p_amount: input.amount,
       p_category_id: input.categoryId,

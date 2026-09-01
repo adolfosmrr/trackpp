@@ -1,6 +1,19 @@
+import type { FixedExpense } from "../fixedExpenses/types"
+
 export type TransactionType = "expense" | "income"
 
 export type CreateMovementMode = TransactionType | "fixed"
+
+export type TransactionSheetRequest =
+  | {
+      kind: "create"
+      initialMode: CreateMovementMode
+    }
+  | {
+      kind: "edit-fixed"
+      fixedExpense: FixedExpense
+      period: string
+    }
 
 export type TransactionTypeFilter = "all" | "income" | "expense" | "fixed"
 

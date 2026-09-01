@@ -8,10 +8,10 @@ import {
 
 import { CreateTransactionForm } from "./CreateTransactionForm"
 import { TransactionBlurBackdrop } from "./TransactionBlurBackdrop"
-import type { CreateMovementMode } from "../types"
+import type { TransactionSheetRequest } from "../types"
 
 type CreateTransactionBottomSheetProps = {
-  initialMode: CreateMovementMode
+  request: TransactionSheetRequest
   onDismiss: () => void
   onSuccess: () => void
 }
@@ -19,7 +19,7 @@ type CreateTransactionBottomSheetProps = {
 export const CreateTransactionBottomSheet = forwardRef<
   BottomSheetModal,
   CreateTransactionBottomSheetProps
->(function CreateTransactionBottomSheet({ initialMode, onDismiss, onSuccess }, ref) {
+>(function CreateTransactionBottomSheet({ request, onDismiss, onSuccess }, ref) {
   const insets = useSafeAreaInsets()
   const { height } = useWindowDimensions()
 
@@ -40,7 +40,7 @@ export const CreateTransactionBottomSheet = forwardRef<
       <BottomSheetView
         style={{ paddingBottom: insets.bottom + 16 }}
       >
-        <CreateTransactionForm initialMode={initialMode} onSuccess={onSuccess} />
+        <CreateTransactionForm request={request} onSuccess={onSuccess} />
       </BottomSheetView>
     </BottomSheetModal>
   )

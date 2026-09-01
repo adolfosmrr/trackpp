@@ -12,7 +12,10 @@ import {
 import Svg, { Defs, LinearGradient, Rect, Stop } from "react-native-svg"
 
 import { useDeleteFixedExpense } from "../hooks/useDeleteFixedExpense"
-import { useFixedExpensePeriods } from "../hooks/useFixedExpensePeriods"
+import {
+  getCurrentFixedExpensePeriod,
+  useFixedExpensePeriods,
+} from "../hooks/useFixedExpensePeriods"
 import { useFixedExpenses } from "../hooks/useFixedExpenses"
 import { usePayFixedExpensePeriod } from "../hooks/usePayFixedExpensePeriod"
 import type { FixedExpense, FixedExpensePeriod } from "../types"
@@ -27,6 +30,7 @@ import { HomeIncomeExpenseSummary } from "../../home/components/HomeIncomeExpens
 import { ScreenContainer } from "../../../components/layout/ScreenContainer"
 import { TopSection } from "../../../components/layout/TopSection"
 import { TopSectionHeader } from "../../../components/layout/TopSectionHeader"
+import { useCreateTransactionSheet } from "../../transactions/components/CreateTransactionSheetProvider"
 
 export function FixedExpensesScreen({ navigation }: any) {
   const [deletingId, setDeletingId] = useState<string | null>(null)
@@ -34,8 +38,13 @@ export function FixedExpensesScreen({ navigation }: any) {
   const [topSectionHeight, setTopSectionHeight] = useState(0)
   const { data: profile, isLoading: profileLoading, error: profileError } = useProfile()
   const { data: dashboard, isLoading: dashboardLoading, error: dashboardError } = useDashboard()
+  const { openEditFixedExpense } = useCreateTransactionSheet()
   const { data, isLoading, error } = useFixedExpenses()
-  const periodsQuery = useFixedExpensePeriods(data !== undefined && data.length > 0)
+  const currentPeriod = getCurrentFixedExpensePeriod()
+  const periodsQuery = useFixedExpensePeriods(
+    data !== undefined && data.length > 0,
+    currentPeriod
+  )
   const {
     data: periods,
     isLoading: periodsLoading,
@@ -213,7 +222,7 @@ export function FixedExpensesScreen({ navigation }: any) {
                 <View style={styles.actions}>
                   <Pressable
                     style={styles.actionButton}
-                    onPress={() => navigation.navigate("EditFixedExpense", { fixedExpenseId: item.id })}
+                    onPress={() => openEditFixedExpense(item, currentPeriod)}
                   >
                     <Text style={styles.actionButtonText}>Editar</Text>
                   </Pressable>

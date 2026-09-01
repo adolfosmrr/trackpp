@@ -14,31 +14,49 @@ import { useHouseholdStore } from "../../../store/householdStore"
 import { useHouseholdCategories } from "../../categories/hooks/useHouseholdCategories"
 import { SegmentedToggle } from "../../../components/inputs/SegmentedToggle"
 import { FieldChevronIcon } from "../../../components/icons/FieldChevronIcon"
-import { useCategories } from "../../categories/hooks/useCategories"
 import { useCreateLinkedTransactions } from "../hooks/useCreateLinkedTransactions"
 import { useCreateFixedExpense } from "../../fixedExpenses/hooks/useCreateFixedExpense"
+import { useUpdateFixedExpense } from "../../fixedExpenses/hooks/useUpdateFixedExpense"
 import { CategorySelectorSheet } from "./CategorySelectorSheet"
 import { HouseholdSelectorSheet } from "./HouseholdSelectorSheet"
 
 import type { Category } from "../../categories/types"
-import type { CreateMovementMode, LinkedTransactionTarget } from "../types"
+import type {
+  CreateMovementMode,
+  LinkedTransactionTarget,
+  TransactionSheetRequest,
+} from "../types"
 
 type CreateTransactionFormProps = {
   onSuccess?: () => void
-  initialMode?: CreateMovementMode
+  request: TransactionSheetRequest
 }
 
 export function CreateTransactionForm({
   onSuccess,
-  initialMode,
+  request,
 }: CreateTransactionFormProps) {
   const [type, setType] = useState<"expense" | "income">("expense")
-  const [mode, setMode] = useState<CreateMovementMode>(initialMode ?? "expense")
-  const [title, setTitle] = useState("")
-  const [amount, setAmount] = useState("")
-  const [fixedCategoryId, setFixedCategoryId] = useState<string | null>(null)
-  const [chargeDay, setChargeDay] = useState("1")
-  const [dueDay, setDueDay] = useState("10")
+  const editingFixedExpense = request.kind === "edit-fixed"
+    ? request.fixedExpense
+    : undefined
+  const initialMode = request.kind === "edit-fixed"
+    ? "fixed"
+    : request.initialMode
+  const [mode, setMode] = useState<CreateMovementMode>(initialMode)
+  const [title, setTitle] = useState(editingFixedExpense?.name ?? "")
+  const [amount, setAmount] = useState(
+    editingFixedExpense ? String(editingFixedExpense.amount) : ""
+  )
+  const [fixedCategoryId, setFixedCategoryId] = useState<string | null>(
+    editingFixedExpense?.category_id ?? null
+  )
+  const [chargeDay, setChargeDay] = useState(
+    editingFixedExpense ? String(editingFixedExpense.charge_day) : "1"
+  )
+  const [dueDay, setDueDay] = useState(
+    editingFixedExpense ? String(editingFixedExpense.due_day) : "10"
+  )
   const selectedHouseholdId = useHouseholdStore(
     (state) => state.selectedHouseholdId
   )
@@ -54,8 +72,11 @@ export function CreateTransactionForm({
   const categorySelectorRef = useRef<BottomSheetModal>(null)
   const createTransactionMutation = useCreateLinkedTransactions()
   const createFixedExpenseMutation = useCreateFixedExpense()
+  const updateFixedExpenseMutation = useUpdateFixedExpense()
   const { data: memberships } = useHouseholds()
+  const isEditingFixedExpense = Boolean(editingFixedExpense)
   const isFixedMode = mode === "fixed"
+  const fixedCategoryHouseholdId = editingFixedExpense?.household_id ?? selectedHouseholdId
   const primaryTarget =
     targets.find((target) => target.householdId === selectedHouseholdId) ??
     targets[0]
@@ -75,7 +96,11 @@ export function CreateTransactionForm({
     data: fixedCategories,
     isLoading: fixedCategoriesLoading,
     isError: fixedCategoriesError,
-  } = useCategories("expense", isFixedMode)
+  } = useHouseholdCategories(
+    fixedCategoryHouseholdId,
+    "expense",
+    isFixedMode,
+  )
   const selectedFixedCategory = fixedCategories?.find(
     (category) => category.id === fixedCategoryId
   )
@@ -110,13 +135,14 @@ export function CreateTransactionForm({
 
   useEffect(() => {
     if (
+      !isEditingFixedExpense &&
       activeCategoryHouseholdId &&
       !targets.some((target) => target.householdId === activeCategoryHouseholdId)
     ) {
       setActiveCategoryHouseholdId(null)
       categorySelectorRef.current?.dismiss()
     }
-  }, [activeCategoryHouseholdId, targets])
+  }, [activeCategoryHouseholdId, isEditingFixedExpense, targets])
 
   function handleModeChange(newMode: CreateMovementMode) {
     setMode(newMode)
@@ -132,7 +158,7 @@ export function CreateTransactionForm({
     }
   }
 
-  async function handleCreate() {
+  async function handleSubmit() {
     if (!title.trim()) {
       Alert.alert("Error", "Escribe un título.")
       return
@@ -163,19 +189,38 @@ export function CreateTransactionForm({
       }
 
       try {
-        await createFixedExpenseMutation.mutateAsync({
-          name: title.trim(),
-          amount: parsedAmount,
-          categoryId: fixedCategoryId,
-          chargeDay: parsedChargeDay,
-          dueDay: parsedDueDay,
-          isActive: true,
-        })
+        if (isEditingFixedExpense && editingFixedExpense) {
+          if (request.kind !== "edit-fixed") {
+            throw new Error("Falta el período del gasto fijo que se está editando.")
+          }
+
+          await updateFixedExpenseMutation.mutateAsync({
+            fixedExpenseId: editingFixedExpense.id,
+            period: request.period,
+            name: title.trim(),
+            amount: parsedAmount,
+            categoryId: fixedCategoryId,
+            chargeDay: parsedChargeDay,
+            dueDay: parsedDueDay,
+            isActive: editingFixedExpense.is_active,
+          })
+        } else {
+          await createFixedExpenseMutation.mutateAsync({
+            name: title.trim(),
+            amount: parsedAmount,
+            categoryId: fixedCategoryId,
+            chargeDay: parsedChargeDay,
+            dueDay: parsedDueDay,
+            isActive: true,
+          })
+        }
         onSuccess?.()
       } catch (error) {
         const message = error instanceof Error
           ? error.message
-          : "No se pudo crear el gasto fijo."
+          : isEditingFixedExpense
+            ? "No se pudo actualizar el gasto fijo."
+            : "No se pudo crear el gasto fijo."
         Alert.alert("Error", message)
       }
       return
@@ -265,8 +310,8 @@ export function CreateTransactionForm({
   }
 
   function openFixedCategorySelector() {
-    if (!selectedHouseholdId) return
-    setActiveCategoryHouseholdId(selectedHouseholdId)
+    if (!fixedCategoryHouseholdId) return
+    setActiveCategoryHouseholdId(fixedCategoryHouseholdId)
     categorySelectorRef.current?.present()
   }
 
@@ -326,16 +371,18 @@ export function CreateTransactionForm({
 
   return (
     <View style={styles.container}>
-      <SegmentedToggle
-        value={mode}
-        options={[
-          { value: "income", label: "Ingreso" },
-          { value: "expense", label: "Gasto" },
-          { value: "fixed", label: "Gasto Fijo" },
-        ]}
-        onChange={handleModeChange}
-        width="100%"
-      />
+          {!isEditingFixedExpense ? (
+            <SegmentedToggle
+              value={mode}
+              options={[
+                { value: "income", label: "Ingreso" },
+                { value: "expense", label: "Gasto" },
+                { value: "fixed", label: "Gasto Fijo" },
+              ]}
+              onChange={handleModeChange}
+              width="100%"
+            />
+          ) : null}
 
       <View style={styles.fieldsStack}>
       <TextInput
@@ -444,14 +491,26 @@ export function CreateTransactionForm({
       </View>
 
       <Pressable
-        style={[styles.button, (createTransactionMutation.isPending || createFixedExpenseMutation.isPending) && styles.buttonDisabled]}
-        onPress={handleCreate}
-        disabled={createTransactionMutation.isPending || createFixedExpenseMutation.isPending}
+        style={[styles.button, (
+          isEditingFixedExpense
+            ? updateFixedExpenseMutation.isPending
+            : createTransactionMutation.isPending || createFixedExpenseMutation.isPending
+        ) && styles.buttonDisabled]}
+        onPress={handleSubmit}
+        disabled={isEditingFixedExpense
+          ? updateFixedExpenseMutation.isPending
+          : createTransactionMutation.isPending || createFixedExpenseMutation.isPending}
       >
         <Text style={styles.buttonText}>
-          {createTransactionMutation.isPending || createFixedExpenseMutation.isPending
+          {(
+            isEditingFixedExpense
+              ? updateFixedExpenseMutation.isPending
+              : createTransactionMutation.isPending || createFixedExpenseMutation.isPending
+          )
             ? "Guardando..."
-            : "Guardar movimiento"}
+            : isEditingFixedExpense
+              ? "Guardar cambios"
+              : "Guardar movimiento"}
         </Text>
       </Pressable>
       </View>

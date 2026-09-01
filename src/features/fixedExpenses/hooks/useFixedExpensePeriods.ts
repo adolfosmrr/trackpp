@@ -11,15 +11,17 @@ export function getCurrentFixedExpensePeriod() {
   return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-01`
 }
 
-export function useFixedExpensePeriods(enabled = true) {
+export function useFixedExpensePeriods(
+  enabled = true,
+  requestedPeriod = getCurrentFixedExpensePeriod()
+) {
   const householdId = useHouseholdStore(
     (state) => state.selectedHouseholdId
   )
-  const period = getCurrentFixedExpensePeriod()
 
   const query = useQuery({
-    queryKey: ["fixed-expense-periods", householdId, period],
-    queryFn: () => getFixedExpensePeriods(householdId!, period),
+    queryKey: ["fixed-expense-periods", householdId, requestedPeriod],
+    queryFn: () => getFixedExpensePeriods(householdId!, requestedPeriod),
     enabled: Boolean(householdId) && enabled,
   })
 

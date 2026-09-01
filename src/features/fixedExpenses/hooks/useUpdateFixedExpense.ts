@@ -8,6 +8,7 @@ import type { FixedExpenseInput } from "../types"
 
 type UpdateValues = FixedExpenseInput & {
   fixedExpenseId: string
+  period: string
 }
 
 export function useUpdateFixedExpense() {
@@ -17,8 +18,8 @@ export function useUpdateFixedExpense() {
   )
 
   return useMutation({
-    mutationFn: ({ fixedExpenseId, ...input }: UpdateValues) =>
-      updateFixedExpense(fixedExpenseId, input),
+    mutationFn: ({ fixedExpenseId, period, ...input }: UpdateValues) =>
+      updateFixedExpense(fixedExpenseId, input, period),
     onSuccess: () => {
       void queryClient.invalidateQueries({
         queryKey: ["fixed-expenses", householdId],

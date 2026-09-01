@@ -3,10 +3,12 @@ import type { ReactNode } from "react"
 import { BottomSheetModal } from "@gorhom/bottom-sheet"
 
 import { CreateTransactionBottomSheet } from "./CreateTransactionBottomSheet"
-import type { CreateMovementMode } from "../types"
+import type { CreateMovementMode, TransactionSheetRequest } from "../types"
+import type { FixedExpense } from "../../fixedExpenses/types"
 
 type CreateTransactionSheetContextValue = {
   openCreateTransaction: (initialMode?: CreateMovementMode) => void
+  openEditFixedExpense: (fixedExpense: FixedExpense, period: string) => void
 }
 
 const CreateTransactionSheetContext = createContext<CreateTransactionSheetContextValue | null>(null)
@@ -14,7 +16,10 @@ const CreateTransactionSheetContext = createContext<CreateTransactionSheetContex
 export function CreateTransactionSheetProvider({ children }: { children: ReactNode }) {
   const bottomSheetModalRef = useRef<BottomSheetModal>(null)
   const [mounted, setMounted] = useState(false)
-  const [initialMode, setInitialMode] = useState<CreateMovementMode>("expense")
+  const [request, setRequest] = useState<TransactionSheetRequest>({
+    kind: "create",
+    initialMode: "expense",
+  })
 
   useEffect(() => {
     if (!mounted) return
@@ -24,7 +29,12 @@ export function CreateTransactionSheetProvider({ children }: { children: ReactNo
   }, [mounted])
 
   function openCreateTransaction(nextMode: CreateMovementMode = "expense") {
-    setInitialMode(nextMode)
+    setRequest({ kind: "create", initialMode: nextMode })
+    setMounted(true)
+  }
+
+  function openEditFixedExpense(fixedExpense: FixedExpense, period: string) {
+    setRequest({ kind: "edit-fixed", fixedExpense, period })
     setMounted(true)
   }
 
@@ -33,12 +43,17 @@ export function CreateTransactionSheetProvider({ children }: { children: ReactNo
   }
 
   return (
-    <CreateTransactionSheetContext.Provider value={{ openCreateTransaction }}>
+    <CreateTransactionSheetContext.Provider
+      value={{ openCreateTransaction, openEditFixedExpense }}
+    >
       {children}
       {mounted ? (
         <CreateTransactionBottomSheet
+          key={request.kind === "edit-fixed"
+            ? `edit-fixed-${request.fixedExpense.id}-${request.period}`
+            : `create-${request.initialMode}`}
           ref={bottomSheetModalRef}
-          initialMode={initialMode}
+          request={request}
           onDismiss={handleDismiss}
           onSuccess={() => bottomSheetModalRef.current?.dismiss()}
         />

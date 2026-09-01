@@ -1,6 +1,7 @@
 import { Alert, ActivityIndicator, Text, View } from "react-native"
 
 import { FixedExpenseForm } from "../components/FixedExpenseForm"
+import { getCurrentFixedExpensePeriod } from "../hooks/useFixedExpensePeriods"
 import { useFixedExpenses } from "../hooks/useFixedExpenses"
 import { useUpdateFixedExpense } from "../hooks/useUpdateFixedExpense"
 import type { FixedExpenseInput } from "../types"
@@ -14,7 +15,11 @@ export function EditFixedExpenseScreen({ route, navigation }: any) {
     if (!expense) return
 
     try {
-      await mutation.mutateAsync({ fixedExpenseId: expense.id, ...values })
+      await mutation.mutateAsync({
+        fixedExpenseId: expense.id,
+        period: route.params.period ?? getCurrentFixedExpensePeriod(),
+        ...values,
+      })
       navigation.goBack()
     } catch (error) {
       Alert.alert("Error", error instanceof Error ? error.message : "No se pudo actualizar el gasto fijo.")
