@@ -4,25 +4,19 @@ import {
   View,
   Text,
   Pressable,
-  TextInput,
   ScrollView,
   StyleSheet,
   ActivityIndicator,
   Alert,
-  Modal,
   LayoutChangeEvent,
 } from "react-native"
 
 import { useBudgets } from "../hooks/useBudgets"
-import { useCreateBudget } from "../hooks/useCreateBudget"
-import { useUpdateBudget } from "../hooks/useUpdateBudget"
 import { useDeleteBudget } from "../hooks/useDeleteBudget"
-
-import { useCategories } from "../../categories/hooks/useCategories"
-
-import type { BudgetWithProgress } from "../types"
 import { useProfile } from "../../profile/hooks/useProfile"
 import { useDashboard } from "../../dashboard/hooks/useDashboard"
+import { useBudgetSheet } from "../components/BudgetSheetProvider"
+import { BudgetSheetProvider } from "../components/BudgetSheetProvider"
 import { ScreenContainer } from "../../../components/layout/ScreenContainer"
 import { TopSection } from "../../../components/layout/TopSection"
 import { TopSectionHeader } from "../../../components/layout/TopSectionHeader"
@@ -31,6 +25,14 @@ import { HomeGreeting } from "../../home/components/HomeGreeting"
 import { HomeIncomeExpenseSummary } from "../../home/components/HomeIncomeExpenseSummary"
 
 export function BudgetsScreen() {
+  return (
+    <BudgetSheetProvider>
+      <BudgetsScreenContent />
+    </BudgetSheetProvider>
+  )
+}
+
+function BudgetsScreenContent() {
   const [topSectionHeight, setTopSectionHeight] = useState(0)
   const { data: profile, isLoading: profileLoading, error: profileError } = useProfile()
   const { data: dashboard, isLoading: dashboardLoading, error: dashboardError } = useDashboard()
@@ -40,121 +42,12 @@ export function BudgetsScreen() {
     error: budgetsError,
   } = useBudgets()
 
-  const {
-    data: categories,
-    isLoading: categoriesLoading,
-  } = useCategories("expense")
-
-  const createBudgetMutation = useCreateBudget()
-  const updateBudgetMutation = useUpdateBudget()
   const deleteBudgetMutation = useDeleteBudget()
-
-  const [selectedCategoryId, setSelectedCategoryId] =
-    useState<string | null>(null)
-
-  const [amount, setAmount] = useState("")
-
-  const [editingBudget, setEditingBudget] =
-    useState<BudgetWithProgress | null>(null)
-
-  const [editingAmount, setEditingAmount] =
-    useState("")
+  const { openCreateBudget, openEditBudget } = useBudgetSheet()
 
   function handleTopSectionLayout(event: LayoutChangeEvent) {
     const height = event.nativeEvent.layout.height
     setTopSectionHeight((current) => current || height)
-  }
-
-  async function handleCreateBudget() {
-    if (!selectedCategoryId) {
-      Alert.alert(
-        "Error",
-        "Selecciona una categoría."
-      )
-      return
-    }
-
-    const parsedAmount = Number(
-      amount.replace(",", ".")
-    )
-
-    if (!parsedAmount || parsedAmount <= 0) {
-      Alert.alert(
-        "Error",
-        "Escribe un monto válido."
-      )
-      return
-    }
-
-    try {
-      await createBudgetMutation.mutateAsync({
-        categoryId: selectedCategoryId,
-        amount: parsedAmount,
-      })
-
-      setSelectedCategoryId(null)
-      setAmount("")
-    } catch (error) {
-      if (__DEV__) {
-        console.error("[Budget] create error:", {
-          message:
-            error instanceof Error
-              ? error.message
-              : undefined,
-        })
-      }
-
-      const message =
-        error instanceof Error
-          ? error.message
-          : "No se pudo crear el presupuesto."
-
-      Alert.alert("Error", message)
-    }
-  }
-
-  function handleEditBudget(
-    budget: BudgetWithProgress
-  ) {
-    setEditingBudget(budget)
-    setEditingAmount(
-      String(budget.amount)
-    )
-  }
-
-  async function handleSaveEdit() {
-    if (!editingBudget) {
-      return
-    }
-
-    const parsedAmount = Number(
-      editingAmount.replace(",", ".")
-    )
-
-    if (!parsedAmount || parsedAmount <= 0) {
-      Alert.alert(
-        "Error",
-        "Escribe un monto válido."
-      )
-      return
-    }
-
-    try {
-      await updateBudgetMutation.mutateAsync({
-        budgetId: editingBudget.id,
-        amount: parsedAmount,
-      })
-
-      setEditingBudget(null)
-      setEditingAmount("")
-    } catch (error) {
-      const message =
-        error instanceof Error
-          ? error.message
-          : "No se pudo actualizar el presupuesto."
-
-      Alert.alert("Error", message)
-    }
   }
 
   function handleDeleteBudget(
@@ -195,7 +88,6 @@ export function BudgetsScreen() {
 
   if (
     budgetsLoading ||
-    categoriesLoading ||
     profileLoading ||
     dashboardLoading
   ) {
@@ -224,84 +116,18 @@ export function BudgetsScreen() {
           contentContainerStyle={styles.content}
         >
           <View style={{ height: topSectionHeight }} />
+          <View style={styles.budgetSection}>
+            <View style={styles.budgetContent}>
         <Text style={styles.title}>
-          Presupuesto del mes
+          Presupuesto{'\n'}del mes
         </Text>
-
-        <Text style={styles.label}>
-          Categoría
-        </Text>
-
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={
-            false
-          }
-          contentContainerStyle={
-            styles.categories
-          }
-        >
-          {categories?.map(
-            (category) => {
-              const selected =
-                selectedCategoryId ===
-                category.id
-
-              return (
-                <Pressable
-                  key={category.id}
-                  style={[
-                    styles.category,
-                    selected &&
-                      styles.categorySelected,
-                  ]}
-                  onPress={() =>
-                    setSelectedCategoryId(
-                      category.id
-                    )
-                  }
-                >
-                  <Text
-                    style={[
-                      styles.categoryText,
-                      selected &&
-                        styles.categoryTextSelected,
-                    ]}
-                  >
-                    {category.icon
-                      ? `${category.icon} `
-                      : ""}
-                    {category.name}
-                  </Text>
-                </Pressable>
-              )
-            }
-          )}
-        </ScrollView>
-
-        <TextInput
-          style={styles.input}
-          placeholder="Monto mensual"
-          keyboardType="decimal-pad"
-          value={amount}
-          onChangeText={setAmount}
-        />
 
         <Pressable
-          style={[
-            styles.button,
-            createBudgetMutation.isPending &&
-              styles.buttonDisabled,
-          ]}
-          onPress={handleCreateBudget}
-          disabled={
-            createBudgetMutation.isPending
-          }
+          style={styles.createBudgetButton}
+          onPress={openCreateBudget}
         >
-          <Text style={styles.buttonText}>
-            {createBudgetMutation.isPending
-              ? "Guardando..."
-              : "Crear presupuesto"}
+          <Text style={styles.createBudgetButtonText}>
+            Crear presupuesto
           </Text>
         </Pressable>
 
@@ -388,9 +214,7 @@ export function BudgetsScreen() {
                 >
                   <Pressable
                     onPress={() =>
-                      handleEditBudget(
-                        budget
-                      )
+                      openEditBudget(budget)
                     }
                   >
                     <Text
@@ -427,86 +251,10 @@ export function BudgetsScreen() {
             </Text>
           )}
         </View>
+            </View>
+          </View>
         </ScrollView>
       </ScreenContainer>
-
-      <Modal
-        visible={!!editingBudget}
-        transparent
-        animationType="fade"
-        onRequestClose={() =>
-          setEditingBudget(null)
-        }
-      >
-        <View
-          style={styles.modalOverlay}
-        >
-          <View
-            style={styles.modalContent}
-          >
-            <Text
-              style={styles.modalTitle}
-            >
-              Editar presupuesto
-            </Text>
-
-            <Text
-              style={styles.modalCategory}
-            >
-              {editingBudget?.category
-                .icon ?? ""}{" "}
-              {editingBudget?.category
-                .name ?? ""}
-            </Text>
-
-            <TextInput
-              style={styles.input}
-              placeholder="Nuevo monto"
-              keyboardType="decimal-pad"
-              value={editingAmount}
-              onChangeText={
-                setEditingAmount
-              }
-            />
-
-            <Pressable
-              style={[
-                styles.button,
-                updateBudgetMutation.isPending &&
-                  styles.buttonDisabled,
-              ]}
-              onPress={handleSaveEdit}
-              disabled={
-                updateBudgetMutation.isPending
-              }
-            >
-              <Text
-                style={styles.buttonText}
-              >
-                {updateBudgetMutation.isPending
-                  ? "Guardando..."
-                  : "Guardar cambios"}
-              </Text>
-            </Pressable>
-
-            <Pressable
-              style={
-                styles.cancelButton
-              }
-              onPress={() => {
-                setEditingBudget(null)
-                setEditingAmount("")
-              }}
-            >
-              <Text
-                style={styles.cancelText}
-              >
-                Cancelar
-              </Text>
-            </Pressable>
-          </View>
-        </View>
-      </Modal>
 
       <TopSection
         mode="collapsed"
@@ -578,12 +326,23 @@ const styles =
 
     container: {
       flex: 1,
+      marginTop: 30
     },
 
     content: {
-      padding: 24,
-      gap: 18,
       paddingBottom: 40,
+    },
+
+    budgetSection: {
+      backgroundColor: "#E6E6E6",
+      borderTopLeftRadius: 60,
+      borderTopRightRadius: 60,
+      paddingTop: 50,
+    },
+
+    budgetContent: {
+      paddingHorizontal: 20,
+      gap: 18,
     },
 
     center: {
@@ -593,61 +352,26 @@ const styles =
     },
 
     title: {
-      fontSize: 26,
+      fontSize: 40,
+      lineHeight: 40,
       fontWeight: "700",
     },
 
-    label: {
-      fontSize: 16,
-      fontWeight: "600",
-    },
-
-    categories: {
-      gap: 10,
-    },
-
-    category: {
-      paddingHorizontal: 14,
-      paddingVertical: 10,
-      borderWidth: 1,
-      borderColor: "#ccc",
+    createBudgetButton: {
+      width: "100%",
+      backgroundColor: "#000000",
       borderRadius: 999,
-    },
-
-    categorySelected: {
-      backgroundColor: "#111",
-      borderColor: "#111",
-    },
-
-    categoryText: {
-      fontWeight: "500",
-    },
-
-    categoryTextSelected: {
-      color: "#fff",
-    },
-
-    input: {
-      borderWidth: 1,
-      borderColor: "#ccc",
-      borderRadius: 10,
-      padding: 14,
-    },
-
-    button: {
-      backgroundColor: "#111",
-      padding: 16,
-      borderRadius: 10,
+      paddingHorizontal: 20,
+      paddingVertical: 15,
       alignItems: "center",
+      justifyContent: "center",
     },
 
-    buttonDisabled: {
-      opacity: 0.6,
-    },
-
-    buttonText: {
-      color: "#fff",
-      fontWeight: "700",
+    createBudgetButtonText: {
+      color: "#FFFFFF",
+      fontFamily: "FamiljenGrotesk-Bold",
+      fontSize: 16,
+      lineHeight: 16,
     },
 
     list: {
@@ -720,40 +444,4 @@ const styles =
       paddingVertical: 30,
     },
 
-    modalOverlay: {
-      flex: 1,
-      backgroundColor:
-        "rgba(0, 0, 0, 0.35)",
-      alignItems: "center",
-      justifyContent: "center",
-      padding: 24,
-    },
-
-    modalContent: {
-      width: "100%",
-      backgroundColor: "#fff",
-      borderRadius: 18,
-      padding: 20,
-      gap: 16,
-    },
-
-    modalTitle: {
-      fontSize: 22,
-      fontWeight: "700",
-    },
-
-    modalCategory: {
-      fontSize: 16,
-      color: "#777",
-    },
-
-    cancelButton: {
-      padding: 14,
-      alignItems: "center",
-    },
-
-    cancelText: {
-      fontWeight: "600",
-      color: "#777",
-    },
   })

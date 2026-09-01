@@ -34,6 +34,10 @@ export type BudgetWithProgress = Budget & {
   progressPercentage: number
 }
 
+export type BudgetSheetRequest =
+  | { kind: "create" }
+  | { kind: "edit"; budget: Budget }
+
 export type CreateBudgetInput = {
   householdId: string
   categoryId: string
