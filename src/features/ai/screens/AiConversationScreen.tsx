@@ -19,6 +19,8 @@ import Svg, {
 
 import { ApiError } from "../../../services/api"
 import { useHouseholdStore } from "../../../store/householdStore"
+import { SiriProvider } from "../../../components/organisms/apple-intelligence"
+import { useSiri } from "../../../components/organisms/apple-intelligence/context"
 import { useFinancialChat } from "../hooks/useFinancialChat"
 
 const suggestions = [
@@ -31,6 +33,14 @@ const suggestions = [
 ]
 
 export function AiConversationScreen({ route }: any) {
+  return (
+    <SiriProvider>
+      <AiConversationContent route={route} />
+    </SiriProvider>
+  )
+}
+
+function AiConversationContent({ route }: any) {
   const insets = useSafeAreaInsets()
   const householdId = useHouseholdStore((state) => state.selectedHouseholdId)
   const [conversationId, setConversationId] = useState<string | null>(
@@ -39,6 +49,7 @@ export function AiConversationScreen({ route }: any) {
   const [input, setInput] = useState("")
   const { messages, sendMessage, isPending, error, isLoadingMessages } =
     useFinancialChat(conversationId, setConversationId)
+  const { toggle, isActive } = useSiri()
   const errorMessage =
     error instanceof ApiError && error.code === "AI_DAILY_LIMIT_REACHED"
       ? "Estás haciendo demasiadas preguntas. Intenta nuevamente en un momento."
@@ -47,6 +58,14 @@ export function AiConversationScreen({ route }: any) {
   useEffect(() => {
     setConversationId(route.params?.conversationId ?? null)
   }, [route.params?.conversationId])
+
+  useEffect(() => {
+    if (isPending && !isActive) {
+      void toggle()
+    } else if (!isPending && isActive) {
+      void toggle()
+    }
+  }, [isActive, isPending, toggle])
 
   function handleSend() {
     if (sendMessage(input)) {
