@@ -28,6 +28,7 @@ export async function getFixedExpenses(
       )
     `)
     .eq("household_id", householdId)
+    .eq("is_active", true)
     .order("due_day", { ascending: true })
     .order("name", { ascending: true })
 

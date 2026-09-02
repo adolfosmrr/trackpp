@@ -4,14 +4,14 @@ import {
   Pressable,
   StyleSheet,
   Text,
-  TextInput,
   View,
   useWindowDimensions,
 } from "react-native"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import {
   BottomSheetModal,
-  BottomSheetView,
+  BottomSheetScrollView,
+  BottomSheetTextInput,
 } from "@gorhom/bottom-sheet"
 
 import { useCategories } from "../../categories/hooks/useCategories"
@@ -52,9 +52,11 @@ export const BudgetBottomSheet = forwardRef<
       onDismiss={onDismiss}
       backdropComponent={(props) => <TransactionBlurBackdrop {...props} />}
     >
-      <BottomSheetView style={{ paddingBottom: insets.bottom + 16 }}>
+      <BottomSheetScrollView
+        contentContainerStyle={{ paddingBottom: insets.bottom + 16 }}
+      >
         <BudgetForm request={request} onSuccess={onSuccess} />
-      </BottomSheetView>
+      </BottomSheetScrollView>
     </BottomSheetModal>
   )
 })
@@ -159,7 +161,7 @@ function BudgetForm({
       </Text>
 
       <View style={styles.fieldsStack}>
-        <TextInput
+        <BottomSheetTextInput
           style={[styles.field, styles.input]}
           placeholder="Nombre del presupuesto"
           placeholderTextColor="rgba(28, 28, 28, 0.5)"
@@ -189,7 +191,7 @@ function BudgetForm({
           </View>
         </Pressable>
 
-        <TextInput
+        <BottomSheetTextInput
           style={[styles.field, styles.input]}
           placeholder={isCreate ? "Monto mensual" : "Nuevo monto"}
           placeholderTextColor="rgba(28, 28, 28, 0.5)"

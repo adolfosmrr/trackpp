@@ -56,5 +56,6 @@ export function useUnreadActivity(
       : 0,
     markAsSeen: markSeenMutation.mutateAsync,
     isMarkingSeen: markSeenMutation.isPending,
+    refetch: unreadQuery.refetch,
   }
 }

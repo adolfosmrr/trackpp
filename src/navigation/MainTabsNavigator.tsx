@@ -9,14 +9,18 @@ import { useHouseholds } from "../features/households/hooks/useHouseholds"
 import { useHouseholdStore } from "../store/householdStore"
 import { useActivityRealtime } from "../features/activity/hooks/useActivityRealtime"
 import { useFixedExpenseNotificationSync } from "../features/fixedExpenses/hooks/useFixedExpenseNotificationSync"
+import {
+    withMainTabsSwipe,
+    type MainTabsParamList,
+} from "./MainTabsSwipeContainer"
 
-export type MainTabsParamList = {
-    Home: undefined
-    Transactions: undefined
-    AiChat: undefined
-    Budgets: undefined
-    Profile: undefined
-}
+const SwipeHomeScreen = withMainTabsSwipe(HomeScreen)
+const SwipeTransactionsScreen = withMainTabsSwipe(TransactionsScreen)
+const SwipeAiChatScreen = withMainTabsSwipe(AiChatScreen)
+const SwipeBudgetsScreen = withMainTabsSwipe(BudgetsScreen)
+const SwipeProfileScreen = withMainTabsSwipe(ProfileScreen)
+
+export type { MainTabsParamList } from "./MainTabsSwipeContainer"
 
 const Tab = createNativeBottomTabNavigator<MainTabsParamList>()
 
@@ -41,7 +45,7 @@ export function MainTabsNavigator() {
         >
             <Tab.Screen
                 name="Home"
-                component={HomeScreen}
+                component={SwipeHomeScreen}
                 options={{
                     title: "Inicio",
                     tabBarIcon: ({ focused }) => ({
@@ -53,7 +57,7 @@ export function MainTabsNavigator() {
 
             <Tab.Screen
                 name="Transactions"
-                component={TransactionsScreen}
+                component={SwipeTransactionsScreen}
                 options={{
                     title: "Movimientos",
                     tabBarIcon: ({ focused }) => ({
@@ -67,7 +71,7 @@ export function MainTabsNavigator() {
 
             <Tab.Screen
                 name="AiChat"
-                component={AiChatScreen}
+                component={SwipeAiChatScreen}
                 options={{
                     title: "AI",
                     tabBarIcon: ({ focused }) => ({
@@ -79,7 +83,7 @@ export function MainTabsNavigator() {
 
             <Tab.Screen
                 name="Budgets"
-                component={BudgetsScreen}
+                component={SwipeBudgetsScreen}
                 options={{
                     title: "Presupuesto",
                     tabBarIcon: ({ focused }) => ({
@@ -91,7 +95,7 @@ export function MainTabsNavigator() {
 
             <Tab.Screen
                 name="Profile"
-                component={ProfileScreen}
+                component={SwipeProfileScreen}
                 options={{
                     title: "Perfil",
                     tabBarIcon: ({ focused }) => ({

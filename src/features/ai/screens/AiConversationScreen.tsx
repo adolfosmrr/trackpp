@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react"
 import {
   ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -74,7 +76,10 @@ function AiConversationContent({ route }: any) {
   }
 
   return (
-    <View style={styles.container}>
+    <KeyboardAvoidingView
+      style={styles.container}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+    >
       <ScrollView
         style={styles.messages}
         contentContainerStyle={styles.messagesContent}
@@ -174,7 +179,7 @@ function AiConversationContent({ route }: any) {
           </Pressable>
         </View>
       </View>
-    </View>
+    </KeyboardAvoidingView>
   )
 }
 

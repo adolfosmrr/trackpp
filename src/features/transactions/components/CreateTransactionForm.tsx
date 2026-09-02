@@ -4,10 +4,14 @@ import {
   Pressable,
   StyleSheet,
   Text,
-  TextInput,
   View,
 } from "react-native"
-import { BottomSheetModal } from "@gorhom/bottom-sheet"
+import {
+  BottomSheetModal,
+  BottomSheetTextInput,
+} from "@gorhom/bottom-sheet"
+import { Gesture, GestureDetector } from "react-native-gesture-handler"
+import { runOnJS, useSharedValue } from "react-native-reanimated"
 
 import { useHouseholds } from "../../households/hooks/useHouseholds"
 import { useHouseholdStore } from "../../../store/householdStore"
@@ -27,6 +31,13 @@ import type {
   TransactionSheetRequest,
 } from "../types"
 
+const MODE_ORDER: CreateMovementMode[] = ["expense", "income", "fixed"]
+const MODE_GESTURE_ACTIVATION_DISTANCE = 36
+const MODE_SWIPE_DISTANCE = 70
+const MODE_SWIPE_VELOCITY = 650
+const MODE_HORIZONTAL_INTENT_RATIO = 1.3
+const MODE_VERTICAL_FAIL_DISTANCE = 26
+
 type CreateTransactionFormProps = {
   onSuccess?: () => void
   request: TransactionSheetRequest
@@ -44,6 +55,7 @@ export function CreateTransactionForm({
     ? "fixed"
     : request.initialMode
   const [mode, setMode] = useState<CreateMovementMode>(initialMode)
+  const modeGestureCommitted = useSharedValue(false)
   const [title, setTitle] = useState(editingFixedExpense?.name ?? "")
   const [amount, setAmount] = useState(
     editingFixedExpense ? String(editingFixedExpense.amount) : ""
@@ -157,6 +169,56 @@ export function CreateTransactionForm({
       setActiveCategoryHouseholdId(null)
     }
   }
+
+  function handleModeSwipe(
+    translationX: number,
+    translationY: number,
+    velocityX: number,
+  ) {
+    if (modeGestureCommitted.value) return
+
+    const horizontalDistance = Math.abs(translationX)
+    const verticalDistance = Math.abs(translationY)
+    const isClearlyHorizontal =
+      horizontalDistance >= verticalDistance * MODE_HORIZONTAL_INTENT_RATIO
+    const hasEnoughIntent =
+      horizontalDistance >= MODE_SWIPE_DISTANCE ||
+      Math.abs(velocityX) >= MODE_SWIPE_VELOCITY
+
+    if (!isClearlyHorizontal || !hasEnoughIntent) return
+
+    const currentIndex = MODE_ORDER.indexOf(mode)
+    const nextIndex = translationX < 0 ? currentIndex + 1 : currentIndex - 1
+    const nextMode = MODE_ORDER[nextIndex]
+
+    if (!nextMode) return
+
+    modeGestureCommitted.value = true
+    handleModeChange(nextMode)
+  }
+
+  const nativeGesture = Gesture.Native().shouldCancelWhenOutside(false)
+  const modeGesture = Gesture.Pan()
+    .simultaneousWithExternalGesture(nativeGesture)
+    .enabled(!isEditingFixedExpense)
+    .activeOffsetX([
+      -MODE_GESTURE_ACTIVATION_DISTANCE,
+      MODE_GESTURE_ACTIVATION_DISTANCE,
+    ])
+    .failOffsetY([
+      -MODE_VERTICAL_FAIL_DISTANCE,
+      MODE_VERTICAL_FAIL_DISTANCE,
+    ])
+    .onBegin(() => {
+      modeGestureCommitted.value = false
+    })
+    .onEnd((event) => {
+      runOnJS(handleModeSwipe)(
+        event.translationX,
+        event.translationY,
+        event.velocityX,
+      )
+    })
 
   async function handleSubmit() {
     if (!title.trim()) {
@@ -370,7 +432,8 @@ export function CreateTransactionForm({
   }
 
   return (
-    <View style={styles.container}>
+    <GestureDetector gesture={Gesture.Simultaneous(modeGesture, nativeGesture)}>
+      <View style={styles.container}>
           {!isEditingFixedExpense ? (
             <SegmentedToggle
               value={mode}
@@ -385,14 +448,14 @@ export function CreateTransactionForm({
           ) : null}
 
       <View style={styles.fieldsStack}>
-      <TextInput
+      <BottomSheetTextInput
         style={[styles.field, styles.input]}
         placeholder="Título"
         placeholderTextColor="rgba(28, 28, 28, 0.5)"
         value={title}
         onChangeText={setTitle}
       />
-      <TextInput
+      <BottomSheetTextInput
         style={[styles.field, styles.input]}
         placeholder="Monto"
         placeholderTextColor="rgba(28, 28, 28, 0.5)"
@@ -406,7 +469,7 @@ export function CreateTransactionForm({
           {renderFixedCategoryField()}
           <View style={[styles.field, styles.dayField]}>
             <Text style={styles.dayFieldLabel}>Día de cobro</Text>
-            <TextInput
+            <BottomSheetTextInput
               style={styles.dayInput}
               keyboardType="number-pad"
               maxLength={2}
@@ -416,7 +479,7 @@ export function CreateTransactionForm({
           </View>
           <View style={[styles.field, styles.dayField]}>
             <Text style={styles.dayFieldLabel}>Día de vencimiento</Text>
-            <TextInput
+            <BottomSheetTextInput
               style={styles.dayInput}
               keyboardType="number-pad"
               maxLength={2}
@@ -514,7 +577,8 @@ export function CreateTransactionForm({
         </Text>
       </Pressable>
       </View>
-    </View>
+      </View>
+    </GestureDetector>
   )
 }
 

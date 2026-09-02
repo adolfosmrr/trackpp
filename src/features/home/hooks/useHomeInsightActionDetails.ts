@@ -12,6 +12,7 @@ export type HomeInsightActionDetailsResult = {
   actionDetails: Record<string, InsightActionDetail | undefined>
   isLoading: boolean
   error?: Error
+  refetch: () => Promise<unknown[]>
 }
 
 export function useHomeInsightActionDetails(
@@ -55,6 +56,7 @@ export function useHomeInsightActionDetails(
     error: queryWithError?.error
       ? toError(queryWithError.error)
       : undefined,
+    refetch: () => Promise.all(relevantQueries.map((query) => query!.refetch())),
   }
 }
 

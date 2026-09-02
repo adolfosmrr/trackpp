@@ -4,6 +4,7 @@ import { useIsFocused } from "@react-navigation/native"
 import {
   AccessibilityInfo,
   LayoutChangeEvent,
+  RefreshControl,
   View,
   Text,
   Pressable,
@@ -92,7 +93,10 @@ export function HomeScreen({
   const [isExpanded, setIsExpanded] = useState(false)
   const [isUpcomingPaymentsExpanded, setIsUpcomingPaymentsExpanded] = useState(false)
   const [topSectionHeight, setTopSectionHeight] = useState(0)
+  const [expandedTopSectionHeightValue, setExpandedTopSectionHeightValue] = useState(0)
+  const [collapsedTopSectionHeightValue, setCollapsedTopSectionHeightValue] = useState<number | null>(null)
   const [reduceMotionEnabled, setReduceMotionEnabled] = useState(false)
+  const [refreshing, setRefreshing] = useState(false)
   const topSectionLayoutTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const lastTopSectionLog = useRef<string | null>(null)
   const isCollapsedRef = useRef(false)
@@ -207,6 +211,7 @@ export function HomeScreen({
     if (actualLayoutHeight > 0 && topSectionHeight === 0) {
       expandedTopSectionHeight.current = actualLayoutHeight
       expandedTopSectionHeightShared.value = actualLayoutHeight
+      setExpandedTopSectionHeightValue(actualLayoutHeight)
       setTopSectionHeight(actualLayoutHeight)
     }
 
@@ -223,9 +228,15 @@ export function HomeScreen({
       if (state === "expanded") {
         expandedTopSectionHeight.current = stableHeight
         expandedTopSectionHeightShared.value = stableHeight
+        setExpandedTopSectionHeightValue((current) =>
+          current === stableHeight ? current : stableHeight
+        )
       } else {
         collapsedTopSectionHeight.current = stableHeight
         collapsedTopSectionHeightShared.value = stableHeight
+        setCollapsedTopSectionHeightValue((current) =>
+          current === stableHeight ? current : stableHeight
+        )
       }
 
       const signature = `${state}:${stableHeight}`
@@ -255,28 +266,31 @@ export function HomeScreen({
         state.setSelectedHouseholdId
     )
 
+  const profileQuery = useProfile()
   const {
     data: profile,
     isLoading: profileLoading,
     error: profileError,
-  } = useProfile()
+  } = profileQuery
 
+  const householdsQuery = useHouseholds()
   const {
     data: memberships,
     isLoading: householdsLoading,
     error: householdsError,
-  } = useHouseholds()
+  } = householdsQuery
 
   const currentHousehold = memberships?.find(
     (membership) => membership.household.id === selectedHouseholdId
   )?.household
   const displayName = profile?.name?.trim()
 
+  const activityQuery = useActivity(currentHousehold?.type === "couple")
   const {
     data: activity,
     isLoading: activityLoading,
     error: activityError,
-  } = useActivity(currentHousehold?.type === "couple")
+  } = activityQuery
 
   const isCoupleHousehold =
     currentHousehold?.type === "couple"
@@ -284,14 +298,17 @@ export function HomeScreen({
     unreadCount,
     markAsSeen,
     isMarkingSeen,
+    refetch: refetchUnreadActivity,
   } = useUnreadActivity(isCoupleHousehold)
 
+  const remindersQuery = useFixedExpenseReminders()
   const {
     data: reminders,
     error: remindersError,
-  } = useFixedExpenseReminders()
+  } = remindersQuery
   const homeInsightQuery = useHomeAiInsight()
-  const { actionDetails } = useHomeInsightActionDetails(homeInsightQuery.data)
+  const actionDetailsQuery = useHomeInsightActionDetails(homeInsightQuery.data)
+  const { actionDetails } = actionDetailsQuery
 
   useEffect(() => {
     if (!isFocused || !isCoupleHousehold) {
@@ -344,11 +361,12 @@ export function HomeScreen({
     setSelectedHouseholdId,
   ])
 
+  const dashboardQuery = useDashboard()
   const {
     data: dashboard,
     isLoading: dashboardLoading,
     error: dashboardError,
-  } = useDashboard()
+  } = dashboardQuery
   const displayedHomeAmounts = useDelayedHomeAmounts(
     {
       balance: dashboard?.balance ?? 0,
@@ -359,10 +377,34 @@ export function HomeScreen({
     !dashboardLoading && !!dashboard,
   )
 
+  const insightsQuery = useDashboardInsights()
   const {
     data: insights,
     error: insightsError,
-  } = useDashboardInsights()
+  } = insightsQuery
+
+  const refreshProgressOffset = isCollapsed
+    ? collapsedTopSectionHeightValue ?? expandedTopSectionHeightValue
+    : expandedTopSectionHeightValue
+
+  const handleRefresh = async () => {
+    setRefreshing(true)
+    try {
+      await Promise.all([
+        profileQuery.refetch(),
+        householdsQuery.refetch(),
+        dashboardQuery.refetch(),
+        insightsQuery.refetch(),
+        activityQuery.refetch(),
+        refetchUnreadActivity(),
+        remindersQuery.refetch(),
+        homeInsightQuery.refetch(),
+        actionDetailsQuery.refetch(),
+      ])
+    } finally {
+      setRefreshing(false)
+    }
+  }
 
   useEffect(() => {
     if (profileError) {
@@ -430,6 +472,16 @@ export function HomeScreen({
         <Animated.ScrollView
           onScroll={scrollHandler}
           scrollEventThrottle={16}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={handleRefresh}
+              progressViewOffset={refreshProgressOffset}
+              tintColor="#1C1C1C"
+              colors={["#1C1C1C"]}
+              progressBackgroundColor="#FFFFFF"
+            />
+          }
           style={[styles.scrollView, !topSectionHeight && styles.hiddenScroll]}
           contentContainerStyle={[
             styles.scrollContent,

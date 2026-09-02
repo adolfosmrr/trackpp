@@ -23,23 +23,26 @@ export function ProfileScreen({ navigation, }: any) {
     (state) => state.selectedHouseholdId
   )
 
+  const meQuery = useMe()
   const {
     data: backendUser,
     isLoading: backendUserLoading,
     error: backendUserError,
-  } = useMe()
+  } = meQuery
 
+  const profileQuery = useProfile()
   const {
     data: profile,
     isLoading: profileLoading,
     error: profileError,
-  } = useProfile()
+  } = profileQuery
 
+  const householdsQuery = useHouseholds()
   const {
     data: memberships,
     isLoading: householdsLoading,
     error: householdsError,
-  } = useHouseholds()
+  } = householdsQuery
 
   const currentHousehold = memberships?.find(
     (membership) =>

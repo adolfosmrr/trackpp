@@ -9,6 +9,7 @@ import {
   ActivityIndicator,
   Alert,
   LayoutChangeEvent,
+  RefreshControl,
 } from "react-native"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 
@@ -36,13 +37,17 @@ export function BudgetsScreen() {
 function BudgetsScreenContent() {
   const insets = useSafeAreaInsets()
   const [topSectionHeight, setTopSectionHeight] = useState(0)
-  const { data: profile, isLoading: profileLoading, error: profileError } = useProfile()
-  const { data: dashboard, isLoading: dashboardLoading, error: dashboardError } = useDashboard()
+  const [refreshing, setRefreshing] = useState(false)
+  const profileQuery = useProfile()
+  const { data: profile, isLoading: profileLoading, error: profileError } = profileQuery
+  const dashboardQuery = useDashboard()
+  const { data: dashboard, isLoading: dashboardLoading, error: dashboardError } = dashboardQuery
+  const budgetsQuery = useBudgets()
   const {
     data: budgets,
     isLoading: budgetsLoading,
     error: budgetsError,
-  } = useBudgets()
+  } = budgetsQuery
 
   const deleteBudgetMutation = useDeleteBudget()
   const { openCreateBudget, openEditBudget } = useBudgetSheet()
@@ -50,6 +55,19 @@ function BudgetsScreenContent() {
   function handleTopSectionLayout(event: LayoutChangeEvent) {
     const height = event.nativeEvent.layout.height
     setTopSectionHeight((current) => current || height)
+  }
+
+  async function handleRefresh() {
+    setRefreshing(true)
+    try {
+      await Promise.all([
+        profileQuery.refetch(),
+        dashboardQuery.refetch(),
+        budgetsQuery.refetch(),
+      ])
+    } finally {
+      setRefreshing(false)
+    }
   }
 
   function handleDeleteBudget(
@@ -116,6 +134,16 @@ function BudgetsScreenContent() {
         <ScrollView
           style={[styles.container, !topSectionHeight && styles.hiddenList]}
           contentContainerStyle={styles.content}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={handleRefresh}
+              progressViewOffset={topSectionHeight}
+              tintColor="#1C1C1C"
+              colors={["#1C1C1C"]}
+              progressBackgroundColor="#FFFFFF"
+            />
+          }
         >
           <View style={{ height: topSectionHeight }} />
           <View style={styles.budgetSection}>

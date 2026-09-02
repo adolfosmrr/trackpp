@@ -6,6 +6,7 @@ import {
   StyleSheet,
   ActivityIndicator,
   Alert,
+  RefreshControl,
 } from "react-native"
   import { useMemo, useState } from "react"
 
@@ -42,6 +43,7 @@ import { useCreateTransactionSheet } from "../components/CreateTransactionSheetP
     const [appliedFilters, setAppliedFilters] = useState(defaultTransactionFilters)
     const [draftFilters, setDraftFilters] = useState(defaultTransactionFilters)
     const [filtersVisible, setFiltersVisible] = useState(false)
+    const [refreshing, setRefreshing] = useState(false)
     const deleteMutation = useDeleteTransaction()
     const { openCreateTransaction } = useCreateTransactionSheet()
 
@@ -51,29 +53,33 @@ import { useCreateTransactionSheet } from "../components/CreateTransactionSheetP
     }
 
     const { user } = useAuth()
+    const profileQuery = useProfile()
     const {
       data: profile,
       isLoading: profileLoading,
       error: profileError,
-    } = useProfile()
+    } = profileQuery
+    const dashboardQuery = useDashboard()
     const {
       data: dashboard,
       isLoading: dashboardLoading,
       error: dashboardError,
-    } = useDashboard()
+    } = dashboardQuery
     const selectedHouseholdId = useHouseholdStore(
       (state) => state.selectedHouseholdId
     )
-    const { data: memberships } = useHouseholds()
+    const householdsQuery = useHouseholds()
+    const { data: memberships } = householdsQuery
     const currentHousehold = memberships?.find(
       (membership) => membership.household.id === selectedHouseholdId
     )?.household
 
+    const transactionsQuery = useTransactions()
     const {
       data: transactions,
       isLoading,
       error,
-    } = useTransactions()
+    } = transactionsQuery
     const transactionList = transactions ?? []
     const householdType = currentHousehold?.type === "couple" ? "couple" : "personal"
     const categories = useMemo(
@@ -85,6 +91,20 @@ import { useCreateTransactionSheet } from "../components/CreateTransactionSheetP
       [transactionList]
     )
     const activeFilterCount = getActiveFilterCount(appliedFilters, householdType)
+
+    async function handleRefresh() {
+      setRefreshing(true)
+      try {
+        await Promise.all([
+          profileQuery.refetch(),
+          dashboardQuery.refetch(),
+          householdsQuery.refetch(),
+          transactionsQuery.refetch(),
+        ])
+      } finally {
+        setRefreshing(false)
+      }
+    }
 
     function openFilters() {
       setDraftFilters(appliedFilters)
@@ -170,6 +190,16 @@ import { useCreateTransactionSheet } from "../components/CreateTransactionSheetP
           keyExtractor={(item) => item.id}
           style={!topSectionHeight ? styles.hiddenList : undefined}
           contentContainerStyle={styles.list}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={handleRefresh}
+              progressViewOffset={topSectionHeight}
+              tintColor="#1C1C1C"
+              colors={["#1C1C1C"]}
+              progressBackgroundColor="#FFFFFF"
+            />
+          }
           ListHeaderComponent={
             topSectionHeight > 0
               ? (

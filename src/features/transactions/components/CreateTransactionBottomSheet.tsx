@@ -3,7 +3,7 @@ import { StyleSheet, useWindowDimensions } from "react-native"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import {
   BottomSheetModal,
-  BottomSheetView,
+  BottomSheetScrollView,
 } from "@gorhom/bottom-sheet"
 
 import { CreateTransactionForm } from "./CreateTransactionForm"
@@ -37,11 +37,11 @@ export const CreateTransactionBottomSheet = forwardRef<
       onDismiss={onDismiss}
       backdropComponent={(props) => <TransactionBlurBackdrop {...props} />}
     >
-      <BottomSheetView
-        style={{ paddingBottom: insets.bottom + 16 }}
+      <BottomSheetScrollView
+        contentContainerStyle={{ paddingBottom: insets.bottom + 16 }}
       >
         <CreateTransactionForm request={request} onSuccess={onSuccess} />
-      </BottomSheetView>
+      </BottomSheetScrollView>
     </BottomSheetModal>
   )
 })

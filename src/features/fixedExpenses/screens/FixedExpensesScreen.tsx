@@ -5,6 +5,7 @@ import {
   FlatList,
   LayoutChangeEvent,
   Pressable,
+  RefreshControl,
   StyleSheet,
   Text,
   View,
@@ -36,10 +37,14 @@ export function FixedExpensesScreen({ navigation }: any) {
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [processingPeriodId, setProcessingPeriodId] = useState<string | null>(null)
   const [topSectionHeight, setTopSectionHeight] = useState(0)
-  const { data: profile, isLoading: profileLoading, error: profileError } = useProfile()
-  const { data: dashboard, isLoading: dashboardLoading, error: dashboardError } = useDashboard()
-  const { openEditFixedExpense } = useCreateTransactionSheet()
-  const { data, isLoading, error } = useFixedExpenses()
+  const [refreshing, setRefreshing] = useState(false)
+  const profileQuery = useProfile()
+  const { data: profile, isLoading: profileLoading, error: profileError } = profileQuery
+  const dashboardQuery = useDashboard()
+  const { data: dashboard, isLoading: dashboardLoading, error: dashboardError } = dashboardQuery
+  const { openCreateTransaction, openEditFixedExpense } = useCreateTransactionSheet()
+  const fixedExpensesQuery = useFixedExpenses()
+  const { data, isLoading, error } = fixedExpensesQuery
   const currentPeriod = getCurrentFixedExpensePeriod()
   const periodsQuery = useFixedExpensePeriods(
     data !== undefined && data.length > 0,
@@ -52,12 +57,28 @@ export function FixedExpensesScreen({ navigation }: any) {
   } = periodsQuery
   const deleteMutation = useDeleteFixedExpense()
   const payMutation = usePayFixedExpensePeriod()
-  const { data: memberships } = useHouseholds()
+  const householdsQuery = useHouseholds()
+  const { data: memberships } = householdsQuery
   const selectedHouseholdId = useHouseholdStore((state) => state.selectedHouseholdId)
   const selectedHousehold = memberships?.find(
     (membership) => membership.household.id === selectedHouseholdId
   )
   const currency = selectedHousehold?.household.currency ?? "ARS"
+
+  async function handleRefresh() {
+    setRefreshing(true)
+    try {
+      await Promise.all([
+        profileQuery.refetch(),
+        dashboardQuery.refetch(),
+        householdsQuery.refetch(),
+        fixedExpensesQuery.refetch(),
+        periodsQuery.refetch(),
+      ])
+    } finally {
+      setRefreshing(false)
+    }
+  }
 
   function handleTopSectionLayout(event: LayoutChangeEvent) {
     const height = event.nativeEvent.layout.height
@@ -146,6 +167,16 @@ export function FixedExpensesScreen({ navigation }: any) {
           keyExtractor={(item) => item.id}
           style={!topSectionHeight ? styles.hiddenList : undefined}
           contentContainerStyle={styles.list}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={handleRefresh}
+              progressViewOffset={topSectionHeight}
+              tintColor="#1C1C1C"
+              colors={["#1C1C1C"]}
+              progressBackgroundColor="#FFFFFF"
+            />
+          }
           ListHeaderComponent={
             topSectionHeight > 0 ? (
               <View>
@@ -162,7 +193,7 @@ export function FixedExpensesScreen({ navigation }: any) {
               </Text>
               <Pressable
                 style={styles.emptyButton}
-                onPress={() => navigation.navigate("CreateFixedExpense")}
+                onPress={() => openCreateTransaction("fixed")}
               >
                 <Text style={styles.primaryButtonText}>Agregar gasto fijo</Text>
               </Pressable>

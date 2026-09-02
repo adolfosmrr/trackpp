@@ -1,5 +1,6 @@
 import { useState } from "react"
-import { Alert, FlatList, Pressable, StyleSheet, Text, View } from "react-native"
+import { useQueryClient } from "@tanstack/react-query"
+import { Alert, FlatList, Pressable, RefreshControl, StyleSheet, Text, View } from "react-native"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 
 import { ScreenContainer } from "../../../components/layout/ScreenContainer"
@@ -13,13 +14,26 @@ import type { AiConversation } from "../types"
 
 export function AiChatScreen({ navigation }: any) {
   const insets = useSafeAreaInsets()
+  const queryClient = useQueryClient()
+  const [refreshing, setRefreshing] = useState(false)
   const [deletingConversationId, setDeletingConversationId] = useState<string | null>(null)
   const conversationsQuery = useAiConversations()
   const deleteMutation = useDeleteAiConversation()
+  const listTopPadding = Math.max(100, insets.top + 20)
   const conversations = [...(conversationsQuery.data ?? [])].sort(
     (left, right) => Date.parse(right.updatedAt) - Date.parse(left.updatedAt)
   )
   const { previews } = useAiConversationPreviews(conversations)
+
+  async function handleRefresh() {
+    setRefreshing(true)
+    try {
+      await conversationsQuery.refetch()
+      await queryClient.refetchQueries({ queryKey: ["ai-messages"], type: "active" })
+    } finally {
+      setRefreshing(false)
+    }
+  }
 
   function handleNewConversation() {
     navigation.navigate("AiConversation")
@@ -68,10 +82,21 @@ export function AiChatScreen({ navigation }: any) {
       <FlatList
         data={conversations}
         keyExtractor={(conversation) => conversation.id}
+        alwaysBounceVertical
         contentContainerStyle={[
           styles.listContent,
-          { paddingTop: Math.max(100, insets.top + 20) },
+          { paddingTop: listTopPadding },
         ]}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={handleRefresh}
+            progressViewOffset={listTopPadding}
+            tintColor="#1C1C1C"
+            colors={["#1C1C1C"]}
+            progressBackgroundColor="#FFFFFF"
+          />
+        }
         ItemSeparatorComponent={() => <View style={styles.conversationGap} />}
         ListHeaderComponent={(
           <View>
