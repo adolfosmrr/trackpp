@@ -169,26 +169,8 @@ import {
     label: string
     onPress: () => void
   }) {
-    const button = (
-      <Pressable
-        accessibilityLabel="Cambiar cuenta"
-        accessibilityRole="button"
-        hitSlop={compact ? 10 : 0}
-        onPress={onPress}
-        style={[
-          styles.trigger,
-          compact && styles.compactTrigger,
-          compact && liquidGlassEnabled && styles.compactTriggerOnGlass,
-        ]}
-      >
-        {compact && liquidGlassEnabled ? (
-          <GlassView
-            colorScheme="dark"
-            glassEffectStyle="regular"
-            pointerEvents="none"
-            style={styles.glassFill}
-          />
-        ) : null}
+    const content = (
+      <>
         <Text
           numberOfLines={1}
           style={[styles.triggerText, compact && styles.compactTriggerText]}
@@ -196,10 +178,36 @@ import {
           {label}
         </Text>
         {compact ? <ChevronDownIcon /> : <Text style={styles.chevron}>▼</Text>}
-      </Pressable>
+      </>
     )
 
-    return button
+    if (compact && liquidGlassEnabled) {
+      return (
+        <GlassView glassEffectStyle="clear" style={styles.glassTrigger}>
+          <Pressable
+            accessibilityLabel="Cambiar cuenta"
+            accessibilityRole="button"
+            hitSlop={10}
+            onPress={onPress}
+            style={styles.glassPressable}
+          >
+            {content}
+          </Pressable>
+        </GlassView>
+      )
+    }
+
+    return (
+      <Pressable
+        accessibilityLabel="Cambiar cuenta"
+        accessibilityRole="button"
+        hitSlop={compact ? 10 : 0}
+        onPress={onPress}
+        style={[styles.trigger, compact && styles.compactTrigger]}
+      >
+        {content}
+      </Pressable>
+    )
   }
 
   const styles = StyleSheet.create({
@@ -240,18 +248,20 @@ import {
       paddingHorizontal: 20,
     },
 
-    compactTriggerOnGlass: {
-      borderWidth: 0,
-      overflow: "hidden",
+    glassTrigger: {
+      borderRadius: radii.md,
+      flexShrink: 1,
+      height: 40,
+      marginLeft: 15,
     },
 
-    glassFill: {
-      borderRadius: radii.md,
-      bottom: 0,
-      left: 0,
-      position: "absolute",
-      right: 0,
-      top: 0,
+    glassPressable: {
+      alignItems: "center",
+      backgroundColor: colors.transparent,
+      flexDirection: "row",
+      gap: 8,
+      height: 40,
+      paddingHorizontal: 20,
     },
 
     compactTriggerText: {

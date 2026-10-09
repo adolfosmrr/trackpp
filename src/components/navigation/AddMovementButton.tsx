@@ -16,7 +16,8 @@ export function AddMovementButton() {
         onPress={() => {
           void openCreateTransaction()
         }}
-        style={[styles.button, { top: insets.top + 4 }]}
+        hitSlop={{ top: 2, bottom: 2 }}
+        style={[styles.button, { top: insets.top }]}
       >
         <Text style={styles.label}>+ Movimiento</Text>
       </Pressable>
@@ -33,7 +34,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     backgroundColor: colors.brand,
     borderRadius: radii.md,
-    height: 44,
+    height: 40,
     justifyContent: "center",
     minWidth: 44,
     paddingHorizontal: 14,
