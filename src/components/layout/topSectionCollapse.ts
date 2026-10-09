@@ -4,8 +4,7 @@ import { cancelAnimation, withSpring, type SharedValue } from "react-native-rean
  * Vertical layout endpoints for the home top panel, expanded then collapsed.
  * The spacer uses the same deltas, so the list follows the panel 1:1.
  */
-export const TOP_HEADER_HEIGHT = [40, 24] as const
-export const TOP_AVATAR_SIZE = [40, 24] as const
+const TOP_HEADER_HEIGHT = [40, 40] as const
 export const TOP_GREETING_HEIGHT = [78, 20] as const
 export const TOP_BALANCE_MARGIN_TOP = [60, 20] as const
 export const TOP_BALANCE_LABEL_HEIGHT = [22, 0] as const

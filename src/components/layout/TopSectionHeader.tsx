@@ -1,8 +1,6 @@
 import { memo } from "react"
 import { Pressable, StyleSheet, View } from "react-native"
-import Animated, { interpolate, useAnimatedStyle, type SharedValue } from "react-native-reanimated"
-
-import { TOP_AVATAR_SIZE } from "./topSectionCollapse"
+import type { SharedValue } from "react-native-reanimated"
 
 import { ProfileAvatar } from "../profile/ProfileAvatar"
 import type { Profile } from "../../features/profile/services/profileService"
@@ -14,13 +12,7 @@ type TopSectionHeaderProps = {
   collapseProgress: SharedValue<number>
 }
 
-export const TopSectionHeader = memo(function TopSectionHeader({ profile, collapseProgress }: TopSectionHeaderProps) {
-  const avatarStyle = useAnimatedStyle(() => ({
-    borderRadius: interpolate(collapseProgress.value, [0, 1], [20, 12]),
-    height: interpolate(collapseProgress.value, [0, 1], TOP_AVATAR_SIZE),
-    width: interpolate(collapseProgress.value, [0, 1], TOP_AVATAR_SIZE),
-  }))
-
+export const TopSectionHeader = memo(function TopSectionHeader({ profile }: TopSectionHeaderProps) {
   return (
     <View style={styles.row}>
       <Pressable
@@ -29,9 +21,9 @@ export const TopSectionHeader = memo(function TopSectionHeader({ profile, collap
         hitSlop={12}
         onPress={openProfileMenu}
       >
-        <ProfileAvatar name={profile?.name} uri={profile?.avatar_url} style={avatarStyle} />
+        <ProfileAvatar name={profile?.name} uri={profile?.avatar_url} />
       </Pressable>
-      <HouseholdSwitcher collapseProgress={collapseProgress} compact />
+      <HouseholdSwitcher compact />
     </View>
   )
 })

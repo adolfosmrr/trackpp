@@ -6,22 +6,20 @@ import {
     Modal,
   } from "react-native"
   import { useNavigation } from "@react-navigation/native"
+  import { GlassView, isGlassEffectAPIAvailable, isLiquidGlassAvailable } from "expo-glass-effect"
   import { colors, fonts, radii } from "../../../theme"
   import { useState } from "react"
-  import Animated, { interpolate, useAnimatedStyle, type SharedValue } from "react-native-reanimated"
   
   import { useHouseholds } from "../hooks/useHouseholds"
   import { useHouseholdStore } from "../../../store/householdStore"
 
   import { ChevronDownIcon } from "../../../components/icons/ChevronDownIcon"
-  import { TOP_HEADER_HEIGHT } from "../../../components/layout/topSectionCollapse"
 
-  const AnimatedPressable = Animated.createAnimatedComponent(Pressable)
+  const liquidGlassEnabled = isLiquidGlassAvailable() && isGlassEffectAPIAvailable()
   
-  export function HouseholdSwitcher({ compact = false, collapseProgress }: { compact?: boolean; collapseProgress?: SharedValue<number> }) {
+  export function HouseholdSwitcher({ compact = false }: { compact?: boolean }) {
     const [open, setOpen] = useState(false)
     const navigation = useNavigation<any>()
-    const compactAnimatedStyle = useCompactAnimatedStyle(collapseProgress)
   
     const selectedHouseholdId = useHouseholdStore(
       (state) => state.selectedHouseholdId
@@ -54,9 +52,9 @@ import {
     if (isLoading) {
       return (
         compact ? (
-          <Animated.Text style={[styles.compactLoading, compactAnimatedStyle]}>
+          <Text style={styles.compactLoading}>
             Cargando...
-          </Animated.Text>
+          </Text>
         ) : (
           <Text style={styles.loading}>Cargando...</Text>
         )
@@ -65,22 +63,11 @@ import {
   
     return (
       <>
-        <AnimatedPressable
-          accessibilityLabel="Cambiar cuenta"
-          accessibilityRole="button"
-          hitSlop={compact ? 10 : 0}
-          style={[styles.trigger, compact && styles.compactTrigger, compact && compactAnimatedStyle]}
+        <SpaceSelectorButton
+          compact={compact}
+          label={currentHousehold?.name ?? "Seleccionar espacio"}
           onPress={() => setOpen(true)}
-        >
-          <Text
-            numberOfLines={1}
-            style={[styles.triggerText, compact && styles.compactTriggerText]}
-          >
-            {currentHousehold?.name ?? "Seleccionar espacio"}
-          </Text>
-  
-          {compact ? <ChevronDownIcon /> : <Text style={styles.chevron}>▼</Text>}
-        </AnimatedPressable>
+        />
   
         <Modal
           visible={open}
@@ -173,13 +160,48 @@ import {
     )
   }
 
-  function useCompactAnimatedStyle(collapseProgress?: SharedValue<number>) {
-    return useAnimatedStyle(() => ({
-      height: interpolate(collapseProgress?.value ?? 0, [0, 1], TOP_HEADER_HEIGHT),
-      paddingHorizontal: interpolate(collapseProgress?.value ?? 0, [0, 1], [20, 12]),
-    }))
+  function SpaceSelectorButton({
+    compact,
+    label,
+    onPress,
+  }: {
+    compact: boolean
+    label: string
+    onPress: () => void
+  }) {
+    const button = (
+      <Pressable
+        accessibilityLabel="Cambiar cuenta"
+        accessibilityRole="button"
+        hitSlop={compact ? 10 : 0}
+        onPress={onPress}
+        style={[
+          styles.trigger,
+          compact && styles.compactTrigger,
+          compact && liquidGlassEnabled && styles.compactTriggerOnGlass,
+        ]}
+      >
+        {compact && liquidGlassEnabled ? (
+          <GlassView
+            colorScheme="dark"
+            glassEffectStyle="regular"
+            pointerEvents="none"
+            style={styles.glassFill}
+          />
+        ) : null}
+        <Text
+          numberOfLines={1}
+          style={[styles.triggerText, compact && styles.compactTriggerText]}
+        >
+          {label}
+        </Text>
+        {compact ? <ChevronDownIcon /> : <Text style={styles.chevron}>▼</Text>}
+      </Pressable>
+    )
+
+    return button
   }
-  
+
   const styles = StyleSheet.create({
     loading: {
       color: colors.mutedForeground,
@@ -215,7 +237,21 @@ import {
       gap: 8,
       height: 40,
       marginLeft: 15,
-      paddingHorizontal: 12,
+      paddingHorizontal: 20,
+    },
+
+    compactTriggerOnGlass: {
+      borderWidth: 0,
+      overflow: "hidden",
+    },
+
+    glassFill: {
+      borderRadius: radii.md,
+      bottom: 0,
+      left: 0,
+      position: "absolute",
+      right: 0,
+      top: 0,
     },
 
     compactTriggerText: {
