@@ -1,5 +1,8 @@
+import { memo } from "react"
 import { Pressable, StyleSheet, Text, View } from "react-native"
 import Animated, { interpolate, useAnimatedStyle, type SharedValue } from "react-native-reanimated"
+
+import { TOP_HEADER_HEIGHT } from "./topSectionCollapse"
 
 import { PlusIcon } from "../icons/PlusIcon"
 import { ProfileAvatar } from "../profile/ProfileAvatar"
@@ -15,15 +18,15 @@ type TopSectionHeaderProps = {
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable)
 
-export function TopSectionHeader({ profile, collapseProgress }: TopSectionHeaderProps) {
+export const TopSectionHeader = memo(function TopSectionHeader({ profile, collapseProgress }: TopSectionHeaderProps) {
   const { openCreateTransaction } = useCreateTransactionSheet()
   const avatarStyle = useAnimatedStyle(() => ({
     borderRadius: interpolate(collapseProgress.value, [0, 1], [20, 12]),
-    height: interpolate(collapseProgress.value, [0, 1], [40, 24]),
-    width: interpolate(collapseProgress.value, [0, 1], [40, 24]),
+    height: interpolate(collapseProgress.value, [0, 1], TOP_HEADER_HEIGHT),
+    width: interpolate(collapseProgress.value, [0, 1], TOP_HEADER_HEIGHT),
   }))
   const addButtonStyle = useAnimatedStyle(() => ({
-    height: interpolate(collapseProgress.value, [0, 1], [40, 24]),
+    height: interpolate(collapseProgress.value, [0, 1], TOP_HEADER_HEIGHT),
     paddingHorizontal: interpolate(collapseProgress.value, [0, 1], [0, 12]),
     width: interpolate(collapseProgress.value, [0, 1], [40, 122]),
   }))
@@ -51,7 +54,7 @@ export function TopSectionHeader({ profile, collapseProgress }: TopSectionHeader
       </AnimatedPressable>
     </View>
   )
-}
+})
 
 const styles = StyleSheet.create({
   row: {

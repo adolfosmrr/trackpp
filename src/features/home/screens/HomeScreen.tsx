@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { useQueryClient } from "@tanstack/react-query"
 import { useIsFocused } from "@react-navigation/native"
 
@@ -12,6 +12,7 @@ import {
   StyleSheet,
   ActivityIndicator,
 } from "react-native"
+import { Gesture, GestureDetector } from "react-native-gesture-handler"
 import Animated, {
   cancelAnimation,
   Extrapolation,
@@ -20,7 +21,6 @@ import Animated, {
   useAnimatedScrollHandler,
   useAnimatedStyle,
   useSharedValue,
-  withTiming,
 } from "react-native-reanimated"
 
 import {
@@ -66,12 +66,20 @@ import { StackedCardList } from "../components/StackedCardList"
 import { InsightSectionIcon } from "../components/icons/InsightSectionIcon"
 import { UpcomingPaymentsSectionIcon } from "../components/icons/UpcomingPaymentsSectionIcon"
 import { colors, fonts, radii, refreshControlColors } from "../../../theme"
+import {
+  TOP_INSIGHT_HEIGHT,
+  TOP_INSIGHT_MARGIN_BOTTOM,
+  TOP_INSIGHT_MARGIN_TOP,
+  TOP_SECTION_INSIGHT_COLLAPSE,
+  settleTopSectionProgress,
+  topSectionCollapseRange,
+  topSectionSnapTarget,
+} from "../../../components/layout/topSectionCollapse"
 import { useHomeAiInsight } from "../hooks/useHomeAiInsight"
 import { useHomeInsightActionDetails } from "../hooks/useHomeInsightActionDetails"
 import { useDelayedHomeAmounts } from "../hooks/useDelayedHomeAmounts"
 import { PendingChargesBanner } from "../../pendingCharges/components/PendingChargesBanner"
 
-const INSIGHT_SLOT_HEIGHT = 112
 const SCROLL_TRIGGER_DELTA = 3
 const INFO_CARD_VARIANTS: HomeInfoCardVariant[] = [
   "darkGradientText",
@@ -96,24 +104,21 @@ export function HomeScreen({
   const [isCollapsed, setIsCollapsed] = useState(false)
   const [isExpanded, setIsExpanded] = useState(false)
   const [isUpcomingPaymentsExpanded, setIsUpcomingPaymentsExpanded] = useState(false)
-  const [topSectionHeight, setTopSectionHeight] = useState(0)
-  const [expandedTopSectionHeightValue, setExpandedTopSectionHeightValue] = useState(0)
-  const [collapsedTopSectionHeightValue, setCollapsedTopSectionHeightValue] = useState<number | null>(null)
+  const [expandedTopSectionHeight, setExpandedTopSectionHeight] = useState(0)
   const [reduceMotionEnabled, setReduceMotionEnabled] = useState(false)
   const [refreshing, setRefreshing] = useState(false)
-  const topSectionLayoutTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const lastTopSectionLog = useRef<string | null>(null)
   const isCollapsedRef = useRef(false)
-  const latestTopSectionHeight = useRef(0)
-  const expandedTopSectionHeight = useRef(0)
-  const collapsedTopSectionHeight = useRef<number | null>(null)
+  const showsInsightRef = useRef(false)
+  const measuredIncludesInsight = useRef<boolean | null>(null)
   const collapseProgress = useSharedValue(0)
   const previousScrollY = useSharedValue(0)
-  const lastScrollY = useSharedValue(0)
   const collapseTriggered = useSharedValue(false)
-  const observedTopSectionHeight = useSharedValue(0)
-  const expandedTopSectionHeightShared = useSharedValue(0)
-  const collapsedTopSectionHeightShared = useSharedValue(0)
+  const pullingToRefresh = useSharedValue(false)
+  const expandedHeightShared = useSharedValue(0)
+  const collapseRangeShared = useSharedValue(topSectionCollapseRange(false))
+  const reduceMotionShared = useSharedValue(false)
+  const panStartProgress = useSharedValue(0)
+  const panStartTranslation = useSharedValue(0)
 
   useEffect(() => {
     let mounted = true
@@ -133,130 +138,91 @@ export function HomeScreen({
     }
   }, [])
 
-  const toggleCollapsed = () => {
-    const nextCollapsed = !isCollapsed
-    isCollapsedRef.current = nextCollapsed
-    setIsCollapsed(nextCollapsed)
-    collapseTriggered.value = nextCollapsed
-    previousScrollY.value = lastScrollY.value
-    cancelAnimation(collapseProgress)
-    collapseProgress.value = reduceMotionEnabled
-      ? nextCollapsed ? 1 : 0
-      : withTiming(nextCollapsed ? 1 : 0, { duration: 290 })
-  }
+  useEffect(() => {
+    reduceMotionShared.value = reduceMotionEnabled
+  }, [reduceMotionEnabled, reduceMotionShared])
 
-  const syncCollapsedState = (collapsed: boolean) => {
+  const syncCollapsedState = useCallback((collapsed: boolean) => {
     isCollapsedRef.current = collapsed
     setIsCollapsed(collapsed)
-  }
-
-  const syncHandleDragState = (collapsed: boolean) => {
-    isCollapsedRef.current = collapsed
-    setIsCollapsed(collapsed)
-    collapseTriggered.value = collapsed
-    previousScrollY.value = lastScrollY.value
-  }
+  }, [])
 
   const scrollHandler = useAnimatedScrollHandler({
     onBeginDrag: (event) => {
-      const currentY = Math.max(0, event.contentOffset.y)
-      previousScrollY.value = currentY
-      lastScrollY.value = currentY
+      const offsetY = event.contentOffset.y
+      pullingToRefresh.value = offsetY < 0
+      previousScrollY.value = Math.max(0, offsetY)
     },
     onScroll: (event) => {
-      const currentY = Math.max(0, event.contentOffset.y)
-      const deltaY = currentY - previousScrollY.value
-      previousScrollY.value = currentY
-      lastScrollY.value = currentY
+      const rawY = event.contentOffset.y
+      const wasPulling = pullingToRefresh.value
+
+      if (rawY < 0) {
+        pullingToRefresh.value = true
+      }
+
+      if (rawY <= 0) {
+        const scrolledBackToTop =
+          previousScrollY.value > 0 &&
+          collapseTriggered.value &&
+          !wasPulling
+        previousScrollY.value = 0
+        if (scrolledBackToTop) {
+          collapseTriggered.value = false
+          settleTopSectionProgress(collapseProgress, collapseRangeShared, reduceMotionShared, 0)
+          runOnJS(syncCollapsedState)(false)
+        }
+        return
+      }
+
+      if (wasPulling) {
+        previousScrollY.value = rawY
+        return
+      }
+
+      const deltaY = rawY - previousScrollY.value
+      previousScrollY.value = rawY
 
       if (
-        currentY > 0 &&
         deltaY > SCROLL_TRIGGER_DELTA &&
         !collapseTriggered.value &&
         collapseProgress.value < 1
       ) {
         collapseTriggered.value = true
-        cancelAnimation(collapseProgress)
-        collapseProgress.value = reduceMotionEnabled
-          ? 1
-          : withTiming(1, { duration: 290 })
+        settleTopSectionProgress(collapseProgress, collapseRangeShared, reduceMotionShared, 1)
         runOnJS(syncCollapsedState)(true)
       }
+    },
+    onEndDrag: (event) => {
+      if (event.contentOffset.y >= 0) pullingToRefresh.value = false
+    },
+    onMomentumEnd: (event) => {
+      if (event.contentOffset.y >= 0) pullingToRefresh.value = false
     },
   })
 
   const animatedInsightSlotStyle = useAnimatedStyle(() => ({
-    marginBottom: interpolate(collapseProgress.value, [0, 1], [60, 0]),
-    marginTop: interpolate(collapseProgress.value, [0, 1], [30, 0]),
-    height: interpolate(collapseProgress.value, [0, 1], [INSIGHT_SLOT_HEIGHT, 0]),
+    marginBottom: interpolate(collapseProgress.value, [0, 1], TOP_INSIGHT_MARGIN_BOTTOM),
+    marginTop: interpolate(collapseProgress.value, [0, 1], TOP_INSIGHT_MARGIN_TOP),
+    height: interpolate(collapseProgress.value, [0, 1], TOP_INSIGHT_HEIGHT),
   }))
   const animatedInsightContentStyle = useAnimatedStyle(() => ({
     opacity: interpolate(collapseProgress.value, [0, 1], [1, 0]),
     transform: [{ translateY: interpolate(collapseProgress.value, [0, 1], [0, -12]) }],
   }))
-  const topSectionSpacerStyle = useAnimatedStyle(() => ({
-    height: collapsedTopSectionHeightShared.value > 0
-      ? interpolate(
-          collapseProgress.value,
-          [0, 1],
-          [
-            expandedTopSectionHeightShared.value,
-            collapsedTopSectionHeightShared.value,
-          ],
-          Extrapolation.CLAMP
-        )
-      : observedTopSectionHeight.value || expandedTopSectionHeightShared.value,
-  }))
-  const handleTopSectionLayout = (event: LayoutChangeEvent) => {
-    const actualLayoutHeight = event.nativeEvent.layout.height
-    latestTopSectionHeight.current = actualLayoutHeight
-    observedTopSectionHeight.value = actualLayoutHeight
-
-    if (actualLayoutHeight > 0 && topSectionHeight === 0) {
-      expandedTopSectionHeight.current = actualLayoutHeight
-      expandedTopSectionHeightShared.value = actualLayoutHeight
-      setExpandedTopSectionHeightValue(actualLayoutHeight)
-      setTopSectionHeight(actualLayoutHeight)
+  const topSectionSpacerStyle = useAnimatedStyle(() => {
+    const expanded = expandedHeightShared.value
+    if (expanded <= 0) return { height: 0 }
+    const collapsed = Math.max(0, expanded - collapseRangeShared.value)
+    return {
+      height: interpolate(
+        collapseProgress.value,
+        [0, 1],
+        [expanded, collapsed],
+        Extrapolation.CLAMP
+      ),
     }
-
-    if (topSectionLayoutTimer.current) {
-      clearTimeout(topSectionLayoutTimer.current)
-    }
-
-    topSectionLayoutTimer.current = setTimeout(() => {
-      const stableHeight = latestTopSectionHeight.current
-      if (stableHeight <= 0) return
-
-      const state = isCollapsedRef.current ? "collapsed" : "expanded"
-
-      if (state === "expanded") {
-        expandedTopSectionHeight.current = stableHeight
-        expandedTopSectionHeightShared.value = stableHeight
-        setExpandedTopSectionHeightValue((current) =>
-          current === stableHeight ? current : stableHeight
-        )
-      } else {
-        collapsedTopSectionHeight.current = stableHeight
-        collapsedTopSectionHeightShared.value = stableHeight
-        setCollapsedTopSectionHeightValue((current) =>
-          current === stableHeight ? current : stableHeight
-        )
-      }
-
-      const signature = `${state}:${stableHeight}`
-
-      if (lastTopSectionLog.current === signature) return
-
-      lastTopSectionLog.current = signature
-      console.log(`[TopSection] ${state} height`, stableHeight)
-      console.log("[Home] top section measurements", {
-        expandedHeight: expandedTopSectionHeight.current || null,
-        collapsedHeight: collapsedTopSectionHeight.current,
-        spacerExpandedTarget: expandedTopSectionHeight.current || null,
-        spacerCollapsedTarget: collapsedTopSectionHeight.current,
-      })
-    }, 120)
-  }
+  })
 
   const selectedHouseholdId =
     useHouseholdStore(
@@ -313,6 +279,98 @@ export function HomeScreen({
   const homeInsightQuery = useHomeAiInsight()
   const actionDetailsQuery = useHomeInsightActionDetails(homeInsightQuery.data)
   const { actionDetails } = actionDetailsQuery
+  const showsInsight = Boolean(
+    homeInsightQuery.isLoading ||
+      homeInsightQuery.data?.intro ||
+      homeInsightQuery.data?.groups.length
+  )
+  showsInsightRef.current = showsInsight
+
+  useEffect(() => {
+    collapseRangeShared.value = topSectionCollapseRange(showsInsight)
+
+    if (measuredIncludesInsight.current == null) return
+    if (measuredIncludesInsight.current === showsInsight) return
+    if (!isCollapsedRef.current) return
+
+    const delta = showsInsight ? TOP_SECTION_INSIGHT_COLLAPSE : -TOP_SECTION_INSIGHT_COLLAPSE
+    const nextHeight = Math.max(0, expandedHeightShared.value + delta)
+    expandedHeightShared.value = nextHeight
+    measuredIncludesInsight.current = showsInsight
+    setExpandedTopSectionHeight(nextHeight)
+  }, [collapseRangeShared, expandedHeightShared, showsInsight])
+
+  const handleExpandedLayout = useCallback((event: LayoutChangeEvent) => {
+    if (isCollapsedRef.current) return
+    const height = event.nativeEvent.layout.height
+    if (height <= 0) return
+    expandedHeightShared.value = height
+    measuredIncludesInsight.current = showsInsightRef.current
+    setExpandedTopSectionHeight((current) => (current === height ? current : height))
+  }, [expandedHeightShared])
+
+  const commitCollapsed = useCallback((collapsed: boolean) => {
+    isCollapsedRef.current = collapsed
+    setIsCollapsed(collapsed)
+    collapseTriggered.value = collapsed
+  }, [collapseTriggered])
+  const commitCollapsedRef = useRef(commitCollapsed)
+  commitCollapsedRef.current = commitCollapsed
+  const commitFromGesture = useCallback((collapsed: boolean) => {
+    commitCollapsedRef.current(collapsed)
+  }, [])
+
+  const pan = useMemo(
+    () =>
+      Gesture.Pan()
+        .activeOffsetY([-8, 8])
+        .failOffsetX([-15, 15])
+        .onStart((event) => {
+          cancelAnimation(collapseProgress)
+          panStartProgress.value = collapseProgress.value
+          panStartTranslation.value = event.translationY
+        })
+        .onUpdate((event) => {
+          const range = Math.max(1, collapseRangeShared.value)
+          const dy = event.translationY - panStartTranslation.value
+          const next = panStartProgress.value - dy / range
+          collapseProgress.value = Math.min(1, Math.max(0, next))
+        })
+        .onEnd((event) => {
+          const target = topSectionSnapTarget(collapseProgress.value, event.velocityY)
+          settleTopSectionProgress(
+            collapseProgress,
+            collapseRangeShared,
+            reduceMotionShared,
+            target,
+            event.velocityY,
+          )
+          collapseTriggered.value = target === 1
+          runOnJS(commitFromGesture)(target === 1)
+        }),
+    [
+      collapseProgress,
+      collapseRangeShared,
+      collapseTriggered,
+      commitFromGesture,
+      panStartProgress,
+      panStartTranslation,
+      reduceMotionShared,
+    ],
+  )
+
+  const toggleCollapsed = useCallback(() => {
+    const nextCollapsed = !isCollapsedRef.current
+    isCollapsedRef.current = nextCollapsed
+    setIsCollapsed(nextCollapsed)
+    collapseTriggered.value = nextCollapsed
+    settleTopSectionProgress(
+      collapseProgress,
+      collapseRangeShared,
+      reduceMotionShared,
+      nextCollapsed ? 1 : 0,
+    )
+  }, [collapseProgress, collapseRangeShared, collapseTriggered, reduceMotionShared])
 
   useEffect(() => {
     if (!isFocused || !isCoupleHousehold) {
@@ -387,9 +445,11 @@ export function HomeScreen({
     error: insightsError,
   } = insightsQuery
 
-  const refreshProgressOffset = isCollapsed
-    ? collapsedTopSectionHeightValue ?? expandedTopSectionHeightValue
-    : expandedTopSectionHeightValue
+  const collapsedTopSectionHeight = Math.max(
+    0,
+    expandedTopSectionHeight - topSectionCollapseRange(showsInsight),
+  )
+  const refreshProgressOffset = isCollapsed ? collapsedTopSectionHeight : expandedTopSectionHeight
 
   const handleRefresh = async () => {
     setRefreshing(true)
@@ -485,7 +545,7 @@ export function HomeScreen({
               {...refreshControlColors}
             />
           }
-          style={[styles.scrollView, !topSectionHeight && styles.hiddenScroll]}
+          style={[styles.scrollView, !expandedTopSectionHeight && styles.hiddenScroll]}
           contentContainerStyle={[
             styles.scrollContent,
           ]}
@@ -611,47 +671,46 @@ export function HomeScreen({
       </ScreenContainer>
       <TopSection
         overlay
-        onLayout={handleTopSectionLayout}
+        onLayout={handleExpandedLayout}
         style={styles.topSectionOverlay}
       >
-        <TopSectionHeader collapseProgress={collapseProgress} profile={profile} />
-        <HomeGreeting displayName={displayName} collapseProgress={collapseProgress} />
-        <HomeBalance balance={displayedHomeAmounts.balance} collapseProgress={collapseProgress} isCollapsed={isCollapsed} />
-        <HomeIncomeExpenseSummary
-          collapseProgress={collapseProgress}
-          expenses={displayedHomeAmounts.expenses}
-          income={displayedHomeAmounts.income}
-        />
-        {homeInsightQuery.isLoading ? (
-          <Animated.View
-            pointerEvents={isCollapsed ? "none" : "auto"}
-            style={[styles.insightSlot, animatedInsightSlotStyle]}
-          >
-            <Animated.View style={[styles.insightContent, animatedInsightContentStyle]}>
-              <HomeInsightSkeleton />
-            </Animated.View>
-          </Animated.View>
-        ) : homeInsightQuery.data?.intro || homeInsightQuery.data?.groups.length ? (
-          <Animated.View
-            pointerEvents={isCollapsed ? "none" : "auto"}
-            style={[styles.insightSlot, animatedInsightSlotStyle]}
-          >
-            <Animated.View style={[styles.insightContent, animatedInsightContentStyle]}>
-              <HomeInsightCard
-                actionDetails={actionDetails}
-                insight={homeInsightQuery.data}
-                isCollapsed={isCollapsed}
-                variant="plain"
-              />
-            </Animated.View>
-          </Animated.View>
-        ) : null}
-        <TopSectionHandle
-          collapseProgress={collapseProgress}
-          onDragEnd={syncHandleDragState}
-          onPress={toggleCollapsed}
-          reduceMotionEnabled={reduceMotionEnabled}
-        />
+        <GestureDetector gesture={pan}>
+          <View collapsable={false} style={styles.panelGesture}>
+            <TopSectionHeader collapseProgress={collapseProgress} profile={profile} />
+            <HomeGreeting displayName={displayName} collapseProgress={collapseProgress} />
+            <HomeBalance balance={displayedHomeAmounts.balance} collapseProgress={collapseProgress} isCollapsed={isCollapsed} />
+            <HomeIncomeExpenseSummary
+              collapseProgress={collapseProgress}
+              expenses={displayedHomeAmounts.expenses}
+              income={displayedHomeAmounts.income}
+            />
+            {homeInsightQuery.isLoading ? (
+              <Animated.View
+                pointerEvents={isCollapsed ? "none" : "auto"}
+                style={[styles.insightSlot, animatedInsightSlotStyle]}
+              >
+                <Animated.View style={[styles.insightContent, animatedInsightContentStyle]}>
+                  <HomeInsightSkeleton />
+                </Animated.View>
+              </Animated.View>
+            ) : homeInsightQuery.data?.intro || homeInsightQuery.data?.groups.length ? (
+              <Animated.View
+                pointerEvents={isCollapsed ? "none" : "auto"}
+                style={[styles.insightSlot, animatedInsightSlotStyle]}
+              >
+                <Animated.View style={[styles.insightContent, animatedInsightContentStyle]}>
+                  <HomeInsightCard
+                    actionDetails={actionDetails}
+                    insight={homeInsightQuery.data}
+                    isCollapsed={isCollapsed}
+                    variant="plain"
+                  />
+                </Animated.View>
+              </Animated.View>
+            ) : null}
+            <TopSectionHandle onPress={toggleCollapsed} pan={pan} />
+          </View>
+        </GestureDetector>
       </TopSection>
     </View>
   )
@@ -687,6 +746,11 @@ const styles =
       zIndex: 10,
     },
 
+    panelGesture: {
+      marginHorizontal: -20,
+      paddingHorizontal: 20,
+    },
+
     center: {
       flex: 1,
       alignItems: "center",
@@ -717,15 +781,16 @@ const styles =
     },
 
     insightSlot: {
-      height: INSIGHT_SLOT_HEIGHT,
-      marginBottom: 60,
-      marginTop: 60,
+      height: TOP_INSIGHT_HEIGHT[0],
+      marginBottom: TOP_INSIGHT_MARGIN_BOTTOM[0],
+      marginTop: TOP_INSIGHT_MARGIN_TOP[0],
+      overflow: "hidden",
       position: "relative",
     },
 
     insightContent: {
       alignItems: "stretch",
-      height: INSIGHT_SLOT_HEIGHT,
+      height: TOP_INSIGHT_HEIGHT[0],
       justifyContent: "center",
       left: 0,
       position: "absolute",

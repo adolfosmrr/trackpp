@@ -14,6 +14,7 @@ import {
   import { useHouseholdStore } from "../../../store/householdStore"
 
   import { ChevronDownIcon } from "../../../components/icons/ChevronDownIcon"
+import { TOP_HEADER_HEIGHT } from "../../../components/layout/topSectionCollapse"
 
   const AnimatedPressable = Animated.createAnimatedComponent(Pressable)
   
@@ -170,7 +171,7 @@ import {
 
   function useCompactAnimatedStyle(collapseProgress?: SharedValue<number>) {
     return useAnimatedStyle(() => ({
-      height: interpolate(collapseProgress?.value ?? 0, [0, 1], [40, 24]),
+      height: interpolate(collapseProgress?.value ?? 0, [0, 1], TOP_HEADER_HEIGHT),
       paddingHorizontal: interpolate(collapseProgress?.value ?? 0, [0, 1], [20, 12]),
     }))
   }

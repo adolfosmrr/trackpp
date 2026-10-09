@@ -1,7 +1,13 @@
-import { StyleSheet, Text, View } from "react-native"
+import { memo } from "react"
+import { StyleSheet, View } from "react-native"
 import Animated, { interpolate, useAnimatedStyle, type SharedValue } from "react-native-reanimated"
 import { AnimatedAmount } from "../../../components/animated/AnimatedAmount"
 import { colors, fonts } from "../../../theme"
+import {
+  TOP_SUMMARY_LABEL_FONT_SIZE,
+  TOP_SUMMARY_MARGIN_BOTTOM,
+  TOP_SUMMARY_MARGIN_TOP,
+} from "../../../components/layout/topSectionCollapse"
 
 type HomeIncomeExpenseSummaryProps = {
   income: number
@@ -9,14 +15,14 @@ type HomeIncomeExpenseSummaryProps = {
   collapseProgress: SharedValue<number>
 }
 
-export function HomeIncomeExpenseSummary({
+export const HomeIncomeExpenseSummary = memo(function HomeIncomeExpenseSummary({
   income,
   expenses,
   collapseProgress,
 }: HomeIncomeExpenseSummaryProps) {
   const containerStyle = useAnimatedStyle(() => ({
-    marginBottom: interpolate(collapseProgress.value, [0, 1], [10, 30]),
-    marginTop: interpolate(collapseProgress.value, [0, 1], [50, 10]),
+    marginBottom: interpolate(collapseProgress.value, [0, 1], TOP_SUMMARY_MARGIN_BOTTOM),
+    marginTop: interpolate(collapseProgress.value, [0, 1], TOP_SUMMARY_MARGIN_TOP),
   }))
   return (
     <Animated.View style={[styles.container, containerStyle]}>
@@ -24,7 +30,7 @@ export function HomeIncomeExpenseSummary({
       <SummaryItem collapseProgress={collapseProgress} label="Gastos" amount={expenses} tone="expense" />
     </Animated.View>
   )
-}
+})
 
 function SummaryItem({
   label,
@@ -38,7 +44,16 @@ function SummaryItem({
   tone: "income" | "expense"
 }) {
   const labelStyle = useAnimatedStyle(() => ({
-    fontSize: interpolate(collapseProgress.value, [0, 1], [18, 16]),
+    transformOrigin: "left center",
+    transform: [
+      {
+        scale: interpolate(
+          collapseProgress.value,
+          [0, 1],
+          [1, TOP_SUMMARY_LABEL_FONT_SIZE[1] / TOP_SUMMARY_LABEL_FONT_SIZE[0]]
+        ),
+      },
+    ],
   }))
 
   return (
@@ -68,7 +83,8 @@ const styles = StyleSheet.create({
   container: {
     columnGap: 40,
     flexDirection: "row",
-    marginTop: 30,
+    marginBottom: TOP_SUMMARY_MARGIN_BOTTOM[0],
+    marginTop: TOP_SUMMARY_MARGIN_TOP[0],
   },
   item: {
     flexShrink: 1,
@@ -76,7 +92,7 @@ const styles = StyleSheet.create({
   label: {
     color: colors.mutedForeground,
     fontFamily: fonts.sans,
-    fontSize: 13,
+    fontSize: TOP_SUMMARY_LABEL_FONT_SIZE[0],
   },
   amount: {
     flexShrink: 1,

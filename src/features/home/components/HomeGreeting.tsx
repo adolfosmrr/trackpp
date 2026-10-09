@@ -1,6 +1,8 @@
-import { StyleSheet, View } from "react-native"
+import { memo } from "react"
+import { StyleSheet } from "react-native"
 
 import { colors, fonts } from "../../../theme"
+import { TOP_GREETING_HEIGHT } from "../../../components/layout/topSectionCollapse"
 import Animated, { interpolate, useAnimatedStyle, type SharedValue } from "react-native-reanimated"
 
 type HomeGreetingProps = {
@@ -8,9 +10,9 @@ type HomeGreetingProps = {
   collapseProgress: SharedValue<number>
 }
 
-export function HomeGreeting({ displayName, collapseProgress }: HomeGreetingProps) {
+export const HomeGreeting = memo(function HomeGreeting({ displayName, collapseProgress }: HomeGreetingProps) {
   const containerStyle = useAnimatedStyle(() => ({
-    height: interpolate(collapseProgress.value, [0, 1], [78, 20]),
+    height: interpolate(collapseProgress.value, [0, 1], TOP_GREETING_HEIGHT),
     marginTop: 20,
   }))
   const verticalStyle = useAnimatedStyle(() => ({
@@ -34,11 +36,13 @@ export function HomeGreeting({ displayName, collapseProgress }: HomeGreetingProp
       </Animated.View>
     </Animated.View>
   )
-}
+})
 
 const styles = StyleSheet.create({
   container: {
     alignItems: "flex-start",
+    height: TOP_GREETING_HEIGHT[0],
+    marginTop: 20,
     position: "relative",
   },
   layout: {
