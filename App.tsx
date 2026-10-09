@@ -7,6 +7,7 @@ import { SafeAreaProvider } from "react-native-safe-area-context"
 import { AuthProvider } from "./src/features/auth/context/AuthContext"
 import { RootNavigator } from "./src/navigation/RootNavigator"
 import { NotificationObserver } from "./src/features/notifications/components/NotificationObserver"
+import { PushTokenRegistrar } from "./src/features/notifications/components/PushTokenRegistrar"
 import { CreateTransactionSheetProvider } from "./src/features/transactions/components/CreateTransactionSheetProvider"
 import "./src/features/notifications/services/notificationSetup"
 
@@ -33,6 +34,7 @@ export default function App() {
             <BottomSheetModalProvider>
               <CreateTransactionSheetProvider>
                 <NotificationObserver />
+                <PushTokenRegistrar />
                 <RootNavigator />
               </CreateTransactionSheetProvider>
             </BottomSheetModalProvider>

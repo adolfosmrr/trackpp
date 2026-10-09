@@ -2,7 +2,7 @@ import { useEffect, useRef } from "react"
 import * as Notifications from "expo-notifications"
 
 import { useAuth } from "../../auth/context/AuthContext"
-import { handleFixedExpenseNotificationResponse } from "../services/notificationNavigation"
+import { handleNotificationResponse } from "../services/notificationNavigation"
 
 export function NotificationObserver() {
   const { session } = useAuth()
@@ -20,7 +20,7 @@ export function NotificationObserver() {
       }
 
       handledIdentifiers.current.add(identifier)
-      handleFixedExpenseNotificationResponse(response, session.user.id)
+      handleNotificationResponse(response, session.user.id)
       void Notifications.clearLastNotificationResponseAsync()
     }
 

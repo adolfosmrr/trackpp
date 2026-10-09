@@ -12,29 +12,44 @@ type FixedExpenseNotificationData = {
   targetPeriod?: string
 }
 
-let pendingData: FixedExpenseNotificationData | null = null
+type PendingNavigation =
+  | { kind: "fixed_expense"; data: FixedExpenseNotificationData }
+  | { kind: "pending_charge"; chargeId: string }
 
-export function handleFixedExpenseNotificationResponse(
+let pendingNavigation: PendingNavigation | null = null
+
+export function handleNotificationResponse(
   response: Notifications.NotificationResponse,
-  currentUserId: string
+  currentUserId: string,
 ) {
   const data = response.notification.request.content.data
-  if (!isFixedExpenseNotificationData(data) || data.userId !== currentUserId) {
+  if (isFixedExpenseNotificationData(data)) {
+    if (data.userId !== currentUserId) return
+    pendingNavigation = { kind: "fixed_expense", data }
+  } else if (isPendingChargeNotificationData(data)) {
+    if (data.userId !== currentUserId) return
+    pendingNavigation = { kind: "pending_charge", chargeId: data.chargeId }
+  } else {
     return
   }
 
-  pendingData = data
   flushPendingNotificationNavigation()
 }
 
 export function flushPendingNotificationNavigation() {
-  if (!pendingData || !navigationRef.isReady()) {
+  if (!pendingNavigation || !navigationRef.isReady()) {
     return
   }
 
-  const data = pendingData
-  pendingData = null
+  const pending = pendingNavigation
+  pendingNavigation = null
 
+  if (pending.kind === "pending_charge") {
+    navigationRef.navigate("PendingCharge", { chargeId: pending.chargeId })
+    return
+  }
+
+  const data = pending.data
   if (data.householdId) {
     useHouseholdStore.getState().setSelectedHouseholdId(data.householdId)
   }
@@ -49,12 +64,22 @@ export function flushPendingNotificationNavigation() {
 }
 
 function isFixedExpenseNotificationData(
-  value: unknown
+  value: unknown,
 ): value is FixedExpenseNotificationData {
-  if (typeof value !== "object" || value === null) {
-    return false
-  }
+  if (!isRecord(value)) return false
+  return value.type === "fixed_expense" && typeof value.userId === "string"
+}
 
-  const data = value as Record<string, unknown>
-  return data.type === "fixed_expense" && typeof data.userId === "string"
+function isPendingChargeNotificationData(
+  value: unknown,
+): value is { type: "pending_charge"; chargeId: string; userId: string } {
+  if (!isRecord(value)) return false
+  return value.type === "pending_charge"
+    && typeof value.chargeId === "string"
+    && value.chargeId.length > 0
+    && typeof value.userId === "string"
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null
 }
