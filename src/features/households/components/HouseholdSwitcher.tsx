@@ -14,7 +14,7 @@ import {
   import { useHouseholdStore } from "../../../store/householdStore"
 
   import { ChevronDownIcon } from "../../../components/icons/ChevronDownIcon"
-import { TOP_HEADER_HEIGHT } from "../../../components/layout/topSectionCollapse"
+  import { TOP_HEADER_HEIGHT } from "../../../components/layout/topSectionCollapse"
 
   const AnimatedPressable = Animated.createAnimatedComponent(Pressable)
   

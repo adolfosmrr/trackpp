@@ -2,7 +2,7 @@ import { memo } from "react"
 import { Pressable, StyleSheet, Text, View } from "react-native"
 import Animated, { interpolate, useAnimatedStyle, type SharedValue } from "react-native-reanimated"
 
-import { TOP_HEADER_HEIGHT } from "./topSectionCollapse"
+import { TOP_AVATAR_SIZE, TOP_HEADER_HEIGHT } from "./topSectionCollapse"
 
 import { PlusIcon } from "../icons/PlusIcon"
 import { ProfileAvatar } from "../profile/ProfileAvatar"
@@ -23,7 +23,7 @@ export const TopSectionHeader = memo(function TopSectionHeader({ profile, collap
   const avatarStyle = useAnimatedStyle(() => ({
     borderRadius: interpolate(collapseProgress.value, [0, 1], [20, 12]),
     height: interpolate(collapseProgress.value, [0, 1], TOP_HEADER_HEIGHT),
-    width: interpolate(collapseProgress.value, [0, 1], TOP_HEADER_HEIGHT),
+    width: interpolate(collapseProgress.value, [0, 1], TOP_AVATAR_SIZE),
   }))
   const addButtonStyle = useAnimatedStyle(() => ({
     height: interpolate(collapseProgress.value, [0, 1], TOP_HEADER_HEIGHT),

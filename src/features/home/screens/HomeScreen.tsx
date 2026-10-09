@@ -18,9 +18,13 @@ import Animated, {
   Extrapolation,
   interpolate,
   runOnJS,
+  scrollTo,
+  useAnimatedReaction,
+  useAnimatedRef,
   useAnimatedScrollHandler,
   useAnimatedStyle,
   useSharedValue,
+  withDecay,
 } from "react-native-reanimated"
 
 import {
@@ -119,6 +123,18 @@ export function HomeScreen({
   const reduceMotionShared = useSharedValue(false)
   const panStartProgress = useSharedValue(0)
   const panStartTranslation = useSharedValue(0)
+  const panStartScroll = useSharedValue(0)
+  const draggingPanel = useSharedValue(false)
+  const settlingPanel = useSharedValue(false)
+  const acceptExpandedLayout = useSharedValue(true)
+  const reportedExpandedHeight = useSharedValue(0)
+  const lockedExpandedHeight = useSharedValue(false)
+  const scrollActive = useSharedValue(false)
+  const drivingList = useSharedValue(false)
+  const scrollY = useSharedValue(0)
+  const scrollContentHeight = useSharedValue(0)
+  const scrollLayoutHeight = useSharedValue(0)
+  const scrollRef = useAnimatedRef<Animated.ScrollView>()
 
   useEffect(() => {
     let mounted = true
@@ -142,19 +158,38 @@ export function HomeScreen({
     reduceMotionShared.value = reduceMotionEnabled
   }, [reduceMotionEnabled, reduceMotionShared])
 
-  const syncCollapsedState = useCallback((collapsed: boolean) => {
+  const commitCollapsed = useCallback((collapsed: boolean) => {
     isCollapsedRef.current = collapsed
     setIsCollapsed(collapsed)
+    collapseTriggered.value = collapsed
+  }, [collapseTriggered])
+
+  const commitExpandedHeight = useCallback((height: number) => {
+    measuredIncludesInsight.current = showsInsightRef.current
+    setExpandedTopSectionHeight((current) => (current === height ? current : height))
   }, [])
 
   const scrollHandler = useAnimatedScrollHandler({
     onBeginDrag: (event) => {
+      cancelAnimation(scrollY)
+      drivingList.value = false
+      scrollActive.value = true
       const offsetY = event.contentOffset.y
       pullingToRefresh.value = offsetY < 0
       previousScrollY.value = Math.max(0, offsetY)
+      scrollY.value = offsetY
     },
     onScroll: (event) => {
       const rawY = event.contentOffset.y
+      scrollContentHeight.value = event.contentSize.height
+      scrollLayoutHeight.value = event.layoutMeasurement.height
+
+      if (drivingList.value) {
+        previousScrollY.value = Math.max(0, rawY)
+        return
+      }
+
+      scrollY.value = rawY
       const wasPulling = pullingToRefresh.value
 
       if (rawY < 0) {
@@ -162,15 +197,26 @@ export function HomeScreen({
       }
 
       if (rawY <= 0) {
+        const maxOffset = Math.max(0, event.contentSize.height - event.layoutMeasurement.height)
+        const clampedByLayout = previousScrollY.value > maxOffset + 1
         const scrolledBackToTop =
+          scrollActive.value &&
           previousScrollY.value > 0 &&
           collapseTriggered.value &&
-          !wasPulling
+          !wasPulling &&
+          !clampedByLayout
         previousScrollY.value = 0
         if (scrolledBackToTop) {
           collapseTriggered.value = false
-          settleTopSectionProgress(collapseProgress, collapseRangeShared, reduceMotionShared, 0)
-          runOnJS(syncCollapsedState)(false)
+          settleTopSectionProgress(
+            collapseProgress,
+            collapseRangeShared,
+            reduceMotionShared,
+            settlingPanel,
+            acceptExpandedLayout,
+            0,
+          )
+          runOnJS(commitCollapsed)(false)
         }
         return
       }
@@ -189,17 +235,50 @@ export function HomeScreen({
         collapseProgress.value < 1
       ) {
         collapseTriggered.value = true
-        settleTopSectionProgress(collapseProgress, collapseRangeShared, reduceMotionShared, 1)
-        runOnJS(syncCollapsedState)(true)
+        settleTopSectionProgress(
+          collapseProgress,
+          collapseRangeShared,
+          reduceMotionShared,
+          settlingPanel,
+          acceptExpandedLayout,
+          1,
+        )
+        runOnJS(commitCollapsed)(true)
       }
     },
     onEndDrag: (event) => {
+      const velocityY = event.velocity?.y ?? 0
+      if (Math.abs(velocityY) < 0.1) scrollActive.value = false
       if (event.contentOffset.y >= 0) pullingToRefresh.value = false
     },
+    onMomentumBegin: () => {
+      scrollActive.value = true
+    },
     onMomentumEnd: (event) => {
+      scrollActive.value = false
       if (event.contentOffset.y >= 0) pullingToRefresh.value = false
     },
   })
+
+  useAnimatedReaction(
+    () => reportedExpandedHeight.value,
+    (height) => {
+      if (lockedExpandedHeight.value) return
+      if (!acceptExpandedLayout.value || draggingPanel.value || settlingPanel.value) return
+      if (collapseProgress.value !== 0 || height <= 0) return
+      lockedExpandedHeight.value = true
+      expandedHeightShared.value = height
+      runOnJS(commitExpandedHeight)(height)
+    },
+  )
+
+  useAnimatedReaction(
+    () => scrollY.value,
+    (y) => {
+      if (!drivingList.value) return
+      scrollTo(scrollRef, 0, y, false)
+    },
+  )
 
   const animatedInsightSlotStyle = useAnimatedStyle(() => ({
     marginBottom: interpolate(collapseProgress.value, [0, 1], TOP_INSIGHT_MARGIN_BOTTOM),
@@ -291,7 +370,6 @@ export function HomeScreen({
 
     if (measuredIncludesInsight.current == null) return
     if (measuredIncludesInsight.current === showsInsight) return
-    if (!isCollapsedRef.current) return
 
     const delta = showsInsight ? TOP_SECTION_INSIGHT_COLLAPSE : -TOP_SECTION_INSIGHT_COLLAPSE
     const nextHeight = Math.max(0, expandedHeightShared.value + delta)
@@ -301,24 +379,10 @@ export function HomeScreen({
   }, [collapseRangeShared, expandedHeightShared, showsInsight])
 
   const handleExpandedLayout = useCallback((event: LayoutChangeEvent) => {
-    if (isCollapsedRef.current) return
     const height = event.nativeEvent.layout.height
     if (height <= 0) return
-    expandedHeightShared.value = height
-    measuredIncludesInsight.current = showsInsightRef.current
-    setExpandedTopSectionHeight((current) => (current === height ? current : height))
-  }, [expandedHeightShared])
-
-  const commitCollapsed = useCallback((collapsed: boolean) => {
-    isCollapsedRef.current = collapsed
-    setIsCollapsed(collapsed)
-    collapseTriggered.value = collapsed
-  }, [collapseTriggered])
-  const commitCollapsedRef = useRef(commitCollapsed)
-  commitCollapsedRef.current = commitCollapsed
-  const commitFromGesture = useCallback((collapsed: boolean) => {
-    commitCollapsedRef.current(collapsed)
-  }, [])
+    reportedExpandedHeight.value = height
+  }, [reportedExpandedHeight])
 
   const pan = useMemo(
     () =>
@@ -327,50 +391,103 @@ export function HomeScreen({
         .failOffsetX([-15, 15])
         .onStart((event) => {
           cancelAnimation(collapseProgress)
+          draggingPanel.value = true
+          settlingPanel.value = false
+          acceptExpandedLayout.value = false
+          drivingList.value = false
           panStartProgress.value = collapseProgress.value
           panStartTranslation.value = event.translationY
+          panStartScroll.value = Math.max(0, scrollY.value)
         })
         .onUpdate((event) => {
-          const range = Math.max(1, collapseRangeShared.value)
           const dy = event.translationY - panStartTranslation.value
+          if (!drivingList.value && panStartProgress.value >= 0.999 && dy < 0) {
+            drivingList.value = true
+          }
+          if (drivingList.value) {
+            const maxY = Math.max(0, scrollContentHeight.value - scrollLayoutHeight.value)
+            const next = Math.min(maxY, Math.max(0, panStartScroll.value - dy))
+            scrollY.value = next
+            scrollTo(scrollRef, 0, next, false)
+            return
+          }
+          const range = Math.max(1, collapseRangeShared.value)
           const next = panStartProgress.value - dy / range
           collapseProgress.value = Math.min(1, Math.max(0, next))
         })
         .onEnd((event) => {
+          draggingPanel.value = false
+          if (drivingList.value) {
+            const maxY = Math.max(0, scrollContentHeight.value - scrollLayoutHeight.value)
+            const velocity = -event.velocityY
+            if (reduceMotionShared.value || Math.abs(velocity) < 50 || maxY <= 0) {
+              drivingList.value = false
+              return
+            }
+            scrollY.value = withDecay(
+              {
+                velocity,
+                clamp: [0, Math.max(maxY, scrollY.value)],
+              },
+              (finished) => {
+                if (finished) drivingList.value = false
+              },
+            )
+            return
+          }
           const target = topSectionSnapTarget(collapseProgress.value, event.velocityY)
           settleTopSectionProgress(
             collapseProgress,
             collapseRangeShared,
             reduceMotionShared,
+            settlingPanel,
+            acceptExpandedLayout,
             target,
             event.velocityY,
           )
-          collapseTriggered.value = target === 1
-          runOnJS(commitFromGesture)(target === 1)
+          runOnJS(commitCollapsed)(target === 1)
+        })
+        .onFinalize(() => {
+          draggingPanel.value = false
         }),
     [
+      acceptExpandedLayout,
       collapseProgress,
       collapseRangeShared,
-      collapseTriggered,
-      commitFromGesture,
+      commitCollapsed,
+      draggingPanel,
+      drivingList,
       panStartProgress,
+      panStartScroll,
       panStartTranslation,
       reduceMotionShared,
+      scrollContentHeight,
+      scrollLayoutHeight,
+      scrollRef,
+      scrollY,
+      settlingPanel,
     ],
   )
 
   const toggleCollapsed = useCallback(() => {
     const nextCollapsed = !isCollapsedRef.current
-    isCollapsedRef.current = nextCollapsed
-    setIsCollapsed(nextCollapsed)
-    collapseTriggered.value = nextCollapsed
+    commitCollapsed(nextCollapsed)
     settleTopSectionProgress(
       collapseProgress,
       collapseRangeShared,
       reduceMotionShared,
+      settlingPanel,
+      acceptExpandedLayout,
       nextCollapsed ? 1 : 0,
     )
-  }, [collapseProgress, collapseRangeShared, collapseTriggered, reduceMotionShared])
+  }, [
+    acceptExpandedLayout,
+    collapseProgress,
+    collapseRangeShared,
+    commitCollapsed,
+    reduceMotionShared,
+    settlingPanel,
+  ])
 
   useEffect(() => {
     if (!isFocused || !isCoupleHousehold) {
@@ -535,6 +652,7 @@ export function HomeScreen({
     <View style={styles.screen}>
       <ScreenContainer paddingHorizontal={0}>
         <Animated.ScrollView
+          ref={scrollRef}
           onScroll={scrollHandler}
           scrollEventThrottle={16}
           refreshControl={
@@ -708,7 +826,7 @@ export function HomeScreen({
                 </Animated.View>
               </Animated.View>
             ) : null}
-            <TopSectionHandle onPress={toggleCollapsed} pan={pan} />
+            <TopSectionHandle collapseProgress={collapseProgress} onPress={toggleCollapsed} pan={pan} />
           </View>
         </GestureDetector>
       </TopSection>

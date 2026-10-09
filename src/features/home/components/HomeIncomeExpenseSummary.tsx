@@ -44,16 +44,7 @@ function SummaryItem({
   tone: "income" | "expense"
 }) {
   const labelStyle = useAnimatedStyle(() => ({
-    transformOrigin: "left center",
-    transform: [
-      {
-        scale: interpolate(
-          collapseProgress.value,
-          [0, 1],
-          [1, TOP_SUMMARY_LABEL_FONT_SIZE[1] / TOP_SUMMARY_LABEL_FONT_SIZE[0]]
-        ),
-      },
-    ],
+    fontSize: interpolate(collapseProgress.value, [0, 1], TOP_SUMMARY_LABEL_FONT_SIZE),
   }))
 
   return (
@@ -92,7 +83,7 @@ const styles = StyleSheet.create({
   label: {
     color: colors.mutedForeground,
     fontFamily: fonts.sans,
-    fontSize: TOP_SUMMARY_LABEL_FONT_SIZE[0],
+    fontSize: 13,
   },
   amount: {
     flexShrink: 1,

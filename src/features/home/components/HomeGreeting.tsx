@@ -13,7 +13,6 @@ type HomeGreetingProps = {
 export const HomeGreeting = memo(function HomeGreeting({ displayName, collapseProgress }: HomeGreetingProps) {
   const containerStyle = useAnimatedStyle(() => ({
     height: interpolate(collapseProgress.value, [0, 1], TOP_GREETING_HEIGHT),
-    marginTop: 20,
   }))
   const verticalStyle = useAnimatedStyle(() => ({
     opacity: interpolate(collapseProgress.value, [0, 0.75, 1], [1, 0, 0]),
