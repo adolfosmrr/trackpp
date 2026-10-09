@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react"
+import { useQueryClient } from "@tanstack/react-query"
 import {
   ActivityIndicator,
   Alert,
@@ -8,6 +9,8 @@ import {
   Text,
   View,
 } from "react-native"
+import { BackLink } from "../../../components/navigation/BackLink"
+import { showUndo } from "../../../components/feedback/undo"
 import { colors, fonts, radii } from "../../../theme"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import { BottomSheetModal } from "@gorhom/bottom-sheet"
@@ -38,6 +41,7 @@ type PendingChargeScreenProps = {
 
 export function PendingChargeScreen({ navigation, route }: PendingChargeScreenProps) {
   const insets = useSafeAreaInsets()
+  const queryClient = useQueryClient()
   const chargeId = typeof route.params?.chargeId === "string" ? route.params.chargeId : null
   const chargeQuery = usePendingCharge(chargeId)
   const { data: memberships } = useHouseholds()
@@ -95,28 +99,29 @@ export function PendingChargeScreen({ navigation, route }: PendingChargeScreenPr
     }
   }
 
-  function handleDismiss() {
+  async function handleDismiss() {
     if (!charge || isSaving) return
+    const dismissed = charge
+    queryClient.setQueriesData({ queryKey: ["pending-charges"] }, (current: unknown) => {
+      if (!Array.isArray(current)) return current
+      return current.filter((item) => item?.id !== dismissed.id)
+    })
+    const restore = () => {
+      queryClient.setQueriesData({ queryKey: ["pending-charges"] }, (current: unknown) => {
+        if (!Array.isArray(current)) return current
+        if (current.some((item) => item?.id === dismissed.id)) return current
+        return [dismissed, ...current]
+      })
+    }
 
-    Alert.alert(
-      "Descartar gasto",
-      "No lo vamos a cargar en ningún espacio.",
-      [
-        { text: "Cancelar", style: "cancel" },
-        {
-          text: "Descartar",
-          style: "destructive",
-          onPress: () => {
-            void dismissMutation.mutateAsync(charge.id).then(
-              () => navigation.goBack(),
-              (error: unknown) => {
-                Alert.alert("No se pudo descartar", errorText(error, "Probá de nuevo en un momento."))
-              },
-            )
-          },
-        },
-      ],
-    )
+    try {
+      await dismissMutation.mutateAsync(dismissed.id)
+      navigation.goBack()
+      showUndo({ message: "Descartaste el gasto" })
+    } catch (error) {
+      restore()
+      showUndo({ message: errorText(error, "No se pudo descartar el gasto.") })
+    }
   }
 
   return (
@@ -127,16 +132,18 @@ export function PendingChargeScreen({ navigation, route }: PendingChargeScreenPr
           { paddingTop: insets.top + 16, paddingBottom: insets.bottom + 32 },
         ]}
       >
-        <Pressable accessibilityRole="button" onPress={() => navigation.goBack()}>
-          <Text style={styles.back}>Volver</Text>
-        </Pressable>
+        <BackLink onPress={() => navigation.goBack()} />
 
         {chargeQuery.isLoading ? (
           <ActivityIndicator color={colors.brand} style={styles.loader} />
         ) : chargeQuery.isError ? (
           <View style={styles.messageBlock}>
             <Text style={styles.message}>No se pudo cargar este gasto.</Text>
-            <Pressable onPress={() => void chargeQuery.refetch()} style={styles.primaryButton}>
+            <Pressable
+              accessibilityRole="button"
+              onPress={() => void chargeQuery.refetch()}
+              style={styles.primaryButton}
+            >
               <Text style={styles.primaryButtonText}>Reintentar</Text>
             </Pressable>
           </View>

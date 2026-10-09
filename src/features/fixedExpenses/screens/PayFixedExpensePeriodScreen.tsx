@@ -12,22 +12,16 @@ import { useSafeAreaInsets } from "react-native-safe-area-context"
 import { colors, fonts, radii } from "../../../theme"
 
 import { BackLink } from "../../../components/navigation/BackLink"
+import { formatMoney } from "../../../utils/formatMoney"
 
 import { useFixedExpensePeriods } from "../hooks/useFixedExpensePeriods"
 import { usePayFixedExpensePeriod } from "../hooks/usePayFixedExpensePeriod"
-import { useHouseholds } from "../../households/hooks/useHouseholds"
-import { useHouseholdStore } from "../../../store/householdStore"
 
 export function PayFixedExpensePeriodScreen({ route, navigation }: any) {
   const insets = useSafeAreaInsets()
   const periodsQuery = useFixedExpensePeriods()
   const { data: periods, isLoading } = periodsQuery
   const mutation = usePayFixedExpensePeriod()
-  const { data: memberships } = useHouseholds()
-  const selectedHouseholdId = useHouseholdStore((state) => state.selectedHouseholdId)
-  const currency = memberships?.find(
-    (membership) => membership.household.id === selectedHouseholdId
-  )?.household.currency ?? "ARS"
   const period = periods?.find((item) => item.id === route.params.periodId)
   const [amount, setAmount] = useState("")
 
@@ -62,7 +56,7 @@ export function PayFixedExpensePeriodScreen({ route, navigation }: any) {
     if (parsedAmount > currentPeriod.remaining) {
       Alert.alert(
         "Error",
-        `El monto supera el saldo pendiente de ${formatCurrency(currentPeriod.remaining, currency)}.`
+        `El monto supera el saldo pendiente de ${formatMoney(currentPeriod.remaining)}.`
       )
       return
     }
@@ -85,9 +79,9 @@ export function PayFixedExpensePeriodScreen({ route, navigation }: any) {
     <View style={[styles.container, { paddingTop: insets.top + 16 }]}>
       <BackLink onPress={() => navigation.goBack()} />
       <Text style={styles.title}>{period.name}</Text>
-      <Text style={styles.meta}>Total: {formatCurrency(period.expectedAmount, currency)}</Text>
-      <Text style={styles.meta}>Pagado: {formatCurrency(period.totalPaid, currency)}</Text>
-      <Text style={styles.meta}>Pendiente: {formatCurrency(period.remaining, currency)}</Text>
+      <Text style={styles.meta}>Total: {formatMoney(period.expectedAmount)}</Text>
+      <Text style={styles.meta}>Pagado: {formatMoney(period.totalPaid)}</Text>
+      <Text style={styles.meta}>Pendiente: {formatMoney(period.remaining)}</Text>
 
       <TextInput
         style={styles.input}
@@ -108,19 +102,15 @@ export function PayFixedExpensePeriodScreen({ route, navigation }: any) {
   )
 }
 
-function formatCurrency(amount: number, currency: string) {
-  return new Intl.NumberFormat("es-AR", { style: "currency", currency, maximumFractionDigits: 2 }).format(amount)
-}
-
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background, padding: 24, gap: 16 },
   center: { flex: 1, backgroundColor: colors.background, alignItems: "center", justifyContent: "center", padding: 24 },
   title: { color: colors.foreground, fontFamily: fonts.sansSemibold, fontSize: 22, fontWeight: "600" },
   meta: { color: colors.mutedForeground, fontFamily: fonts.mono, fontSize: 14 },
   input: { borderWidth: 1, borderColor: colors.borderStrong, borderRadius: radii.sm, backgroundColor: colors.field, color: colors.foreground, fontFamily: fonts.sans, padding: 12 },
-  secondaryButton: { padding: 12, borderRadius: radii.sm, borderWidth: 1, borderColor: colors.borderStrong, alignItems: "center" },
+  secondaryButton: { alignItems: "center", borderColor: colors.borderStrong, borderRadius: radii.sm, borderWidth: 1, minHeight: 44, justifyContent: "center", paddingHorizontal: 12 },
   secondaryButtonText: { color: colors.foreground, fontFamily: fonts.sansMedium, fontWeight: "600" },
-  button: { padding: 12, borderRadius: radii.sm, backgroundColor: colors.brand, alignItems: "center" },
+  button: { alignItems: "center", backgroundColor: colors.brand, borderRadius: radii.sm, justifyContent: "center", minHeight: 44, paddingHorizontal: 12 },
   disabled: { opacity: 0.6 },
   buttonText: { color: colors.brandForeground, fontFamily: fonts.sansSemibold, fontWeight: "600" },
 })

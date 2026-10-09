@@ -2,6 +2,7 @@ import { memo } from "react"
 import { StyleSheet, View } from "react-native"
 import Animated, { interpolate, useAnimatedStyle, type SharedValue } from "react-native-reanimated"
 import { AnimatedAmount } from "../../../components/animated/AnimatedAmount"
+import { formatMoney } from "../../../utils/formatMoney"
 import { colors, fonts } from "../../../theme"
 import {
   TOP_SUMMARY_LABEL_FONT_SIZE,
@@ -53,7 +54,7 @@ function SummaryItem({
       <Animated.Text style={[styles.label, labelStyle]}>{label}</Animated.Text>
       <AnimatedAmount
         value={amount}
-        formatter={(value) => `$ ${formatAmount(value)}`}
+        formatter={(value) => formatMoney(value)}
         textProps={{
           adjustsFontSizeToFit: true,
           minimumFontScale: 0.8,
@@ -63,12 +64,6 @@ function SummaryItem({
       />
     </View>
   )
-}
-
-function formatAmount(amount: number) {
-  return new Intl.NumberFormat("es-AR", {
-    maximumFractionDigits: 0,
-  }).format(amount)
 }
 
 const styles = StyleSheet.create({

@@ -1,4 +1,5 @@
 import { useState } from "react"
+import { useQueryClient } from "@tanstack/react-query"
 
 import {
   View,
@@ -7,19 +8,27 @@ import {
   ScrollView,
   StyleSheet,
   ActivityIndicator,
-  Alert,
   LayoutChangeEvent,
   RefreshControl,
 } from "react-native"
 import { colors, fonts, radii, refreshControlColors } from "../../../theme"
+import { formatMoney } from "../../../utils/formatMoney"
+import { EmptyState } from "../../../components/feedback/EmptyState"
+import { showUndo } from "../../../components/feedback/undo"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 
 import { useBudgets } from "../hooks/useBudgets"
 import { useDeleteBudget } from "../hooks/useDeleteBudget"
+import { createBudget } from "../services/budgetService"
 import { useProfile } from "../../profile/hooks/useProfile"
+import { useHouseholdStore } from "../../../store/householdStore"
 import { useDashboard } from "../../dashboard/hooks/useDashboard"
 import { useBudgetSheet } from "../components/BudgetSheetProvider"
 import { BudgetSheetProvider } from "../components/BudgetSheetProvider"
+import { FixedExpensesPreview } from "../components/FixedExpensesPreview"
+import { useCreateTransactionSheet } from "../../transactions/components/CreateTransactionSheetProvider"
+import { getCurrentMonth } from "../hooks/useBudgets"
+import type { BudgetWithProgress } from "../types"
 import { ScreenContainer } from "../../../components/layout/ScreenContainer"
 import { TopSection } from "../../../components/layout/TopSection"
 import { TopSectionHeader } from "../../../components/layout/TopSectionHeader"
@@ -27,16 +36,18 @@ import { HomeBalance } from "../../home/components/HomeBalance"
 import { HomeGreeting } from "../../home/components/HomeGreeting"
 import { HomeIncomeExpenseSummary } from "../../home/components/HomeIncomeExpenseSummary"
 
-export function BudgetsScreen() {
+export function BudgetsScreen({ navigation }: { navigation: { navigate: (screen: string) => void } }) {
   return (
     <BudgetSheetProvider>
-      <BudgetsScreenContent />
+      <BudgetsScreenContent navigation={navigation} />
     </BudgetSheetProvider>
   )
 }
 
-function BudgetsScreenContent() {
+function BudgetsScreenContent({ navigation }: { navigation: { navigate: (screen: string) => void } }) {
   const insets = useSafeAreaInsets()
+  const queryClient = useQueryClient()
+  const selectedHouseholdId = useHouseholdStore((state) => state.selectedHouseholdId)
   const [topSectionHeight, setTopSectionHeight] = useState(0)
   const [refreshing, setRefreshing] = useState(false)
   const profileQuery = useProfile()
@@ -52,6 +63,7 @@ function BudgetsScreenContent() {
 
   const deleteBudgetMutation = useDeleteBudget()
   const { openCreateBudget, openEditBudget } = useBudgetSheet()
+  const { openCreateTransaction, openEditFixedExpense } = useCreateTransactionSheet()
 
   function handleTopSectionLayout(event: LayoutChangeEvent) {
     const height = event.nativeEvent.layout.height
@@ -71,40 +83,56 @@ function BudgetsScreenContent() {
     }
   }
 
-  function handleDeleteBudget(
-    budgetId: string
-  ) {
-    Alert.alert(
-      "Eliminar presupuesto",
-      "¿Seguro que quieres eliminar este presupuesto?",
-      [
-        {
-          text: "Cancelar",
-          style: "cancel",
-        },
-        {
-          text: "Eliminar",
-          style: "destructive",
-          onPress: async () => {
-            try {
-              await deleteBudgetMutation.mutateAsync(
-                budgetId
-              )
-            } catch (error) {
-              const message =
-                error instanceof Error
-                  ? error.message
-                  : "No se pudo eliminar el presupuesto."
-
-              Alert.alert(
-                "Error",
-                message
-              )
-            }
-          },
-        },
-      ]
+  async function handleDeleteBudget(budgetId: string) {
+    const month = getCurrentMonth()
+    const queryKey = ["budgets", selectedHouseholdId, month] as const
+    const budget = queryClient
+      .getQueryData<BudgetWithProgress[]>(queryKey)
+      ?.find((item) => item.id === budgetId)
+    const previous = queryClient.getQueryData<BudgetWithProgress[]>(queryKey)
+    queryClient.setQueryData<BudgetWithProgress[]>(
+      queryKey,
+      (current) => current?.filter((item) => item.id !== budgetId),
     )
+
+    try {
+      await deleteBudgetMutation.mutateAsync(budgetId)
+    } catch (error) {
+      queryClient.setQueryData(queryKey, previous)
+      showUndo({
+        message: error instanceof Error
+          ? error.message
+          : "No se pudo eliminar el presupuesto.",
+      })
+      return
+    }
+
+    if (!budget) {
+      showUndo({ message: "Eliminaste el presupuesto" })
+      return
+    }
+
+    showUndo({
+      message: "Eliminaste el presupuesto",
+      actionLabel: "Deshacer",
+      onAction: () => {
+        void createBudget({
+          householdId: budget.household_id,
+          categoryId: budget.category_id,
+          userId: budget.created_by,
+          name: budget.name,
+          amount: budget.amount,
+          month: budget.month,
+        }).then(() => {
+          void queryClient.invalidateQueries({ queryKey: ["budgets", budget.household_id] })
+          void queryClient.invalidateQueries({ queryKey: ["dashboard", budget.household_id] })
+          void queryClient.invalidateQueries({ queryKey: ["dashboard-insights", budget.household_id] })
+          void queryClient.invalidateQueries({ queryKey: ["activity", budget.household_id] })
+        }).catch(() => {
+          showUndo({ message: "No se pudo deshacer el presupuesto." })
+        })
+      },
+    })
   }
 
   if (
@@ -158,14 +186,17 @@ function BudgetsScreenContent() {
           Presupuesto{'\n'}del mes
         </Text>
 
-        <Pressable
-          style={styles.createBudgetButton}
-          onPress={openCreateBudget}
-        >
-          <Text style={styles.createBudgetButtonText}>
-            Crear presupuesto
-          </Text>
-        </Pressable>
+        {budgets?.length ? (
+          <Pressable
+            accessibilityRole="button"
+            style={styles.createBudgetButton}
+            onPress={openCreateBudget}
+          >
+            <Text style={styles.createBudgetButtonText}>
+              Crear presupuesto
+            </Text>
+          </Pressable>
+        ) : null}
 
         <View style={styles.list}>
           {budgets?.length ? (
@@ -221,7 +252,7 @@ function BudgetsScreenContent() {
                     <View style={styles.statItem}>
                       <Text style={styles.statsText}>Gastado</Text>
                       <Text style={styles.statsText}>
-                        {formatCurrency(budget.spent)}
+                        {formatMoney(budget.spent)}
                       </Text>
                     </View>
 
@@ -230,7 +261,7 @@ function BudgetsScreenContent() {
                         Restante
                       </Text>
                       <Text style={styles.statsText}>
-                        {formatCurrency(Math.abs(budget.remaining))}
+                        {formatMoney(Math.abs(budget.remaining))}
                       </Text>
                     </View>
                   </View>
@@ -238,7 +269,7 @@ function BudgetsScreenContent() {
                   <View style={styles.statItem}>
                     <Text style={styles.statsText}>De</Text>
                     <Text style={styles.statsText}>
-                      {formatCurrency(budget.amount)}
+                      {formatMoney(budget.amount)}
                     </Text>
                   </View>
                 </View>
@@ -249,6 +280,7 @@ function BudgetsScreenContent() {
                   style={styles.actions}
                 >
                     <Pressable
+                      accessibilityRole="button"
                       style={styles.actionsButtons}
                       onPress={() =>
                         openEditBudget(budget)
@@ -264,6 +296,7 @@ function BudgetsScreenContent() {
                     </Pressable>
 
                     <Pressable
+                      accessibilityRole="button"
                       style={styles.actionsButtons}
                       onPress={() =>
                         handleDeleteBudget(
@@ -283,12 +316,21 @@ function BudgetsScreenContent() {
               </View>
             ))
           ) : (
-            <Text style={styles.empty}>
-              Todavía no tienes
-              presupuestos este mes.
-            </Text>
+            <EmptyState
+              title="Este mes no armaste presupuestos"
+              body="Definí un tope por categoría para seguir el gasto."
+              actionLabel="Crear presupuesto"
+              onAction={openCreateBudget}
+            />
           )}
         </View>
+        <FixedExpensesPreview
+          onViewAll={() => navigation.navigate("FixedExpenses")}
+          onCreate={() => {
+            void openCreateTransaction("fixed")
+          }}
+          onEdit={openEditFixedExpense}
+        />
             </View>
           </View>
         </ScrollView>
@@ -318,18 +360,6 @@ function BudgetsScreenContent() {
       />
     </View>
   )
-}
-
-function formatCurrency(
-  amount: number
-) {
-  return new Intl.NumberFormat(
-    "es-AR",
-    {
-      style: "currency",
-      currency: "ARS",
-    }
-  ).format(amount)
 }
 
 function formatPercentage(
@@ -498,12 +528,14 @@ const styles =
     },
 
     actionsButtons: {
+      alignItems: "center",
       backgroundColor: colors.transparent,
       borderColor: colors.borderStrong,
       borderRadius: radii.sm,
       borderWidth: 1,
+      justifyContent: "center",
+      minHeight: 44,
       paddingHorizontal: 20,
-      paddingVertical: 10,
     },
 
     editText: {

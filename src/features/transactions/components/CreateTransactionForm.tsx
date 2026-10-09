@@ -22,6 +22,11 @@ import { FieldChevronIcon } from "../../../components/icons/FieldChevronIcon"
 import { useCreateLinkedTransactions } from "../hooks/useCreateLinkedTransactions"
 import { useCreateFixedExpense } from "../../fixedExpenses/hooks/useCreateFixedExpense"
 import { useUpdateFixedExpense } from "../../fixedExpenses/hooks/useUpdateFixedExpense"
+import {
+  getLastCategoryId,
+  setLastCategoryId,
+  setLastEntryMode,
+} from "../services/entryPreferences"
 import { CategorySelectorSheet } from "./CategorySelectorSheet"
 import { HouseholdSelectorSheet } from "./HouseholdSelectorSheet"
 
@@ -48,13 +53,15 @@ export function CreateTransactionForm({
   onSuccess,
   request,
 }: CreateTransactionFormProps) {
-  const [type, setType] = useState<"expense" | "income">("expense")
   const editingFixedExpense = request.kind === "edit-fixed"
     ? request.fixedExpense
     : undefined
   const initialMode = request.kind === "edit-fixed"
     ? "fixed"
     : request.initialMode
+  const [type, setType] = useState<"expense" | "income">(
+    initialMode === "income" ? "income" : "expense"
+  )
   const [mode, setMode] = useState<CreateMovementMode>(initialMode)
   const modeGestureCommitted = useSharedValue(false)
   const [title, setTitle] = useState(editingFixedExpense?.name ?? "")
@@ -157,8 +164,61 @@ export function CreateTransactionForm({
     }
   }, [activeCategoryHouseholdId, isEditingFixedExpense, targets])
 
+  const suggestionHouseholdId = isFixedMode
+    ? fixedCategoryHouseholdId
+    : primaryTarget?.householdId ?? null
+  const { data: suggestionCategories } = useHouseholdCategories(
+    suggestionHouseholdId,
+    isFixedMode ? "expense" : type,
+    Boolean(suggestionHouseholdId) && !isEditingFixedExpense,
+  )
+  const appliedSuggestion = useRef<string | null>(null)
+  const suggestionKey = `${mode}:${suggestionHouseholdId ?? ""}`
+
+  useEffect(() => {
+    if (isEditingFixedExpense || !suggestionHouseholdId || !suggestionCategories) return
+    if (appliedSuggestion.current === suggestionKey) return
+
+    let cancelled = false
+    void getLastCategoryId(suggestionHouseholdId, mode).then((categoryId) => {
+      if (cancelled) return
+      appliedSuggestion.current = suggestionKey
+      if (!categoryId) return
+      const category = suggestionCategories.find((item) => item.id === categoryId)
+      if (!category) return
+
+      if (mode === "fixed") {
+        setFixedCategoryId((current) => current ?? category.id)
+        return
+      }
+
+      setTargets((currentTargets) =>
+        currentTargets.map((target) =>
+          target.householdId === suggestionHouseholdId && !target.categoryId
+            ? { ...target, categoryId: category.id }
+            : target
+        )
+      )
+      setSelectedCategoriesByHousehold((current) => {
+        if (current[suggestionHouseholdId]) return current
+        return { ...current, [suggestionHouseholdId]: category }
+      })
+    })
+
+    return () => {
+      cancelled = true
+    }
+  }, [
+    isEditingFixedExpense,
+    mode,
+    suggestionCategories,
+    suggestionHouseholdId,
+    suggestionKey,
+  ])
+
   function handleModeChange(newMode: CreateMovementMode) {
     setMode(newMode)
+    void setLastEntryMode(newMode)
     setTargets((currentTargets) =>
       currentTargets.map((target) => ({ ...target, categoryId: null }))
     )
@@ -277,6 +337,10 @@ export function CreateTransactionForm({
             isActive: true,
           })
         }
+        if (fixedCategoryHouseholdId) {
+          await setLastCategoryId(fixedCategoryHouseholdId, "fixed", fixedCategoryId)
+        }
+        await setLastEntryMode("fixed")
         onSuccess?.()
       } catch (error) {
         const message = error instanceof Error
@@ -314,6 +378,12 @@ export function CreateTransactionForm({
         amount: parsedAmount,
         targets,
       })
+      await Promise.all(
+        targets
+          .filter((target) => target.categoryId)
+          .map((target) => setLastCategoryId(target.householdId, type, target.categoryId!))
+      )
+      await setLastEntryMode(type)
       onSuccess?.()
     } catch (error) {
       const message = error instanceof Error
@@ -349,6 +419,9 @@ export function CreateTransactionForm({
 
     if (isFixedMode) {
       setFixedCategoryId(category.id)
+      if (fixedCategoryHouseholdId) {
+        void setLastCategoryId(fixedCategoryHouseholdId, "fixed", category.id)
+      }
       categorySelectorRef.current?.dismiss()
       return
     }
@@ -364,6 +437,7 @@ export function CreateTransactionForm({
       ...currentCategories,
       [activeCategoryHouseholdId]: category,
     }))
+    void setLastCategoryId(activeCategoryHouseholdId, type, category.id)
     categorySelectorRef.current?.dismiss()
   }
 
@@ -450,19 +524,22 @@ export function CreateTransactionForm({
 
       <View style={styles.fieldsStack}>
       <BottomSheetTextInput
-        style={[styles.field, styles.input]}
-        placeholder="Título"
-        placeholderTextColor={colors.mutedForeground}
-        value={title}
-        onChangeText={setTitle}
-      />
-      <BottomSheetTextInput
+        accessibilityLabel="Monto"
+        autoFocus={!isEditingFixedExpense}
         style={[styles.field, styles.input]}
         placeholder="Monto"
         placeholderTextColor={colors.mutedForeground}
         keyboardType="decimal-pad"
         value={amount}
         onChangeText={setAmount}
+      />
+      <BottomSheetTextInput
+        accessibilityLabel="Título"
+        style={[styles.field, styles.input]}
+        placeholder="Título"
+        placeholderTextColor={colors.mutedForeground}
+        value={title}
+        onChangeText={setTitle}
       />
 
       {isFixedMode ? (

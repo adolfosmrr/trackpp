@@ -12,9 +12,8 @@ import { useSafeAreaInsets } from "react-native-safe-area-context"
 import { colors, fonts, radii } from "../../../theme"
 
 import { BackLink } from "../../../components/navigation/BackLink"
+import { formatMoney } from "../../../utils/formatMoney"
 
-import { useHouseholds } from "../../households/hooks/useHouseholds"
-import { useHouseholdStore } from "../../../store/householdStore"
 import { useFixedExpensePeriods } from "../hooks/useFixedExpensePeriods"
 import { useUpdateFixedExpensePayment } from "../hooks/useUpdateFixedExpensePayment"
 
@@ -23,11 +22,6 @@ export function CorrectFixedExpensePaymentScreen({ route, navigation }: any) {
   const periodsQuery = useFixedExpensePeriods()
   const { data: periods, isLoading } = periodsQuery
   const mutation = useUpdateFixedExpensePayment()
-  const { data: memberships } = useHouseholds()
-  const selectedHouseholdId = useHouseholdStore((state) => state.selectedHouseholdId)
-  const currency = memberships?.find(
-    (membership) => membership.household.id === selectedHouseholdId
-  )?.household.currency ?? "ARS"
   const period = periods?.find(
     (item) => item.lastPayment?.id === route.params.paymentId
   )
@@ -73,7 +67,7 @@ export function CorrectFixedExpensePaymentScreen({ route, navigation }: any) {
     if (parsedAmount > maximumAmount) {
       Alert.alert(
         "Error",
-        `El monto no puede superar ${formatCurrency(maximumAmount, currency)}.`
+        `El monto no puede superar ${formatMoney(maximumAmount)}.`
       )
       return
     }
@@ -100,7 +94,7 @@ export function CorrectFixedExpensePaymentScreen({ route, navigation }: any) {
       <BackLink onPress={() => navigation.goBack()} />
       <Text style={styles.title}>Corregir pago</Text>
       <Text style={styles.name}>{currentPeriod.name}</Text>
-      <Text style={styles.meta}>Último pago: {formatCurrency(lastPayment.amount, currency)}</Text>
+      <Text style={styles.meta}>Último pago: {formatMoney(lastPayment.amount)}</Text>
 
       <TextInput
         style={styles.input}
@@ -124,14 +118,6 @@ export function CorrectFixedExpensePaymentScreen({ route, navigation }: any) {
       </Pressable>
     </View>
   )
-}
-
-function formatCurrency(amount: number, currency: string) {
-  return new Intl.NumberFormat("es-AR", {
-    style: "currency",
-    currency,
-    maximumFractionDigits: 2,
-  }).format(amount)
 }
 
 const styles = StyleSheet.create({

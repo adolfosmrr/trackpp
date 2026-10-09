@@ -9,7 +9,12 @@ type HomeSectionToggleProps = {
 
 export function HomeSectionToggle({ expanded, onPress }: HomeSectionToggleProps) {
   return (
-    <Pressable style={styles.button} onPress={onPress}>
+    <Pressable
+      accessibilityLabel={expanded ? "Cerrar insights" : "Ver insights"}
+      accessibilityRole="button"
+      style={styles.button}
+      onPress={onPress}
+    >
       <Text style={styles.label}>{expanded ? "Cerrar" : "Ver más"}</Text>
     </Pressable>
   )
@@ -17,8 +22,8 @@ export function HomeSectionToggle({ expanded, onPress }: HomeSectionToggleProps)
 
 const styles = StyleSheet.create({
   button: {
-    height: 28,
-    paddingHorizontal: 10,
+    height: 44,
+    paddingHorizontal: 12,
     backgroundColor: colors.transparent,
     borderColor: colors.borderStrong,
     borderRadius: radii.sm,

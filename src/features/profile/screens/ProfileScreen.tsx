@@ -1,13 +1,15 @@
 import {
   View,
-  ScrollView,
   Text,
   Pressable,
   StyleSheet,
   ActivityIndicator,
 } from "react-native"
+import { BottomSheetScrollView } from "@gorhom/bottom-sheet"
 
 import { colors, fonts, radii } from "../../../theme"
+import { navigationRef } from "../../../navigation/navigationRef"
+import { closeProfileMenu } from "../profileMenu"
 
 import { supabase } from "../../../services/supabase"
 
@@ -18,7 +20,7 @@ import { useMe } from "../../auth/hooks/useMe"
 
 import { useHouseholdStore } from "../../../store/householdStore"
 
-export function ProfileScreen({ navigation, }: any) {
+export function ProfileScreen() {
   const { user } = useAuth()
 
   const selectedHouseholdId = useHouseholdStore(
@@ -51,7 +53,13 @@ export function ProfileScreen({ navigation, }: any) {
       membership.household.id === selectedHouseholdId
   )?.household
 
+  function openScreen(name: "InviteMember" | "CreateHousehold" | "Invitations") {
+    closeProfileMenu()
+    if (navigationRef.isReady()) navigationRef.navigate(name)
+  }
+
   async function handleLogout() {
+    closeProfileMenu()
     await supabase.auth.signOut()
   }
 
@@ -98,7 +106,7 @@ export function ProfileScreen({ navigation, }: any) {
   }
 
   return (
-    <ScrollView
+    <BottomSheetScrollView
       style={styles.container}
       contentContainerStyle={styles.content}
       showsVerticalScrollIndicator={false}
@@ -153,12 +161,9 @@ export function ProfileScreen({ navigation, }: any) {
         </Text>
 
         <Pressable
+          accessibilityRole="button"
           style={styles.inviteButton}
-          onPress={() =>
-            navigation
-              .getParent()
-              ?.navigate("InviteMember")
-          }
+          onPress={() => openScreen("InviteMember")}
         >
           <Text style={styles.inviteButtonText}>
             Invitar pareja
@@ -166,12 +171,9 @@ export function ProfileScreen({ navigation, }: any) {
         </Pressable>
 
         <Pressable
+          accessibilityRole="button"
           style={styles.inviteButton}
-          onPress={() =>
-            navigation
-              .getParent()
-              ?.navigate("CreateHousehold")
-          }
+          onPress={() => openScreen("CreateHousehold")}
         >
           <Text style={styles.inviteButtonText}>
             Crear espacio
@@ -232,14 +234,9 @@ export function ProfileScreen({ navigation, }: any) {
       </View>
 
       <Pressable
+        accessibilityRole="button"
         style={styles.actionButton}
-        onPress={() =>
-          navigation
-            .getParent()
-            ?.navigate(
-              "Invitations"
-            )
-        }
+        onPress={() => openScreen("Invitations")}
       >
         <Text
           style={styles.actionButtonText}
@@ -249,6 +246,7 @@ export function ProfileScreen({ navigation, }: any) {
       </Pressable>
 
       <Pressable
+        accessibilityRole="button"
         style={styles.logoutButton}
         onPress={handleLogout}
       >
@@ -256,7 +254,7 @@ export function ProfileScreen({ navigation, }: any) {
           Cerrar sesión
         </Text>
       </Pressable>
-    </ScrollView>
+    </BottomSheetScrollView>
   )
 }
 
@@ -299,7 +297,7 @@ const styles = StyleSheet.create({
   content: {
     padding: 24,
     gap: 24,
-    paddingBottom: 120,
+    paddingBottom: 32,
   },
   center: {
     flex: 1,
@@ -389,6 +387,7 @@ const styles = StyleSheet.create({
   },
 
   logoutButton: {
+    minHeight: 44,
     padding: 16,
     borderRadius: radii.sm,
     borderWidth: 1,
@@ -403,6 +402,7 @@ const styles = StyleSheet.create({
   },
   inviteButton: {
     marginTop: 8,
+    minHeight: 44,
     padding: 14,
     borderWidth: 1,
     borderColor: colors.border,
@@ -416,6 +416,7 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
   actionButton: {
+    minHeight: 44,
     padding: 16,
     borderWidth: 1,
     borderColor: colors.border,

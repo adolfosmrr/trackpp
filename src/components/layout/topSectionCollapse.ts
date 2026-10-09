@@ -4,8 +4,7 @@ import { cancelAnimation, withSpring, type SharedValue } from "react-native-rean
  * Vertical layout endpoints for the home top panel, expanded then collapsed.
  * The spacer uses the same deltas, so the list follows the panel 1:1.
  */
-export const TOP_HEADER_HEIGHT = [40, 24] as const
-export const TOP_AVATAR_SIZE = [40, 24] as const
+const TOP_HEADER_HEIGHT = [40, 40] as const
 export const TOP_GREETING_HEIGHT = [78, 20] as const
 export const TOP_BALANCE_MARGIN_TOP = [60, 20] as const
 export const TOP_BALANCE_LABEL_HEIGHT = [22, 0] as const
@@ -14,9 +13,6 @@ export const TOP_BALANCE_FONT_SIZE = [60, 40] as const
 export const TOP_SUMMARY_MARGIN_TOP = [50, 10] as const
 export const TOP_SUMMARY_MARGIN_BOTTOM = [10, 30] as const
 export const TOP_SUMMARY_LABEL_FONT_SIZE = [18, 16] as const
-export const TOP_INSIGHT_MARGIN_TOP = [30, 0] as const
-export const TOP_INSIGHT_HEIGHT = [112, 0] as const
-export const TOP_INSIGHT_MARGIN_BOTTOM = [60, 0] as const
 
 const span = ([expanded, collapsed]: readonly [number, number]) => expanded - collapsed
 
@@ -29,13 +25,8 @@ const TOP_SECTION_BODY_COLLAPSE =
   span(TOP_SUMMARY_MARGIN_TOP) +
   span(TOP_SUMMARY_MARGIN_BOTTOM)
 
-export const TOP_SECTION_INSIGHT_COLLAPSE =
-  span(TOP_INSIGHT_MARGIN_TOP) +
-  span(TOP_INSIGHT_HEIGHT) +
-  span(TOP_INSIGHT_MARGIN_BOTTOM)
-
-export function topSectionCollapseRange(showsInsight: boolean) {
-  return TOP_SECTION_BODY_COLLAPSE + (showsInsight ? TOP_SECTION_INSIGHT_COLLAPSE : 0)
+export function topSectionCollapseRange() {
+  return TOP_SECTION_BODY_COLLAPSE
 }
 
 const TOP_SECTION_SPRING = {

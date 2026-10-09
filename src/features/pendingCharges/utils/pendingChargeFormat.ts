@@ -1,3 +1,5 @@
+import { formatMoney } from "../../../utils/formatMoney"
+
 import type { BankChargeSource, PendingBankCharge } from "../types"
 
 export function sourceLabel(source: BankChargeSource) {
@@ -22,16 +24,8 @@ export function chargeTitle(charge: Pick<PendingBankCharge, "merchant">) {
   return charge.merchant?.trim() || "Gasto con tarjeta"
 }
 
-export function formatChargeAmount(amount: number, currency: string) {
-  try {
-    return new Intl.NumberFormat("es-AR", {
-      style: "currency",
-      currency,
-      maximumFractionDigits: 2,
-    }).format(amount)
-  } catch {
-    return `${currency} ${amount.toFixed(2)}`
-  }
+export function formatChargeAmount(amount: number, _currency?: string) {
+  return formatMoney(amount)
 }
 
 export function formatChargeDate(value: string | null) {

@@ -13,6 +13,7 @@ import Animated, {
 import { BalanceHiddenIcon } from "../../../components/icons/BalanceHiddenIcon"
 import { BalanceVisibleIcon } from "../../../components/icons/BalanceVisibleIcon"
 import { AnimatedAmount } from "../../../components/animated/AnimatedAmount"
+import { formatMoney } from "../../../utils/formatMoney"
 import { colors, fonts } from "../../../theme"
 import {
   TOP_BALANCE_AMOUNT_HEIGHT,
@@ -23,14 +24,12 @@ import {
 
 type HomeBalanceProps = {
   balance: number
-  currencySymbol?: string
   collapseProgress: SharedValue<number>
   isCollapsed: boolean
 }
 
 export const HomeBalance = memo(function HomeBalance({
   balance,
-  currencySymbol = "$",
   collapseProgress,
   isCollapsed,
 }: HomeBalanceProps) {
@@ -77,7 +76,7 @@ export const HomeBalance = memo(function HomeBalance({
         <Pressable
           accessibilityLabel={isBalanceVisible ? "Ocultar balance" : "Mostrar balance"}
           accessibilityRole="button"
-          hitSlop={8}
+          hitSlop={14}
           onPress={() => setIsBalanceVisible((visible) => !visible)}
           style={styles.visibilityButton}
         >
@@ -88,7 +87,7 @@ export const HomeBalance = memo(function HomeBalance({
         <Animated.View style={[styles.amountHolder, amountHolderStyle]}>
           <AnimatedAmount
             value={balance}
-            formatter={(value) => `${currencySymbol}${formatAmount(value)}`}
+            formatter={(value) => formatMoney(value)}
             animatedStyle={[amountStyle, amountVisibilityStyle]}
             style={styles.amount}
             textProps={{
@@ -107,7 +106,7 @@ export const HomeBalance = memo(function HomeBalance({
           <Pressable
             accessibilityLabel={isBalanceVisible ? "Ocultar balance" : "Mostrar balance"}
             accessibilityRole="button"
-            hitSlop={8}
+            hitSlop={14}
             onPress={() => setIsBalanceVisible((visible) => !visible)}
           >
             {isBalanceVisible ? <BalanceVisibleIcon /> : <BalanceHiddenIcon />}
@@ -117,12 +116,6 @@ export const HomeBalance = memo(function HomeBalance({
     </Animated.View>
   )
 })
-
-function formatAmount(amount: number) {
-  return new Intl.NumberFormat("es-AR", {
-    maximumFractionDigits: 0,
-  }).format(amount)
-}
 
 const styles = StyleSheet.create({
   container: {

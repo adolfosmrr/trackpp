@@ -1,5 +1,6 @@
 import { Pressable, StyleSheet, Text, View } from "react-native"
 
+import { formatMoney } from "../../../utils/formatMoney"
 import { colors, fonts, radii } from "../../../theme"
 import type { Transaction, TransactionCategory } from "../types"
 
@@ -67,7 +68,7 @@ export function TransactionCard({
             ]}
           >
             {transaction.type === "expense" ? "-" : "+"}
-            {formatCurrency(Math.abs(transaction.amount))}
+            {formatMoney(Math.abs(transaction.amount))}
           </Text>
         </View>
 
@@ -126,7 +127,9 @@ function TransactionAction({
     <Pressable
       accessibilityLabel="Eliminar movimiento"
       disabled={deleting}
+      hitSlop={8}
       onPress={onDelete}
+      style={styles.deleteHit}
     >
       <Text style={styles.delete}>{deleting ? "Eliminando..." : "Eliminar"}</Text>
     </Pressable>
@@ -154,14 +157,6 @@ function formatTransactionTime(value: string) {
     minute: "2-digit",
     hour12: false,
   }).format(date)
-}
-
-function formatCurrency(amount: number) {
-  return new Intl.NumberFormat("es-AR", {
-    style: "currency",
-    currency: "ARS",
-    maximumFractionDigits: 2,
-  }).format(amount)
 }
 
 const styles = StyleSheet.create({
@@ -248,6 +243,12 @@ const styles = StyleSheet.create({
     fontFamily: fonts.mono,
     fontSize: 12,
     lineHeight: 16,
+  },
+  deleteHit: {
+    alignItems: "center",
+    justifyContent: "center",
+    minHeight: 44,
+    minWidth: 44,
   },
   delete: {
     color: colors.destructive,
