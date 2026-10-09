@@ -1,4 +1,5 @@
 import { Pressable, StyleSheet, Text, View } from "react-native"
+import { colors, fonts, radii } from "../../../theme"
 
 import { GoogleIcon } from "../../../components/icons/GoogleIcon"
 import { MatrixTextMorph } from "../../../components/text/MatrixTextMorph"
@@ -36,17 +37,18 @@ const styles = StyleSheet.create({
   button: {
     paddingVertical: 14,
     paddingHorizontal: 20,
-    borderRadius: 9999,
-    borderWidth: 0,
-    backgroundColor: "#EAEAEA",
+    borderRadius: radii.sm,
+    borderWidth: 1,
+    borderColor: colors.borderStrong,
+    backgroundColor: colors.transparent,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
   },
   disabled: { opacity: 0.6 },
   text: {
-    color: "#1C1C1C",
-    fontFamily: "FamiljenGrotesk-Medium",
+    color: colors.foreground,
+    fontFamily: fonts.sansMedium,
     fontSize: 16,
   },
   iconContainer: {

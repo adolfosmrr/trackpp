@@ -11,6 +11,7 @@ import {
   LayoutChangeEvent,
   RefreshControl,
 } from "react-native"
+import { colors, fonts, radii, refreshControlColors } from "../../../theme"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 
 import { useBudgets } from "../hooks/useBudgets"
@@ -113,7 +114,7 @@ function BudgetsScreenContent() {
   ) {
     return (
       <View style={styles.center}>
-        <ActivityIndicator size="large" />
+        <ActivityIndicator color={colors.brand} size="large" />
       </View>
     )
   }
@@ -121,7 +122,7 @@ function BudgetsScreenContent() {
   if (budgetsError || profileError || dashboardError) {
     return (
       <View style={styles.center}>
-        <Text>
+        <Text style={styles.empty}>
           No se pudieron cargar los presupuestos.
         </Text>
       </View>
@@ -139,9 +140,7 @@ function BudgetsScreenContent() {
               refreshing={refreshing}
               onRefresh={handleRefresh}
               progressViewOffset={topSectionHeight}
-              tintColor="#1C1C1C"
-              colors={["#1C1C1C"]}
-              progressBackgroundColor="#FFFFFF"
+              {...refreshControlColors}
             />
           }
         >
@@ -349,6 +348,7 @@ const styles =
     screenWrapper: {
       flex: 1,
       position: "relative",
+      backgroundColor: colors.background,
     },
 
     topSectionOverlay: {
@@ -373,11 +373,9 @@ const styles =
     },
 
     budgetSection: {
-      backgroundColor: "#E6E6E6",
-      borderTopLeftRadius: 60,
-      borderTopRightRadius: 60,
+      backgroundColor: colors.background,
       flexGrow: 1,
-      paddingTop: 50,
+      paddingTop: 8,
     },
 
     budgetContent: {
@@ -387,20 +385,24 @@ const styles =
 
     center: {
       flex: 1,
+      backgroundColor: colors.background,
       justifyContent: "center",
       alignItems: "center",
     },
 
     title: {
-      fontSize: 40,
-      lineHeight: 40,
-      fontWeight: "700",
+      color: colors.foreground,
+      fontFamily: fonts.sansSemibold,
+      fontSize: 22,
+      letterSpacing: -0.4,
+      lineHeight: 26,
+      fontWeight: "600",
     },
 
     createBudgetButton: {
       width: "100%",
-      backgroundColor: "#000000",
-      borderRadius: 999,
+      backgroundColor: colors.brand,
+      borderRadius: radii.sm,
       paddingHorizontal: 20,
       paddingVertical: 15,
       alignItems: "center",
@@ -408,8 +410,8 @@ const styles =
     },
 
     createBudgetButtonText: {
-      color: "#FFFFFF",
-      fontFamily: "FamiljenGrotesk-Bold",
+      color: colors.brandForeground,
+      fontFamily: fonts.sansSemibold,
       fontSize: 16,
       lineHeight: 16,
     },
@@ -420,18 +422,12 @@ const styles =
     },
 
     card: {
-      backgroundColor: "#FFFFFF",
-      borderRadius: 20,
-      elevation: 6,
+      backgroundColor: colors.card,
+      borderColor: colors.border,
+      borderRadius: radii.md,
+      borderWidth: 1,
       gap: 12,
-      padding: 20,
-      shadowColor: "#000",
-      shadowOffset: {
-        width: 0,
-        height: 4,
-      },
-      shadowOpacity: 0.25,
-      shadowRadius: 12,
+      padding: 14,
     },
 
     cardHeader: {
@@ -440,36 +436,35 @@ const styles =
     },
 
     cardTitle: {
-      color: "#1C1C1C",
-      fontFamily: "FamiljenGrotesk-Bold",
-      fontSize: 24,
+      color: colors.foreground,
+      fontFamily: fonts.sansSemibold,
+      fontSize: 16,
       lineHeight: 24,
     },
 
     cardPercentage: {
-      color: "#1C1C1C",
-      fontFamily: "FamiljenGrotesk-Bold",
-      fontSize: 24,
+      color: colors.foreground,
+      fontFamily: fonts.monoSemibold,
+      fontSize: 16,
       lineHeight: 24,
     },
 
     progressBackground: {
-      height: 8,
-      backgroundColor: "#B6B6B6",
-      borderRadius: 999,
+      height: 6,
+      backgroundColor: colors.control,
+      borderRadius: radii.xs,
       overflow: "hidden",
     },
 
     progress: {
       height: "100%",
-      backgroundColor: "#000000",
+      backgroundColor: colors.brand,
     },
 
     cardSeparator: {
       width: "100%",
       height: 1,
-      backgroundColor: "#000000",
-      opacity: 0.5,
+      backgroundColor: colors.border,
       marginVertical: 15,
     },
 
@@ -489,11 +484,10 @@ const styles =
     },
 
     statsText: {
-      color: "#1C1C1C",
-      fontFamily: "Satoshi-Bold",
-      fontSize: 14,
-      lineHeight: 14,
-      opacity: 0.7,
+      color: colors.mutedForeground,
+      fontFamily: fonts.mono,
+      fontSize: 13,
+      lineHeight: 16,
     },
 
     actions: {
@@ -504,29 +498,32 @@ const styles =
     },
 
     actionsButtons: {
-      backgroundColor: "#000000",
-      borderRadius: 999,
+      backgroundColor: colors.transparent,
+      borderColor: colors.borderStrong,
+      borderRadius: radii.sm,
+      borderWidth: 1,
       paddingHorizontal: 20,
       paddingVertical: 10,
     },
 
     editText: {
-      color: "#FFFFFF",
-      fontFamily: "FamiljenGrotesk-Bold",
+      color: colors.foreground,
+      fontFamily: fonts.sansMedium,
       fontSize: 12,
       lineHeight: 12,
     },
 
     deleteText: {
-      color: "#FF2F2F",
-      fontFamily: "FamiljenGrotesk-Bold",
+      color: colors.destructive,
+      fontFamily: fonts.sansMedium,
       fontSize: 12,
       lineHeight: 12,
     },
 
     empty: {
       textAlign: "center",
-      color: "#777",
+      color: colors.mutedForeground,
+      fontFamily: fonts.sans,
       paddingVertical: 30,
     },
 

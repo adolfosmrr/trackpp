@@ -1,4 +1,5 @@
 import { StyleSheet, Text, type ViewStyle } from "react-native"
+import { colors, fonts } from "../../theme"
 import Animated, { type AnimatedStyle } from "react-native-reanimated"
 
 type ProfileAvatarProps = {
@@ -24,15 +25,17 @@ export function ProfileAvatar({ name, uri, style }: ProfileAvatarProps) {
 const styles = StyleSheet.create({
   avatar: {
     alignItems: "center",
-    backgroundColor: "#D1D1D1",
+    backgroundColor: colors.control,
+    borderColor: colors.border,
+    borderWidth: 1,
     borderRadius: 20,
     height: 40,
     justifyContent: "center",
     width: 40,
   },
   initials: {
-    color: "#1C1C1C",
-    fontFamily: "FamiljenGrotesk-Bold",
+    color: colors.foreground,
+    fontFamily: fonts.sansSemibold,
     fontSize: 16,
   },
 })

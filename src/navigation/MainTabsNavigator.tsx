@@ -13,6 +13,7 @@ import {
     withMainTabsSwipe,
     type MainTabsParamList,
 } from "./MainTabsSwipeContainer"
+import { colors } from "../theme"
 
 const SwipeHomeScreen = withMainTabsSwipe(HomeScreen)
 const SwipeTransactionsScreen = withMainTabsSwipe(TransactionsScreen)
@@ -40,7 +41,11 @@ export function MainTabsNavigator() {
         <Tab.Navigator
             screenOptions={{
                 headerShown: false,
-                tabBarActiveTintColor: "#000000",
+                tabBarActiveTintColor: colors.brand,
+                tabBarInactiveTintColor: colors.mutedForeground,
+                tabBarStyle: {
+                    backgroundColor: colors.background,
+                },
             }}
         >
             <Tab.Screen

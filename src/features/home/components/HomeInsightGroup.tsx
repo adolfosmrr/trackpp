@@ -1,5 +1,6 @@
 import { StyleSheet, Text } from "react-native"
 
+import { colors, fonts } from "../../../theme"
 import type {
   HomeAiInsightAction,
   HomeAiInsightGroup as HomeAiInsightGroupData,
@@ -36,7 +37,7 @@ export function HomeInsightGroup({
             accessibilityRole="button"
             key={`${segment.action.id}-${segment.start}`}
             onPress={() => onActionPress(segment.action)}
-            style={styles.action}
+            style={[styles.action, variant === "plain" && styles.plainAction]}
           >
             {segment.value}
           </Text>
@@ -78,7 +79,8 @@ export function segmentInsightGroup(text: string, actions: HomeAiInsightAction[]
 }
 
 const styles = StyleSheet.create({
-  group: { color: "#1C1C1C", fontFamily: "FamiljenGrotesk-Medium", fontSize: 14, lineHeight: 18 },
-  plainGroup: { color: "#FFFFFF", fontFamily: "FamiljenGrotesk-Bold", fontSize: 22, lineHeight: 28, opacity: 0.5 },
-  action: { textDecorationLine: "underline" },
+  group: { color: colors.foreground, fontFamily: fonts.sans, fontSize: 14, lineHeight: 20 },
+  plainGroup: { color: colors.mutedForeground, fontFamily: fonts.sansMedium, fontSize: 22, lineHeight: 28 },
+  action: { color: colors.brand, textDecorationLine: "underline" },
+  plainAction: { color: colors.brand },
 })

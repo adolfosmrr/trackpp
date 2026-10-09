@@ -1,5 +1,6 @@
 import { Pressable, StyleSheet, Text, View } from "react-native"
 
+import { colors, fonts, radii } from "../../../theme"
 import type { Transaction, TransactionCategory } from "../types"
 
 export type TransactionCardContext = "home" | "transactions"
@@ -59,7 +60,12 @@ export function TransactionCard({
           <Text style={styles.title} numberOfLines={2}>
             {transaction.title}
           </Text>
-          <Text style={styles.amount}>
+          <Text
+            style={[
+              styles.amount,
+              transaction.type === "expense" ? styles.expenseAmount : styles.incomeAmount,
+            ]}
+          >
             {transaction.type === "expense" ? "-" : "+"}
             {formatCurrency(Math.abs(transaction.amount))}
           </Text>
@@ -161,10 +167,12 @@ function formatCurrency(amount: number) {
 const styles = StyleSheet.create({
   card: {
     width: "100%",
-    backgroundColor: "#000000",
-    borderRadius: 20,
-    paddingVertical: 15,
-    paddingHorizontal: 20,
+    backgroundColor: colors.card,
+    borderColor: colors.border,
+    borderRadius: radii.md,
+    borderWidth: 1,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
   },
   headerRow: {
     alignItems: "center",
@@ -174,11 +182,10 @@ const styles = StyleSheet.create({
   },
   actor: {
     flex: 1,
-    color: "#B6FAC5",
-    fontFamily: "Satoshi-Bold",
+    color: colors.brand,
+    fontFamily: fonts.sansMedium,
     fontSize: 12,
-    lineHeight: 12,
-    opacity: 0.5,
+    lineHeight: 16,
   },
   content: {
     gap: 10,
@@ -191,10 +198,10 @@ const styles = StyleSheet.create({
   },
   title: {
     flex: 1,
-    color: "#FFFFFF",
-    fontFamily: "FamiljenGrotesk-Bold",
-    fontSize: 24,
-    lineHeight: 24,
+    color: colors.foreground,
+    fontFamily: fonts.sansSemibold,
+    fontSize: 16,
+    lineHeight: 20,
   },
   categoryRow: {
     alignItems: "center",
@@ -206,25 +213,29 @@ const styles = StyleSheet.create({
     lineHeight: 16,
   },
   categoryName: {
-    color: "#FFFFFF",
-    fontFamily: "Satoshi-Regular",
+    color: colors.mutedForeground,
+    fontFamily: fonts.sans,
     fontSize: 16,
     lineHeight: 16,
   },
   amount: {
-    color: "#FFFFFF",
     flexShrink: 0,
-    fontFamily: "FamiljenGrotesk-Bold",
-    fontSize: 24,
-    lineHeight: 24,
+    fontFamily: fonts.monoSemibold,
+    fontSize: 15,
+    lineHeight: 20,
     textAlign: "right",
+  },
+  incomeAmount: {
+    color: colors.brand,
+  },
+  expenseAmount: {
+    color: colors.destructive,
   },
   divider: {
     width: "100%",
     height: 1,
     marginVertical: 10,
-    backgroundColor: "#FFFFFF",
-    opacity: 0.5,
+    backgroundColor: colors.border,
   },
   footerRow: {
     alignItems: "center",
@@ -233,23 +244,21 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   footerText: {
-    color: "#FFFFFF",
-    fontFamily: "Satoshi-Bold",
+    color: colors.mutedForeground,
+    fontFamily: fonts.mono,
     fontSize: 12,
-    lineHeight: 12,
-    opacity: 0.5,
+    lineHeight: 16,
   },
   delete: {
-    color: "#FF2F2F",
-    fontFamily: "FamiljenGrotesk-Bold",
+    color: colors.destructive,
+    fontFamily: fonts.sansMedium,
     fontSize: 12,
     lineHeight: 12,
   },
   cannotDelete: {
-    color: "#FFFFFF",
-    fontFamily: "FamiljenGrotesk-Bold",
+    color: colors.mutedForeground,
+    fontFamily: fonts.sans,
     fontSize: 12,
-    lineHeight: 12,
-    opacity: 0.5,
+    lineHeight: 16,
   },
 })

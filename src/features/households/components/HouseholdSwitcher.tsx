@@ -5,6 +5,8 @@ import {
     StyleSheet,
     Modal,
   } from "react-native"
+  import { useNavigation } from "@react-navigation/native"
+  import { colors, fonts, radii } from "../../../theme"
   import { useState } from "react"
   import Animated, { interpolate, useAnimatedStyle, type SharedValue } from "react-native-reanimated"
   
@@ -12,11 +14,13 @@ import {
   import { useHouseholdStore } from "../../../store/householdStore"
 
   import { ChevronDownIcon } from "../../../components/icons/ChevronDownIcon"
+  import { TOP_HEADER_HEIGHT } from "../../../components/layout/topSectionCollapse"
 
   const AnimatedPressable = Animated.createAnimatedComponent(Pressable)
   
   export function HouseholdSwitcher({ compact = false, collapseProgress }: { compact?: boolean; collapseProgress?: SharedValue<number> }) {
     const [open, setOpen] = useState(false)
+    const navigation = useNavigation<any>()
     const compactAnimatedStyle = useCompactAnimatedStyle(collapseProgress)
   
     const selectedHouseholdId = useHouseholdStore(
@@ -36,6 +40,16 @@ import {
       (membership) =>
         membership.household.id === selectedHouseholdId
     )?.household
+
+    function openCreateHousehold() {
+      setOpen(false)
+      const parent = navigation.getParent?.()
+      if (parent?.getState?.().routeNames?.includes("CreateHousehold")) {
+        parent.navigate("CreateHousehold")
+        return
+      }
+      navigation.navigate("CreateHousehold")
+    }
   
     if (isLoading) {
       return (
@@ -140,6 +154,14 @@ import {
                   </Pressable>
                 )
               })}
+
+              <Pressable
+                accessibilityRole="button"
+                style={styles.createOption}
+                onPress={openCreateHousehold}
+              >
+                <Text style={styles.createOptionText}>+ Crear espacio</Text>
+              </Pressable>
             </Pressable>
           </Pressable>
         </Modal>
@@ -149,14 +171,15 @@ import {
 
   function useCompactAnimatedStyle(collapseProgress?: SharedValue<number>) {
     return useAnimatedStyle(() => ({
-      height: interpolate(collapseProgress?.value ?? 0, [0, 1], [40, 24]),
+      height: interpolate(collapseProgress?.value ?? 0, [0, 1], TOP_HEADER_HEIGHT),
       paddingHorizontal: interpolate(collapseProgress?.value ?? 0, [0, 1], [20, 12]),
     }))
   }
   
   const styles = StyleSheet.create({
     loading: {
-      color: "#777",
+      color: colors.mutedForeground,
+      fontFamily: fonts.sans,
     },
 
     compactLoading: {
@@ -172,14 +195,18 @@ import {
     },
   
     triggerText: {
+      color: colors.foreground,
+      fontFamily: fonts.sansMedium,
       fontSize: 15,
       fontWeight: "600",
     },
 
     compactTrigger: {
       alignItems: "center",
-      backgroundColor: "#FFFFFF",
-      borderRadius: 9999,
+      backgroundColor: colors.transparent,
+      borderColor: colors.borderStrong,
+      borderRadius: radii.md,
+      borderWidth: 1,
       gap: 8,
       height: 40,
       marginLeft: 15,
@@ -187,8 +214,8 @@ import {
     },
 
     compactTriggerText: {
-      color: "#1C1C1C",
-      fontFamily: "FamiljenGrotesk-Bold",
+      color: colors.foreground,
+      fontFamily: fonts.sansMedium,
       fontSize: 16,
       lineHeight: 16,
       fontWeight: undefined,
@@ -196,66 +223,87 @@ import {
   
     chevron: {
       fontSize: 10,
-      color: "#777",
+      color: colors.mutedForeground,
     },
   
     overlay: {
       flex: 1,
-      backgroundColor: "rgba(0, 0, 0, 0.35)",
+      backgroundColor: colors.overlay,
       justifyContent: "center",
       padding: 24,
     },
   
     modal: {
-      backgroundColor: "#fff",
-      borderRadius: 18,
+      backgroundColor: colors.popover,
+      borderColor: colors.border,
+      borderRadius: radii.lg,
+      borderWidth: 1,
       padding: 20,
       gap: 12,
     },
   
     title: {
-      fontSize: 20,
-      fontWeight: "700",
+      color: colors.foreground,
+      fontFamily: fonts.sansSemibold,
+      fontSize: 18,
+      fontWeight: "600",
       marginBottom: 4,
     },
   
     option: {
       padding: 14,
       borderWidth: 1,
-      borderColor: "#ddd",
-      borderRadius: 12,
+      borderColor: colors.border,
+      borderRadius: radii.sm,
       flexDirection: "row",
       alignItems: "center",
       justifyContent: "space-between",
     },
   
     optionSelected: {
-      backgroundColor: "#111",
-      borderColor: "#111",
+      backgroundColor: colors.brandMuted,
+      borderColor: colors.brand,
     },
   
     optionName: {
+      color: colors.foreground,
+      fontFamily: fonts.sansMedium,
       fontSize: 16,
       fontWeight: "600",
     },
-  
+
     optionNameSelected: {
-      color: "#fff",
+      color: colors.brand,
     },
   
     optionType: {
       marginTop: 3,
-      color: "#777",
+      color: colors.mutedForeground,
       fontSize: 13,
     },
   
     optionTypeSelected: {
-      color: "#ccc",
+      color: colors.brand,
     },
-  
+
     check: {
-      color: "#fff",
+      color: colors.brand,
       fontSize: 18,
       fontWeight: "700",
+    },
+
+    createOption: {
+      alignItems: "center",
+      borderColor: colors.border,
+      borderRadius: radii.sm,
+      borderWidth: 1,
+      padding: 14,
+    },
+
+    createOptionText: {
+      color: colors.brand,
+      fontFamily: fonts.sansMedium,
+      fontSize: 16,
+      fontWeight: "600",
     },
   })

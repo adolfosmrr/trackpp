@@ -1,10 +1,12 @@
 import Svg, { Path } from "react-native-svg"
 
+import { colors } from "../../theme"
+
 type CreateFixedExpenseIconProps = {
   color?: string
 }
 
-export function CreateFixedExpenseIcon({ color = "#1C1C1C" }: CreateFixedExpenseIconProps) {
+export function CreateFixedExpenseIcon({ color = colors.brandForeground }: CreateFixedExpenseIconProps) {
   return (
     <Svg width={15} height={14} viewBox="0 0 15 14" fill="none">
       <Path

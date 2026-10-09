@@ -8,6 +8,10 @@ import {
   StyleSheet,
   Alert,
 } from "react-native"
+import { useSafeAreaInsets } from "react-native-safe-area-context"
+import { colors, fonts, radii } from "../../../theme"
+
+import { BackLink } from "../../../components/navigation/BackLink"
 
 import {
   useCreateHousehold,
@@ -16,6 +20,7 @@ import {
 export function CreateHouseholdScreen({
   navigation,
 }: any) {
+  const insets = useSafeAreaInsets()
   const [name, setName] =
     useState("")
 
@@ -56,7 +61,8 @@ export function CreateHouseholdScreen({
   }
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { paddingTop: insets.top + 16 }]}>
+      <BackLink onPress={() => navigation.goBack()} />
       <Text style={styles.title}>
         Crear espacio compartido
       </Text>
@@ -70,6 +76,7 @@ export function CreateHouseholdScreen({
       <TextInput
         style={styles.input}
         placeholder="Ej. Casa"
+        placeholderTextColor={colors.mutedForeground}
         value={name}
         onChangeText={setName}
       />
@@ -101,32 +108,39 @@ const styles =
   StyleSheet.create({
     container: {
       flex: 1,
+      backgroundColor: colors.background,
       padding: 24,
       gap: 18,
     },
 
     title: {
       fontSize: 26,
-      fontWeight: "700",
+      fontWeight: "600",
+      color: colors.foreground,
+      fontFamily: fonts.sansSemibold,
     },
 
     description: {
       fontSize: 15,
-      color: "#777",
+      color: colors.mutedForeground,
+      fontFamily: fonts.sans,
       lineHeight: 22,
     },
 
     input: {
       borderWidth: 1,
-      borderColor: "#ccc",
-      borderRadius: 12,
-      padding: 14,
+      borderColor: colors.borderStrong,
+      borderRadius: radii.sm,
+      backgroundColor: colors.field,
+      color: colors.foreground,
+      fontFamily: fonts.sans,
+      padding: 12,
     },
 
     button: {
-      backgroundColor: "#111",
-      padding: 16,
-      borderRadius: 12,
+      backgroundColor: colors.brand,
+      padding: 12,
+      borderRadius: radii.sm,
       alignItems: "center",
     },
 
@@ -135,7 +149,8 @@ const styles =
     },
 
     buttonText: {
-      color: "#fff",
-      fontWeight: "700",
+      color: colors.brandForeground,
+      fontFamily: fonts.sansSemibold,
+      fontWeight: "600",
     },
   })

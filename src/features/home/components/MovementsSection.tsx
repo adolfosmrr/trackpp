@@ -1,7 +1,7 @@
 import { Pressable, StyleSheet, Text, View } from "react-native"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
-import Svg, { Defs, LinearGradient, Rect, Stop } from "react-native-svg"
 import type { Transaction } from "../../transactions/types"
+import { colors, fonts, radii } from "../../../theme"
 import { MovementItem } from "./MovementItem"
 
 type MovementsSectionProps = {
@@ -16,24 +16,6 @@ export function MovementsSection({ transactions, onViewAll }: MovementsSectionPr
 
   return (
     <View style={[styles.section, { paddingBottom: bottomPadding }]}>
-      <View pointerEvents="none" style={styles.backgroundLayer}>
-        <Svg width="100%" height="100%" style={StyleSheet.absoluteFill}>
-          <Defs>
-            <LinearGradient
-              id="movements-section-gradient"
-              x1="0%"
-              y1="0%"
-              x2="100%"
-              y2="100%"
-            >
-              <Stop offset="0" stopColor="#BFFFC7" />
-              <Stop offset="1" stopColor="#18A5A7" />
-            </LinearGradient>
-          </Defs>
-          <Rect width="100%" height="100%" fill="url(#movements-section-gradient)" />
-        </Svg>
-      </View>
-
       <View style={styles.content}>
         <View>
           <Text style={styles.sectionTitle}>Movimientos{"\n"}Recientes</Text>
@@ -121,42 +103,36 @@ function formatTransactionDate(date: string) {
 const styles = StyleSheet.create({
   section: {
     position: "relative",
-    marginTop: 10,
-    marginHorizontal: -20,
-    paddingTop: 50,
-    borderTopLeftRadius: 60,
-    borderTopRightRadius: 60,
+    marginTop: 4,
+    paddingTop: 8,
+    borderTopColor: colors.border,
+    borderTopWidth: 1,
   },
-  backgroundLayer: {
-    ...StyleSheet.absoluteFill,
-    borderTopLeftRadius: 60,
-    borderTopRightRadius: 60,
-    overflow: "hidden",
-  },
-  content: {
-    paddingHorizontal: 20,
-  },
+  content: {},
   sectionTitle: {
-    marginBottom: 20,
-    fontSize: 40,
-    lineHeight: 40,
-    fontFamily: "FamiljenGrotesk-Bold",
-    color: "#1C1C1C",
+    marginBottom: 12,
+    fontSize: 22,
+    lineHeight: 26,
+    letterSpacing: -0.4,
+    fontFamily: fonts.sansSemibold,
+    color: colors.foreground,
   },
   viewAllButton: {
     height: 28,
-    paddingHorizontal: 20,
-    backgroundColor: "#000000",
-    borderRadius: 999,
+    paddingHorizontal: 10,
+    backgroundColor: colors.transparent,
+    borderColor: colors.borderStrong,
+    borderRadius: radii.sm,
+    borderWidth: 1,
     alignItems: "center",
     justifyContent: "center",
     alignSelf: "flex-start",
   },
   viewAllText: {
-    color: "#FFFFFF",
-    fontFamily: "FamiljenGrotesk-Bold",
+    color: colors.foreground,
+    fontFamily: fonts.sansMedium,
     fontSize: 12,
-    lineHeight: 12,
+    lineHeight: 14,
   },
   transactions: {
     gap: 12,
@@ -171,12 +147,11 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     fontSize: 16,
     lineHeight: 16,
-    fontFamily: "Satoshi-Bold",
-    color: "#1C1C1C",
-    opacity: 0.5,
+    fontFamily: fonts.monoMedium,
+    color: colors.mutedForeground,
   },
   empty: {
-    color: "#777",
+    color: colors.mutedForeground,
     textAlign: "center",
     paddingVertical: 24,
   },

@@ -1,6 +1,7 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query"
 import { useState } from "react"
 import { Linking, Pressable, StyleSheet, Text, View } from "react-native"
+import { colors, fonts, radii } from "../../../theme"
 import * as Notifications from "expo-notifications"
 
 import {
@@ -59,9 +60,9 @@ export function NotificationPermissionBanner() {
 }
 
 const styles = StyleSheet.create({
-  container: { gap: 8, padding: 14, borderRadius: 12, backgroundColor: "#f5f5f5" },
-  title: { fontWeight: "700" },
-  description: { color: "#555" },
+  container: { gap: 8, padding: 12, borderRadius: radii.md, backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border },
+  title: { fontWeight: "600", color: colors.foreground, fontFamily: fonts.sansSemibold },
+  description: { color: colors.mutedForeground, fontFamily: fonts.sans },
   button: { alignSelf: "flex-start", paddingVertical: 8 },
-  buttonText: { fontWeight: "700" },
+  buttonText: { fontWeight: "600", color: colors.brand, fontFamily: fonts.sansSemibold },
 })

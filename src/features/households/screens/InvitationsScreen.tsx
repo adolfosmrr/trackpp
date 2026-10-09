@@ -7,6 +7,10 @@ import {
     ScrollView,
     Alert,
   } from "react-native"
+import { useSafeAreaInsets } from "react-native-safe-area-context"
+import { colors, fonts, radii } from "../../../theme"
+
+import { BackLink } from "../../../components/navigation/BackLink"
   
   import {
     useInvitations,
@@ -19,6 +23,7 @@ import {
   export function InvitationsScreen({
     navigation,
   }: any) {
+    const insets = useSafeAreaInsets()
     const {
       data: invitations,
       isLoading,
@@ -64,20 +69,27 @@ import {
   
     if (isLoading) {
       return (
-        <View style={styles.center}>
-          <ActivityIndicator
-            size="large"
-          />
+        <View style={[styles.container, { paddingTop: insets.top + 16, paddingHorizontal: 24 }]}>
+          <BackLink onPress={() => navigation.goBack()} />
+          <View style={styles.center}>
+            <ActivityIndicator
+              color={colors.brand}
+              size="large"
+            />
+          </View>
         </View>
       )
     }
   
     if (error) {
       return (
-        <View style={styles.center}>
-          <Text>
-            No se pudieron cargar las invitaciones.
-          </Text>
+        <View style={[styles.container, { paddingTop: insets.top + 16, paddingHorizontal: 24 }]}>
+          <BackLink onPress={() => navigation.goBack()} />
+          <View style={styles.center}>
+            <Text style={styles.empty}>
+              No se pudieron cargar las invitaciones.
+            </Text>
+          </View>
         </View>
       )
     }
@@ -85,10 +97,12 @@ import {
     return (
       <ScrollView
         style={styles.container}
-        contentContainerStyle={
-          styles.content
-        }
+        contentContainerStyle={[
+          styles.content,
+          { paddingTop: insets.top + 16 },
+        ]}
       >
+        <BackLink onPress={() => navigation.goBack()} />
         <Text style={styles.title}>
           Invitaciones
         </Text>
@@ -180,6 +194,7 @@ import {
     StyleSheet.create({
       container: {
         flex: 1,
+        backgroundColor: colors.background,
       },
   
       content: {
@@ -191,43 +206,51 @@ import {
       center: {
         flex: 1,
         alignItems: "center",
+        backgroundColor: colors.background,
         justifyContent: "center",
         padding: 24,
       },
   
       title: {
         fontSize: 26,
-        fontWeight: "700",
+        fontWeight: "600",
+        color: colors.foreground,
+        fontFamily: fonts.sansSemibold,
       },
   
       empty: {
-        color: "#777",
+        color: colors.mutedForeground,
+        fontFamily: fonts.sans,
         textAlign: "center",
         marginTop: 40,
       },
   
       card: {
-        padding: 18,
+        padding: 14,
         borderWidth: 1,
-        borderColor: "#ddd",
-        borderRadius: 16,
+        borderColor: colors.border,
+        borderRadius: radii.md,
+        backgroundColor: colors.card,
         gap: 12,
       },
   
       householdName: {
-        fontSize: 20,
-        fontWeight: "700",
+        fontSize: 18,
+        fontWeight: "600",
+        color: colors.foreground,
+        fontFamily: fonts.sansSemibold,
       },
   
       description: {
-        color: "#777",
+        color: colors.mutedForeground,
+        fontFamily: fonts.sans,
         lineHeight: 20,
       },
   
       button: {
-        padding: 14,
-        backgroundColor: "#111",
-        borderRadius: 10,
+        padding: 12,
+        backgroundColor: colors.brand,
+        borderRadius: radii.sm,
         alignItems: "center",
       },
   
@@ -236,7 +259,8 @@ import {
       },
   
       buttonText: {
-        color: "#fff",
-        fontWeight: "700",
+        color: colors.brandForeground,
+        fontFamily: fonts.sansSemibold,
+        fontWeight: "600",
       },
     })

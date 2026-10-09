@@ -1,5 +1,7 @@
 import type { ReactNode } from "react"
 import { StyleProp, StyleSheet, View, ViewStyle } from "react-native"
+
+import { colors } from "../../theme"
 import {
     BottomTabBarHeightContext,
     useBottomTabBarHeight,
@@ -83,6 +85,7 @@ function ScreenContainerView({
 const styles = StyleSheet.create({
     container: {
         flex: 1,
+        backgroundColor: colors.background,
         paddingHorizontal: 20,
     },
 })

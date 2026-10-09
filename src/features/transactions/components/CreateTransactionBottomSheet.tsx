@@ -1,5 +1,6 @@
 import { forwardRef } from "react"
 import { StyleSheet, useWindowDimensions } from "react-native"
+import { colors, radii } from "../../../theme"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import {
   BottomSheetModal,
@@ -48,11 +49,11 @@ export const CreateTransactionBottomSheet = forwardRef<
 
 const styles = StyleSheet.create({
   background: {
-    backgroundColor: "#E6E6E6",
-    borderTopLeftRadius: 60,
-    borderTopRightRadius: 60,
+    backgroundColor: colors.popover,
+    borderTopLeftRadius: radii.lg,
+    borderTopRightRadius: radii.lg,
   },
   handleIndicator: {
-    backgroundColor: "#1c1c1c",
+    backgroundColor: colors.borderStrong,
   },
 })

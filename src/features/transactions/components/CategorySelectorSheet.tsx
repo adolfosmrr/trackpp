@@ -1,5 +1,6 @@
 import { forwardRef, useState } from "react"
 import { Pressable, StyleSheet, Text, useWindowDimensions, View } from "react-native"
+import { colors, fonts, radii } from "../../../theme"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import {
   BottomSheetModal,
@@ -78,9 +79,9 @@ export const CategorySelectorSheet = forwardRef<
         </View>
         <View style={styles.categoriesWrap}>
           {isLoading ? (
-            <Text>Cargando categorías...</Text>
+            <Text style={styles.status}>Cargando categorías...</Text>
           ) : hasError ? (
-            <Text>No se pudieron cargar las categorías.</Text>
+            <Text style={styles.status}>No se pudieron cargar las categorías.</Text>
           ) : categories?.length ? (
             categories.map((category) => (
               <Pressable
@@ -105,7 +106,7 @@ export const CategorySelectorSheet = forwardRef<
               </Pressable>
             ))
           ) : (
-            <Text>No hay categorías disponibles.</Text>
+            <Text style={styles.status}>No hay categorías disponibles.</Text>
           )}
         </View>
       </BottomSheetScrollView>
@@ -115,14 +116,14 @@ export const CategorySelectorSheet = forwardRef<
 
 const styles = StyleSheet.create({
   sheetContainer: {
-    borderTopLeftRadius: 60,
-    borderTopRightRadius: 60,
+    borderTopLeftRadius: radii.lg,
+    borderTopRightRadius: radii.lg,
     overflow: "hidden",
   },
   background: {
-    backgroundColor: "#E6E6E6",
-    borderTopLeftRadius: 60,
-    borderTopRightRadius: 60,
+    backgroundColor: colors.popover,
+    borderTopLeftRadius: radii.lg,
+    borderTopRightRadius: radii.lg,
   },
   content: {
     gap: 12,
@@ -137,45 +138,48 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
   },
   header: {
-    backgroundColor: "#E6E6E6",
+    backgroundColor: colors.popover,
     paddingHorizontal: 24,
     paddingTop: 24,
     paddingBottom: 12,
     zIndex: 10,
   },
   headerShadow: {
-    elevation: 8,
-    shadowColor: "#000000",
-    shadowOffset: {
-      width: 0,
-      height: 6,
-    },
-    shadowOpacity: 0.35,
-    shadowRadius: 10,
+    borderBottomColor: colors.border,
+    borderBottomWidth: 1,
   },
   title: {
-    fontSize: 18,
+    color: colors.foreground,
+    fontFamily: fonts.sansSemibold,
+    fontSize: 16,
     fontWeight: "600",
   },
   option: {
     alignItems: "center",
-    backgroundColor: "#FFFFFF",
-    borderRadius: 999,
+    backgroundColor: colors.card,
+    borderColor: colors.border,
+    borderRadius: radii.sm,
+    borderWidth: 1,
     flexDirection: "row",
     gap: 8,
     paddingHorizontal: 20,
     paddingVertical: 15,
   },
   optionSelected: {
-    backgroundColor: "#1C1C1C",
+    backgroundColor: colors.brand,
   },
   categoryName: {
-    color: "#1C1C1C",
-    fontSize: 16,
-    fontFamily: "FamiljenGrotesk-Bold",
+    color: colors.foreground,
+    fontSize: 15,
+    fontFamily: fonts.sansMedium,
     lineHeight: 16,
   },
   categoryNameSelected: {
-    color: "#FFFFFF",
+    color: colors.brandForeground,
+  },
+  status: {
+    color: colors.mutedForeground,
+    fontFamily: fonts.sans,
+    paddingHorizontal: 20,
   },
 })

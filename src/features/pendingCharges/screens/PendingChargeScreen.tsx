@@ -8,6 +8,7 @@ import {
   Text,
   View,
 } from "react-native"
+import { colors, fonts, radii } from "../../../theme"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import { BottomSheetModal } from "@gorhom/bottom-sheet"
 
@@ -131,7 +132,7 @@ export function PendingChargeScreen({ navigation, route }: PendingChargeScreenPr
         </Pressable>
 
         {chargeQuery.isLoading ? (
-          <ActivityIndicator color="#1C1C1C" style={styles.loader} />
+          <ActivityIndicator color={colors.brand} style={styles.loader} />
         ) : chargeQuery.isError ? (
           <View style={styles.messageBlock}>
             <Text style={styles.message}>No se pudo cargar este gasto.</Text>
@@ -273,7 +274,7 @@ function errorText(error: unknown, fallback: string) {
 
 const styles = StyleSheet.create({
   screen: {
-    backgroundColor: "#F4F4F4",
+    backgroundColor: colors.background,
     flex: 1,
   },
   content: {
@@ -281,8 +282,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
   },
   back: {
-    color: "#1C1C1C",
-    fontFamily: "FamiljenGrotesk-Medium",
+    color: colors.brand,
+    fontFamily: fonts.sansMedium,
     fontSize: 16,
   },
   loader: {
@@ -293,20 +294,21 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   merchant: {
-    color: "#1C1C1C",
-    fontFamily: "FamiljenGrotesk-Bold",
-    fontSize: 32,
+    color: colors.foreground,
+    fontFamily: fonts.sansSemibold,
+    letterSpacing: -0.6,
+    fontSize: 28,
     lineHeight: 36,
   },
   amount: {
-    color: "#1C1C1C",
-    fontFamily: "FamiljenGrotesk-Bold",
-    fontSize: 28,
+    color: colors.foreground,
+    fontFamily: fonts.monoSemibold,
+    fontSize: 24,
     lineHeight: 32,
   },
   meta: {
-    color: "#666666",
-    fontFamily: "FamiljenGrotesk-Regular",
+    color: colors.mutedForeground,
+    fontFamily: fonts.sans,
     fontSize: 16,
     lineHeight: 22,
   },
@@ -314,15 +316,17 @@ const styles = StyleSheet.create({
     gap: 16,
   },
   message: {
-    color: "#666666",
-    fontFamily: "FamiljenGrotesk-Regular",
+    color: colors.mutedForeground,
+    fontFamily: fonts.sans,
     fontSize: 16,
     lineHeight: 22,
   },
   field: {
     alignItems: "center",
-    backgroundColor: "#000000",
-    borderRadius: 999,
+    backgroundColor: colors.field,
+    borderColor: colors.borderStrong,
+    borderRadius: radii.sm,
+    borderWidth: 1,
     flexDirection: "row",
     justifyContent: "space-between",
     paddingHorizontal: 20,
@@ -332,10 +336,10 @@ const styles = StyleSheet.create({
     opacity: 0.45,
   },
   fieldLabel: {
-    color: "#FFFFFF",
-    fontFamily: "FamiljenGrotesk-Bold",
-    fontSize: 16,
-    lineHeight: 16,
+    color: colors.foreground,
+    fontFamily: fonts.sansMedium,
+    fontSize: 15,
+    lineHeight: 18,
   },
   fieldValueGroup: {
     alignItems: "center",
@@ -347,40 +351,39 @@ const styles = StyleSheet.create({
     minWidth: 0,
   },
   fieldValue: {
-    color: "#FFFFFF",
+    color: colors.mutedForeground,
     flexShrink: 1,
-    fontFamily: "FamiljenGrotesk-Bold",
-    fontSize: 16,
-    lineHeight: 16,
-    opacity: 0.5,
+    fontFamily: fonts.sansMedium,
+    fontSize: 15,
+    lineHeight: 18,
     textAlign: "right",
   },
   error: {
-    color: "#B42318",
-    fontFamily: "FamiljenGrotesk-Regular",
+    color: colors.destructive,
+    fontFamily: fonts.sans,
     fontSize: 14,
     lineHeight: 20,
   },
   primaryButton: {
     alignItems: "center",
-    backgroundColor: "#111111",
-    borderRadius: 999,
+    backgroundColor: colors.brand,
+    borderRadius: radii.sm,
     marginTop: 8,
     padding: 16,
   },
   primaryButtonText: {
-    color: "#FFFFFF",
-    fontFamily: "FamiljenGrotesk-Bold",
-    fontSize: 16,
+    color: colors.brandForeground,
+    fontFamily: fonts.sansSemibold,
+    fontSize: 15,
   },
   secondaryButton: {
     alignItems: "center",
     padding: 12,
   },
   secondaryButtonText: {
-    color: "#1C1C1C",
-    fontFamily: "FamiljenGrotesk-Bold",
-    fontSize: 16,
+    color: colors.mutedForeground,
+    fontFamily: fonts.sansMedium,
+    fontSize: 15,
   },
   buttonDisabled: {
     opacity: 0.45,

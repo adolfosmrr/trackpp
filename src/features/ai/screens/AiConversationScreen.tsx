@@ -11,19 +11,15 @@ import {
   View,
 } from "react-native"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
-import Svg, {
-  Defs,
-  LinearGradient,
-  Path,
-  Rect,
-  Stop,
-} from "react-native-svg"
+import Svg, { Path } from "react-native-svg"
 
 import { ApiError } from "../../../services/api"
 import { useHouseholdStore } from "../../../store/householdStore"
 import { SiriProvider } from "../../../components/organisms/apple-intelligence"
 import { useSiri } from "../../../components/organisms/apple-intelligence/context"
 import { useFinancialChat } from "../hooks/useFinancialChat"
+import { BackLink } from "../../../components/navigation/BackLink"
+import { colors, fonts, radii } from "../../../theme"
 
 const suggestions = [
   "¿Qué gastos fijos tengo pendientes?",
@@ -34,15 +30,15 @@ const suggestions = [
   "¿Cómo evolucionó comida en 3 meses?",
 ]
 
-export function AiConversationScreen({ route }: any) {
+export function AiConversationScreen({ route, navigation }: any) {
   return (
     <SiriProvider>
-      <AiConversationContent route={route} />
+      <AiConversationContent route={route} navigation={navigation} />
     </SiriProvider>
   )
 }
 
-function AiConversationContent({ route }: any) {
+function AiConversationContent({ route, navigation }: any) {
   const insets = useSafeAreaInsets()
   const householdId = useHouseholdStore((state) => state.selectedHouseholdId)
   const [conversationId, setConversationId] = useState<string | null>(
@@ -80,6 +76,9 @@ function AiConversationContent({ route }: any) {
       style={styles.container}
       behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
+      <View style={[styles.header, { paddingTop: insets.top + 16 }]}>
+        <BackLink onPress={() => navigation.goBack()} />
+      </View>
       <ScrollView
         style={styles.messages}
         contentContainerStyle={styles.messagesContent}
@@ -108,7 +107,7 @@ function AiConversationContent({ route }: any) {
           </View>
         ) : null}
 
-        {isLoadingMessages && conversationId ? <ActivityIndicator /> : null}
+        {isLoadingMessages && conversationId ? <ActivityIndicator color={colors.brand} /> : null}
 
         {messages.map((message) => (
           <View
@@ -127,8 +126,8 @@ function AiConversationContent({ route }: any) {
 
         {isPending ? (
           <View style={styles.thinking}>
-            <ActivityIndicator size="small" />
-            <Text>Pensando...</Text>
+            <ActivityIndicator color={colors.brand} size="small" />
+            <Text style={styles.messageRole}>Pensando...</Text>
           </View>
         ) : null}
         {error ? <Text style={styles.error}>{errorMessage}</Text> : null}
@@ -141,6 +140,7 @@ function AiConversationContent({ route }: any) {
             value={input}
             onChangeText={setInput}
             placeholder="Pregunta algo sobre tus finanzas"
+            placeholderTextColor={colors.mutedForeground}
             multiline
             maxLength={500}
             editable={!isPending && Boolean(householdId)}
@@ -151,29 +151,10 @@ function AiConversationContent({ route }: any) {
             onPress={handleSend}
             disabled={!input.trim() || isPending || !householdId}
           >
-            <Svg pointerEvents="none" style={StyleSheet.absoluteFill}>
-              <Defs>
-                <LinearGradient
-                  id="ai-send-button-gradient"
-                  x1="0%"
-                  y1="0%"
-                  x2="100%"
-                  y2="100%"
-                >
-                  <Stop offset="0" stopColor="#BFFFC7" />
-                  <Stop offset="1" stopColor="#18A5A7" />
-                </LinearGradient>
-              </Defs>
-              <Rect
-                width="100%"
-                height="100%"
-                fill="url(#ai-send-button-gradient)"
-              />
-            </Svg>
             <Svg width={15} height={15} viewBox="0 0 15 15" fill="none">
               <Path
                 d="M8.36399 14.9999L6.36399 14.9999L6.36399 3.41394L1.70677 8.07117C1.31622 8.46139 0.683131 8.46159 0.292705 8.07117C-0.0977202 7.68074 -0.0975223 7.04765 0.292705 6.6571L6.65696 0.292846C7.04749 -0.0976787 7.6805 -0.0976787 8.07103 0.292846L14.4353 6.6571C14.8255 7.04765 14.8257 7.68074 14.4353 8.07117C14.0449 8.46159 13.4118 8.46139 13.0212 8.07117L8.36399 3.41394L8.36399 14.9999Z"
-                fill="black"
+                fill={colors.brandForeground}
               />
             </Svg>
           </Pressable>
@@ -184,45 +165,50 @@ function AiConversationContent({ route }: any) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#000000" },
+  container: { flex: 1, backgroundColor: colors.background },
   messages: { flex: 1 },
-  messagesContent: { gap: 12, padding: 20, paddingTop: 80 },
+  header: { paddingHorizontal: 20, paddingBottom: 8 },
+  messagesContent: { gap: 12, padding: 20, paddingTop: 12 },
   emptyState: { gap: 16 },
   subtitle: {
-    color: "#FFFFFF",
-    fontFamily: "FamiljenGrotesk-Bold",
+    color: colors.foreground,
+    fontFamily: fonts.sansSemibold,
     fontSize: 20,
     lineHeight: 20,
   },
   suggestions: { gap: 10 },
   suggestion: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 999,
-    paddingHorizontal: 20,
+    backgroundColor: colors.card,
+    borderColor: colors.border,
+    borderRadius: radii.sm,
+    borderWidth: 1,
+    paddingHorizontal: 12,
     paddingVertical: 10,
   },
   suggestionText: {
-    color: "#1C1C1C",
-    fontFamily: "FamiljenGrotesk-Bold",
+    color: colors.foreground,
+    fontFamily: fonts.sansMedium,
     fontSize: 16,
     lineHeight: 16,
   },
-  message: { borderRadius: 14, gap: 4, maxWidth: "88%", padding: 13 },
-  userMessage: { alignSelf: "flex-end", backgroundColor: "#111" },
-  assistantMessage: { alignSelf: "flex-start", backgroundColor: "#f1f1f1" },
-  messageRole: { color: "#777", fontSize: 12, fontWeight: "700" },
-  messageContent: { lineHeight: 21 },
-  userMessageContent: { color: "#fff", lineHeight: 21 },
+  message: { borderRadius: radii.md, borderWidth: 1, borderColor: colors.border, gap: 4, maxWidth: "88%", padding: 12 },
+  userMessage: { alignSelf: "flex-end", backgroundColor: colors.brandMuted, borderColor: colors.brandBorder },
+  assistantMessage: { alignSelf: "flex-start", backgroundColor: colors.card },
+  messageRole: { color: colors.mutedForeground, fontFamily: fonts.sansMedium, fontSize: 12, fontWeight: "600" },
+  messageContent: { color: colors.foreground, fontFamily: fonts.sans, lineHeight: 21 },
+  userMessageContent: { color: colors.foreground, fontFamily: fonts.sans, lineHeight: 21 },
   thinking: { alignItems: "center", flexDirection: "row", gap: 8 },
-  error: { color: "#b42318" },
+  error: { color: colors.destructive, fontFamily: fonts.sans },
   composerWrapper: {
     paddingHorizontal: 20,
     width: "100%",
   },
   composer: {
     alignItems: "center",
-    backgroundColor: "#FFFFFF",
-    borderRadius: 999,
+    backgroundColor: colors.field,
+    borderColor: colors.borderStrong,
+    borderRadius: radii.lg,
+    borderWidth: 1,
     flexDirection: "row",
     gap: 12,
     paddingLeft: 20,
@@ -232,16 +218,17 @@ const styles = StyleSheet.create({
   },
   input: {
     backgroundColor: "transparent",
-    color: "#1C1C1C",
+    color: colors.foreground,
     flex: 1,
-    fontFamily: "FamiljenGrotesk-Regular",
+    fontFamily: fonts.sans,
     fontSize: 16,
     maxHeight: 100,
     padding: 0,
   },
   sendButton: {
     alignItems: "center",
-    borderRadius: 21,
+    backgroundColor: colors.brand,
+    borderRadius: radii.sm,
     height: 42,
     justifyContent: "center",
     overflow: "hidden",

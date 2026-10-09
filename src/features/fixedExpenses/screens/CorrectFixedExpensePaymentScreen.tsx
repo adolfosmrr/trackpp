@@ -8,6 +8,10 @@ import {
   TextInput,
   View,
 } from "react-native"
+import { useSafeAreaInsets } from "react-native-safe-area-context"
+import { colors, fonts, radii } from "../../../theme"
+
+import { BackLink } from "../../../components/navigation/BackLink"
 
 import { useHouseholds } from "../../households/hooks/useHouseholds"
 import { useHouseholdStore } from "../../../store/householdStore"
@@ -15,6 +19,7 @@ import { useFixedExpensePeriods } from "../hooks/useFixedExpensePeriods"
 import { useUpdateFixedExpensePayment } from "../hooks/useUpdateFixedExpensePayment"
 
 export function CorrectFixedExpensePaymentScreen({ route, navigation }: any) {
+  const insets = useSafeAreaInsets()
   const periodsQuery = useFixedExpensePeriods()
   const { data: periods, isLoading } = periodsQuery
   const mutation = useUpdateFixedExpensePayment()
@@ -35,13 +40,19 @@ export function CorrectFixedExpensePaymentScreen({ route, navigation }: any) {
   }, [period?.lastPayment?.amount])
 
   if (isLoading) {
-    return <ActivityIndicator />
+    return (
+      <View style={[styles.container, { paddingTop: insets.top + 16 }]}>
+        <BackLink onPress={() => navigation.goBack()} />
+        <ActivityIndicator color={colors.brand} />
+      </View>
+    )
   }
 
   if (!period?.lastPayment) {
     return (
-      <View style={styles.center}>
-        <Text>No se encontró el último pago para corregir.</Text>
+      <View style={[styles.container, { paddingTop: insets.top + 16 }]}>
+        <BackLink onPress={() => navigation.goBack()} />
+        <Text style={styles.meta}>No se encontró el último pago para corregir.</Text>
       </View>
     )
   }
@@ -85,14 +96,16 @@ export function CorrectFixedExpensePaymentScreen({ route, navigation }: any) {
   }
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { paddingTop: insets.top + 16 }]}>
+      <BackLink onPress={() => navigation.goBack()} />
       <Text style={styles.title}>Corregir pago</Text>
       <Text style={styles.name}>{currentPeriod.name}</Text>
-      <Text>Último pago: {formatCurrency(lastPayment.amount, currency)}</Text>
+      <Text style={styles.meta}>Último pago: {formatCurrency(lastPayment.amount, currency)}</Text>
 
       <TextInput
         style={styles.input}
         placeholder="Nuevo monto"
+        placeholderTextColor={colors.mutedForeground}
         keyboardType="decimal-pad"
         value={amount}
         onChangeText={setAmount}
@@ -122,12 +135,13 @@ function formatCurrency(amount: number, currency: string) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 24, gap: 16 },
-  center: { flex: 1, alignItems: "center", justifyContent: "center", padding: 24 },
-  title: { fontSize: 22, fontWeight: "700" },
-  name: { fontSize: 18, fontWeight: "600" },
-  input: { borderWidth: 1, borderColor: "#ccc", borderRadius: 10, padding: 14 },
-  button: { padding: 16, borderRadius: 10, backgroundColor: "#111", alignItems: "center" },
+  container: { flex: 1, backgroundColor: colors.background, padding: 24, gap: 16 },
+  center: { flex: 1, backgroundColor: colors.background, alignItems: "center", justifyContent: "center", padding: 24 },
+  title: { color: colors.foreground, fontFamily: fonts.sansSemibold, fontSize: 22, fontWeight: "600" },
+  name: { color: colors.foreground, fontFamily: fonts.sansMedium, fontSize: 18, fontWeight: "600" },
+  meta: { color: colors.mutedForeground, fontFamily: fonts.mono, fontSize: 14 },
+  input: { borderWidth: 1, borderColor: colors.borderStrong, borderRadius: radii.sm, backgroundColor: colors.field, color: colors.foreground, fontFamily: fonts.sans, padding: 12 },
+  button: { padding: 12, borderRadius: radii.sm, backgroundColor: colors.brand, alignItems: "center" },
   disabled: { opacity: 0.6 },
-  buttonText: { color: "#fff", fontWeight: "600" },
+  buttonText: { color: colors.brandForeground, fontFamily: fonts.sansSemibold, fontWeight: "600" },
 })

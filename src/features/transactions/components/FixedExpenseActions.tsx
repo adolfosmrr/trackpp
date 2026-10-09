@@ -1,8 +1,8 @@
 import { Pressable, StyleSheet, Text, View } from "react-native"
-import Svg, { Defs, LinearGradient, Rect, Stop } from "react-native-svg"
 
 import { CreateFixedExpenseIcon } from "../../../components/icons/CreateFixedExpenseIcon"
 import { ViewFixedExpensesIcon } from "../../../components/icons/ViewFixedExpensesIcon"
+import { colors, fonts, radii } from "../../../theme"
 
 type FixedExpenseActionsProps = {
   onCreatePress: () => void
@@ -15,26 +15,7 @@ export function FixedExpenseActions({
 }: FixedExpenseActionsProps) {
   return (
     <View style={styles.container}>
-      <View style={styles.actionSurface}>
-        <Svg pointerEvents="none" style={StyleSheet.absoluteFill}>
-          <Defs>
-            <LinearGradient
-              id="fixed-expense-actions-gradient"
-              x1="0%"
-              y1="0%"
-              x2="100%"
-              y2="100%"
-            >
-              <Stop offset="0" stopColor="#BFFFC7" />
-              <Stop offset="1" stopColor="#18A5A7" />
-            </LinearGradient>
-          </Defs>
-          <Rect
-            width="100%"
-            height="100%"
-            fill="url(#fixed-expense-actions-gradient)"
-          />
-        </Svg>
+      <View style={[styles.actionSurface, styles.brandSurface]}>
         <Pressable
           onPress={onCreatePress}
           style={({ pressed }) => [styles.button, pressed && styles.pressed]}
@@ -65,13 +46,15 @@ const styles = StyleSheet.create({
   },
   actionSurface: {
     flex: 1,
-    borderRadius: 20,
+    borderColor: colors.border,
+    borderRadius: radii.md,
+    borderWidth: 1,
     overflow: "hidden",
     minWidth: 0,
   },
   button: {
     alignItems: "flex-start",
-    borderRadius: 20,
+    borderRadius: radii.md,
     flexDirection: "column",
     gap: 10,
     justifyContent: "center",
@@ -79,20 +62,24 @@ const styles = StyleSheet.create({
     paddingVertical: 15,
     width: "100%",
   },
+  brandSurface: {
+    backgroundColor: colors.brand,
+    borderColor: colors.brand,
+  },
   darkSurface: {
-    backgroundColor: "#000000",
+    backgroundColor: colors.card,
   },
   darkText: {
-    color: "#1C1C1C",
-    fontFamily: "FamiljenGrotesk-Bold",
-    fontSize: 20,
+    color: colors.brandForeground,
+    fontFamily: fonts.sansSemibold,
+    fontSize: 16,
     lineHeight: 20,
     textAlign: "left",
   },
   lightText: {
-    color: "#FFFFFF",
-    fontFamily: "FamiljenGrotesk-Bold",
-    fontSize: 20,
+    color: colors.foreground,
+    fontFamily: fonts.sansSemibold,
+    fontSize: 16,
     lineHeight: 20,
     textAlign: "left",
   },

@@ -8,6 +8,10 @@ import {
   TextInput,
   View,
 } from "react-native"
+import { useSafeAreaInsets } from "react-native-safe-area-context"
+import { colors, fonts, radii } from "../../../theme"
+
+import { BackLink } from "../../../components/navigation/BackLink"
 
 import { useFixedExpensePeriods } from "../hooks/useFixedExpensePeriods"
 import { usePayFixedExpensePeriod } from "../hooks/usePayFixedExpensePeriod"
@@ -15,6 +19,7 @@ import { useHouseholds } from "../../households/hooks/useHouseholds"
 import { useHouseholdStore } from "../../../store/householdStore"
 
 export function PayFixedExpensePeriodScreen({ route, navigation }: any) {
+  const insets = useSafeAreaInsets()
   const periodsQuery = useFixedExpensePeriods()
   const { data: periods, isLoading } = periodsQuery
   const mutation = usePayFixedExpensePeriod()
@@ -27,11 +32,21 @@ export function PayFixedExpensePeriodScreen({ route, navigation }: any) {
   const [amount, setAmount] = useState("")
 
   if (isLoading) {
-    return <ActivityIndicator />
+    return (
+      <View style={[styles.container, { paddingTop: insets.top + 16 }]}>
+        <BackLink onPress={() => navigation.goBack()} />
+        <ActivityIndicator color={colors.brand} />
+      </View>
+    )
   }
 
   if (!period) {
-    return <View style={styles.center}><Text>No se encontró la obligación mensual.</Text></View>
+    return (
+      <View style={[styles.container, { paddingTop: insets.top + 16 }]}>
+        <BackLink onPress={() => navigation.goBack()} />
+        <Text style={styles.meta}>No se encontró la obligación mensual.</Text>
+      </View>
+    )
   }
 
   const currentPeriod = period
@@ -67,15 +82,17 @@ export function PayFixedExpensePeriodScreen({ route, navigation }: any) {
   }
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { paddingTop: insets.top + 16 }]}>
+      <BackLink onPress={() => navigation.goBack()} />
       <Text style={styles.title}>{period.name}</Text>
-      <Text>Total: {formatCurrency(period.expectedAmount, currency)}</Text>
-      <Text>Pagado: {formatCurrency(period.totalPaid, currency)}</Text>
-      <Text>Pendiente: {formatCurrency(period.remaining, currency)}</Text>
+      <Text style={styles.meta}>Total: {formatCurrency(period.expectedAmount, currency)}</Text>
+      <Text style={styles.meta}>Pagado: {formatCurrency(period.totalPaid, currency)}</Text>
+      <Text style={styles.meta}>Pendiente: {formatCurrency(period.remaining, currency)}</Text>
 
       <TextInput
         style={styles.input}
         placeholder="Monto a pagar"
+        placeholderTextColor={colors.mutedForeground}
         keyboardType="decimal-pad"
         value={amount}
         onChangeText={setAmount}
@@ -96,13 +113,14 @@ function formatCurrency(amount: number, currency: string) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 24, gap: 16 },
-  center: { flex: 1, alignItems: "center", justifyContent: "center", padding: 24 },
-  title: { fontSize: 22, fontWeight: "700" },
-  input: { borderWidth: 1, borderColor: "#ccc", borderRadius: 10, padding: 14 },
-  secondaryButton: { padding: 14, borderRadius: 10, borderWidth: 1, borderColor: "#111", alignItems: "center" },
-  secondaryButtonText: { fontWeight: "600" },
-  button: { padding: 16, borderRadius: 10, backgroundColor: "#111", alignItems: "center" },
+  container: { flex: 1, backgroundColor: colors.background, padding: 24, gap: 16 },
+  center: { flex: 1, backgroundColor: colors.background, alignItems: "center", justifyContent: "center", padding: 24 },
+  title: { color: colors.foreground, fontFamily: fonts.sansSemibold, fontSize: 22, fontWeight: "600" },
+  meta: { color: colors.mutedForeground, fontFamily: fonts.mono, fontSize: 14 },
+  input: { borderWidth: 1, borderColor: colors.borderStrong, borderRadius: radii.sm, backgroundColor: colors.field, color: colors.foreground, fontFamily: fonts.sans, padding: 12 },
+  secondaryButton: { padding: 12, borderRadius: radii.sm, borderWidth: 1, borderColor: colors.borderStrong, alignItems: "center" },
+  secondaryButtonText: { color: colors.foreground, fontFamily: fonts.sansMedium, fontWeight: "600" },
+  button: { padding: 12, borderRadius: radii.sm, backgroundColor: colors.brand, alignItems: "center" },
   disabled: { opacity: 0.6 },
-  buttonText: { color: "#fff", fontWeight: "600" },
+  buttonText: { color: colors.brandForeground, fontFamily: fonts.sansSemibold, fontWeight: "600" },
 })
