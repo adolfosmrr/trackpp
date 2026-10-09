@@ -22,7 +22,7 @@ export const TopSectionHeader = memo(function TopSectionHeader({ profile, collap
   const { openCreateTransaction } = useCreateTransactionSheet()
   const avatarStyle = useAnimatedStyle(() => ({
     borderRadius: interpolate(collapseProgress.value, [0, 1], [20, 12]),
-    height: interpolate(collapseProgress.value, [0, 1], TOP_HEADER_HEIGHT),
+    height: interpolate(collapseProgress.value, [0, 1], TOP_AVATAR_SIZE),
     width: interpolate(collapseProgress.value, [0, 1], TOP_AVATAR_SIZE),
   }))
   const addButtonStyle = useAnimatedStyle(() => ({

@@ -45,6 +45,7 @@ function SummaryItem({
 }) {
   const labelStyle = useAnimatedStyle(() => ({
     fontSize: interpolate(collapseProgress.value, [0, 1], TOP_SUMMARY_LABEL_FONT_SIZE),
+    lineHeight: 22,
   }))
 
   return (
@@ -83,7 +84,8 @@ const styles = StyleSheet.create({
   label: {
     color: colors.mutedForeground,
     fontFamily: fonts.sans,
-    fontSize: 13,
+    fontSize: 18,
+    lineHeight: 22,
   },
   amount: {
     flexShrink: 1,

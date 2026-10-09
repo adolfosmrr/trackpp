@@ -39,7 +39,6 @@ export const TopSectionHandle = memo(function TopSectionHandle({
       <View
         accessibilityLabel="Control del panel superior"
         accessibilityRole="button"
-        hitSlop={HANDLE_HIT_SLOP}
         style={styles.hitArea}
       >
         <Animated.View style={[styles.handle, handleStyle]} />

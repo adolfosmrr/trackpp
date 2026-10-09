@@ -134,6 +134,8 @@ export function HomeScreen({
   const scrollY = useSharedValue(0)
   const scrollContentHeight = useSharedValue(0)
   const scrollLayoutHeight = useSharedValue(0)
+  const lastScrollContentHeight = useSharedValue(0)
+  const contentJustShrank = useSharedValue(false)
   const scrollRef = useAnimatedRef<Animated.ScrollView>()
 
   useEffect(() => {
@@ -181,8 +183,11 @@ export function HomeScreen({
     },
     onScroll: (event) => {
       const rawY = event.contentOffset.y
-      scrollContentHeight.value = event.contentSize.height
-      scrollLayoutHeight.value = event.layoutMeasurement.height
+      const contentHeight = event.contentSize.height
+      const contentShrank = lastScrollContentHeight.value > contentHeight + 0.5
+      if (contentHeight > 0) lastScrollContentHeight.value = contentHeight
+      if (contentShrank) contentJustShrank.value = true
+      else if (rawY > 0) contentJustShrank.value = false
 
       if (drivingList.value) {
         previousScrollY.value = Math.max(0, rawY)
@@ -197,14 +202,17 @@ export function HomeScreen({
       }
 
       if (rawY <= 0) {
-        const maxOffset = Math.max(0, event.contentSize.height - event.layoutMeasurement.height)
-        const clampedByLayout = previousScrollY.value > maxOffset + 1
+        const maxOffset = Math.max(0, contentHeight - event.layoutMeasurement.height)
+        const clampedByLayout = previousScrollY.value > maxOffset + 0.01 && rawY <= maxOffset + 0.01
         const scrolledBackToTop =
           scrollActive.value &&
           previousScrollY.value > 0 &&
           collapseTriggered.value &&
           !wasPulling &&
-          !clampedByLayout
+          !clampedByLayout &&
+          !settlingPanel.value &&
+          !contentShrank &&
+          !contentJustShrank.value
         previousScrollY.value = 0
         if (scrolledBackToTop) {
           collapseTriggered.value = false
@@ -384,6 +392,15 @@ export function HomeScreen({
     reportedExpandedHeight.value = height
   }, [reportedExpandedHeight])
 
+  const handleScrollContentSize = useCallback((_width: number, height: number) => {
+    if (scrollContentHeight.value > height + 0.5) contentJustShrank.value = true
+    scrollContentHeight.value = height
+  }, [contentJustShrank, scrollContentHeight])
+
+  const handleScrollLayout = useCallback((event: LayoutChangeEvent) => {
+    scrollLayoutHeight.value = event.nativeEvent.layout.height
+  }, [scrollLayoutHeight])
+
   const pan = useMemo(
     () =>
       Gesture.Pan()
@@ -391,6 +408,7 @@ export function HomeScreen({
         .failOffsetX([-15, 15])
         .onStart((event) => {
           cancelAnimation(collapseProgress)
+          cancelAnimation(scrollY)
           draggingPanel.value = true
           settlingPanel.value = false
           acceptExpandedLayout.value = false
@@ -408,7 +426,6 @@ export function HomeScreen({
             const maxY = Math.max(0, scrollContentHeight.value - scrollLayoutHeight.value)
             const next = Math.min(maxY, Math.max(0, panStartScroll.value - dy))
             scrollY.value = next
-            scrollTo(scrollRef, 0, next, false)
             return
           }
           const range = Math.max(1, collapseRangeShared.value)
@@ -430,7 +447,21 @@ export function HomeScreen({
                 clamp: [0, Math.max(maxY, scrollY.value)],
               },
               (finished) => {
-                if (finished) drivingList.value = false
+                if (!finished) return
+                const landedAtTop = scrollY.value <= 0
+                drivingList.value = false
+                if (!landedAtTop || !collapseTriggered.value || settlingPanel.value) return
+                collapseTriggered.value = false
+                previousScrollY.value = 0
+                settleTopSectionProgress(
+                  collapseProgress,
+                  collapseRangeShared,
+                  reduceMotionShared,
+                  settlingPanel,
+                  acceptExpandedLayout,
+                  0,
+                )
+                runOnJS(commitCollapsed)(false)
               },
             )
             return
@@ -457,9 +488,11 @@ export function HomeScreen({
       commitCollapsed,
       draggingPanel,
       drivingList,
+      collapseTriggered,
       panStartProgress,
       panStartScroll,
       panStartTranslation,
+      previousScrollY,
       reduceMotionShared,
       scrollContentHeight,
       scrollLayoutHeight,
@@ -653,6 +686,8 @@ export function HomeScreen({
       <ScreenContainer paddingHorizontal={0}>
         <Animated.ScrollView
           ref={scrollRef}
+          onContentSizeChange={handleScrollContentSize}
+          onLayout={handleScrollLayout}
           onScroll={scrollHandler}
           scrollEventThrottle={16}
           refreshControl={
