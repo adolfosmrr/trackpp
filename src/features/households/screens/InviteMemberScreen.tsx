@@ -8,13 +8,17 @@ import {
   StyleSheet,
   Alert,
 } from "react-native"
+import { useSafeAreaInsets } from "react-native-safe-area-context"
 import { colors, fonts, radii } from "../../../theme"
+
+import { BackLink } from "../../../components/navigation/BackLink"
 
 import { useCreateInvitation } from "../hooks/useCreateInvitation"
 
 export function InviteMemberScreen({
   navigation,
 }: any) {
+  const insets = useSafeAreaInsets()
   const [email, setEmail] =
     useState("")
 
@@ -60,7 +64,8 @@ export function InviteMemberScreen({
   }
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { paddingTop: insets.top + 16 }]}>
+      <BackLink onPress={() => navigation.goBack()} />
       <Text style={styles.title}>
         Invitar pareja
       </Text>

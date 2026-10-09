@@ -8,7 +8,10 @@ import {
   TextInput,
   View,
 } from "react-native"
+import { useSafeAreaInsets } from "react-native-safe-area-context"
 import { colors, fonts, radii } from "../../../theme"
+
+import { BackLink } from "../../../components/navigation/BackLink"
 
 import { useFixedExpensePeriods } from "../hooks/useFixedExpensePeriods"
 import { usePayFixedExpensePeriod } from "../hooks/usePayFixedExpensePeriod"
@@ -16,6 +19,7 @@ import { useHouseholds } from "../../households/hooks/useHouseholds"
 import { useHouseholdStore } from "../../../store/householdStore"
 
 export function PayFixedExpensePeriodScreen({ route, navigation }: any) {
+  const insets = useSafeAreaInsets()
   const periodsQuery = useFixedExpensePeriods()
   const { data: periods, isLoading } = periodsQuery
   const mutation = usePayFixedExpensePeriod()
@@ -28,11 +32,21 @@ export function PayFixedExpensePeriodScreen({ route, navigation }: any) {
   const [amount, setAmount] = useState("")
 
   if (isLoading) {
-    return <ActivityIndicator color={colors.brand} />
+    return (
+      <View style={[styles.container, { paddingTop: insets.top + 16 }]}>
+        <BackLink onPress={() => navigation.goBack()} />
+        <ActivityIndicator color={colors.brand} />
+      </View>
+    )
   }
 
   if (!period) {
-    return <View style={styles.center}><Text style={styles.meta}>No se encontró la obligación mensual.</Text></View>
+    return (
+      <View style={[styles.container, { paddingTop: insets.top + 16 }]}>
+        <BackLink onPress={() => navigation.goBack()} />
+        <Text style={styles.meta}>No se encontró la obligación mensual.</Text>
+      </View>
+    )
   }
 
   const currentPeriod = period
@@ -68,7 +82,8 @@ export function PayFixedExpensePeriodScreen({ route, navigation }: any) {
   }
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { paddingTop: insets.top + 16 }]}>
+      <BackLink onPress={() => navigation.goBack()} />
       <Text style={styles.title}>{period.name}</Text>
       <Text style={styles.meta}>Total: {formatCurrency(period.expectedAmount, currency)}</Text>
       <Text style={styles.meta}>Pagado: {formatCurrency(period.totalPaid, currency)}</Text>

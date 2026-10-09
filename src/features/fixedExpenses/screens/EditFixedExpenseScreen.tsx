@@ -1,5 +1,7 @@
 import { Alert, ActivityIndicator, StyleSheet, Text, View } from "react-native"
+import { useSafeAreaInsets } from "react-native-safe-area-context"
 
+import { BackLink } from "../../../components/navigation/BackLink"
 import { colors, fonts } from "../../../theme"
 
 import { FixedExpenseForm } from "../components/FixedExpenseForm"
@@ -9,6 +11,7 @@ import { useUpdateFixedExpense } from "../hooks/useUpdateFixedExpense"
 import type { FixedExpenseInput } from "../types"
 
 export function EditFixedExpenseScreen({ route, navigation }: any) {
+  const insets = useSafeAreaInsets()
   const mutation = useUpdateFixedExpense()
   const { data: expenses, isLoading } = useFixedExpenses()
   const expense = expenses?.find((item) => item.id === route.params.fixedExpenseId)
@@ -30,21 +33,31 @@ export function EditFixedExpenseScreen({ route, navigation }: any) {
 
   if (isLoading) {
     return (
-      <View style={styles.center}>
-        <ActivityIndicator color={colors.brand} />
+      <View style={[styles.screen, { paddingTop: insets.top + 16 }]}>
+        <BackLink onPress={() => navigation.goBack()} />
+        <View style={styles.center}>
+          <ActivityIndicator color={colors.brand} />
+        </View>
       </View>
     )
   }
 
   if (!expense) {
     return (
-      <View style={styles.center}>
-        <Text style={styles.message}>No se encontró el gasto fijo.</Text>
+      <View style={[styles.screen, { paddingTop: insets.top + 16 }]}>
+        <BackLink onPress={() => navigation.goBack()} />
+        <View style={styles.center}>
+          <Text style={styles.message}>No se encontró el gasto fijo.</Text>
+        </View>
       </View>
     )
   }
 
   return (
+    <View style={[styles.screen, { paddingTop: insets.top + 16 }]}>
+      <View style={styles.backRow}>
+        <BackLink onPress={() => navigation.goBack()} />
+      </View>
     <FixedExpenseForm
       initialValues={{
         name: expense.name,
@@ -58,10 +71,19 @@ export function EditFixedExpenseScreen({ route, navigation }: any) {
       isPending={mutation.isPending}
       onSubmit={handleSubmit}
     />
+    </View>
   )
 }
 
 const styles = StyleSheet.create({
+  screen: {
+    flex: 1,
+    backgroundColor: colors.background,
+    paddingHorizontal: 24,
+  },
+  backRow: {
+    marginBottom: 8,
+  },
   center: {
     flex: 1,
     alignItems: "center",

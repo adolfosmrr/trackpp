@@ -78,7 +78,7 @@ export function FixedExpenseForm({
   }
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
+    <ScrollView style={styles.scroll} contentContainerStyle={styles.container}>
       <TextInput
         style={styles.input}
         placeholder="Nombre"
@@ -166,7 +166,8 @@ function isValidDay(value: number) {
 }
 
 const styles = StyleSheet.create({
-  container: { padding: 24, gap: 16 },
+  scroll: { flex: 1 },
+  container: { paddingVertical: 24, gap: 16 },
   input: { borderWidth: 1, borderColor: colors.borderStrong, borderRadius: radii.sm, backgroundColor: colors.field, color: colors.foreground, fontFamily: fonts.sans, padding: 12 },
   section: { gap: 10 },
   label: { color: colors.foreground, fontFamily: fonts.sansMedium, fontSize: 15, fontWeight: "600" },

@@ -10,6 +10,7 @@ import {
   Text,
   View,
 } from "react-native"
+import { useSafeAreaInsets } from "react-native-safe-area-context"
 import { colors, fonts, radii, refreshControlColors } from "../../../theme"
 import { useDeleteFixedExpense } from "../hooks/useDeleteFixedExpense"
 import {
@@ -30,9 +31,11 @@ import { HomeIncomeExpenseSummary } from "../../home/components/HomeIncomeExpens
 import { ScreenContainer } from "../../../components/layout/ScreenContainer"
 import { TopSection } from "../../../components/layout/TopSection"
 import { TopSectionHeader } from "../../../components/layout/TopSectionHeader"
+import { BackLink } from "../../../components/navigation/BackLink"
 import { useCreateTransactionSheet } from "../../transactions/components/CreateTransactionSheetProvider"
 
 export function FixedExpensesScreen({ navigation }: any) {
+  const insets = useSafeAreaInsets()
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [processingPeriodId, setProcessingPeriodId] = useState<string | null>(null)
   const [topSectionHeight, setTopSectionHeight] = useState(0)
@@ -142,18 +145,28 @@ export function FixedExpensesScreen({ navigation }: any) {
   }
 
   if (isLoading || periodsLoading || profileLoading || dashboardLoading) {
-    return <View style={styles.center}><ActivityIndicator color={colors.brand} size="large" /></View>
+    return (
+      <View style={[styles.fallback, { paddingTop: insets.top + 16 }]}>
+        <BackLink onPress={() => navigation.goBack()} />
+        <View style={styles.center}>
+          <ActivityIndicator color={colors.brand} size="large" />
+        </View>
+      </View>
+    )
   }
 
   if (error || periodsError || profileError || dashboardError) {
     const loadError = error ?? periodsError ?? profileError ?? dashboardError
 
     return (
-      <View style={styles.center}>
+      <View style={[styles.fallback, { paddingTop: insets.top + 16 }]}>
+        <BackLink onPress={() => navigation.goBack()} />
+        <View style={styles.center}>
         <Text style={styles.empty}>No se pudieron cargar los gastos fijos.</Text>
         {__DEV__ && loadError instanceof Error ? (
           <Text style={styles.errorDetail}>{loadError.message}</Text>
         ) : null}
+        </View>
       </View>
     )
   }
@@ -178,6 +191,9 @@ export function FixedExpensesScreen({ navigation }: any) {
             topSectionHeight > 0 ? (
               <View>
                 <View style={{ height: topSectionHeight }} />
+                <View style={styles.backRow}>
+                  <BackLink onPress={() => navigation.goBack()} />
+                </View>
                 <NotificationPermissionBanner />
               </View>
             ) : null
@@ -201,6 +217,16 @@ export function FixedExpensesScreen({ navigation }: any) {
 
             return (
               <View style={styles.card}>
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel={`Editar ${item.name}`}
+                  onPress={() =>
+                    navigation.navigate("EditFixedExpense", {
+                      fixedExpenseId: item.id,
+                      period: currentPeriod,
+                    })
+                  }
+                >
                 <View style={styles.cardHeader}>
                   <Text style={styles.name} numberOfLines={1}>
                     {period?.category?.icon ?? item.category?.icon
@@ -246,6 +272,7 @@ export function FixedExpensesScreen({ navigation }: any) {
                     <PaymentProgress period={period} />
                   </View>
                 ) : null}
+                </Pressable>
 
                 <View style={styles.actions}>
                   <Pressable
@@ -376,6 +403,8 @@ const styles = StyleSheet.create({
   },
   hiddenList: { opacity: 0 },
   center: { flex: 1, backgroundColor: colors.background, alignItems: "center", justifyContent: "center", padding: 24 },
+  fallback: { flex: 1, backgroundColor: colors.background, paddingHorizontal: 24 },
+  backRow: { marginBottom: 12 },
   list: { gap: 12, paddingHorizontal: 20, paddingTop: 20, paddingBottom: 24 },
   primaryButtonText: { color: colors.brandForeground, fontFamily: fonts.sansSemibold, fontWeight: "600" },
   card: {

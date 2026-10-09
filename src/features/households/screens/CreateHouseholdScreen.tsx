@@ -8,7 +8,10 @@ import {
   StyleSheet,
   Alert,
 } from "react-native"
+import { useSafeAreaInsets } from "react-native-safe-area-context"
 import { colors, fonts, radii } from "../../../theme"
+
+import { BackLink } from "../../../components/navigation/BackLink"
 
 import {
   useCreateHousehold,
@@ -17,6 +20,7 @@ import {
 export function CreateHouseholdScreen({
   navigation,
 }: any) {
+  const insets = useSafeAreaInsets()
   const [name, setName] =
     useState("")
 
@@ -57,7 +61,8 @@ export function CreateHouseholdScreen({
   }
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { paddingTop: insets.top + 16 }]}>
+      <BackLink onPress={() => navigation.goBack()} />
       <Text style={styles.title}>
         Crear espacio compartido
       </Text>

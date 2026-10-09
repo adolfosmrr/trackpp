@@ -8,7 +8,10 @@ import {
   TextInput,
   View,
 } from "react-native"
+import { useSafeAreaInsets } from "react-native-safe-area-context"
 import { colors, fonts, radii } from "../../../theme"
+
+import { BackLink } from "../../../components/navigation/BackLink"
 
 import { useHouseholds } from "../../households/hooks/useHouseholds"
 import { useHouseholdStore } from "../../../store/householdStore"
@@ -16,6 +19,7 @@ import { useFixedExpensePeriods } from "../hooks/useFixedExpensePeriods"
 import { useUpdateFixedExpensePayment } from "../hooks/useUpdateFixedExpensePayment"
 
 export function CorrectFixedExpensePaymentScreen({ route, navigation }: any) {
+  const insets = useSafeAreaInsets()
   const periodsQuery = useFixedExpensePeriods()
   const { data: periods, isLoading } = periodsQuery
   const mutation = useUpdateFixedExpensePayment()
@@ -36,12 +40,18 @@ export function CorrectFixedExpensePaymentScreen({ route, navigation }: any) {
   }, [period?.lastPayment?.amount])
 
   if (isLoading) {
-    return <ActivityIndicator color={colors.brand} />
+    return (
+      <View style={[styles.container, { paddingTop: insets.top + 16 }]}>
+        <BackLink onPress={() => navigation.goBack()} />
+        <ActivityIndicator color={colors.brand} />
+      </View>
+    )
   }
 
   if (!period?.lastPayment) {
     return (
-      <View style={styles.center}>
+      <View style={[styles.container, { paddingTop: insets.top + 16 }]}>
+        <BackLink onPress={() => navigation.goBack()} />
         <Text style={styles.meta}>No se encontró el último pago para corregir.</Text>
       </View>
     )
@@ -86,7 +96,8 @@ export function CorrectFixedExpensePaymentScreen({ route, navigation }: any) {
   }
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { paddingTop: insets.top + 16 }]}>
+      <BackLink onPress={() => navigation.goBack()} />
       <Text style={styles.title}>Corregir pago</Text>
       <Text style={styles.name}>{currentPeriod.name}</Text>
       <Text style={styles.meta}>Último pago: {formatCurrency(lastPayment.amount, currency)}</Text>

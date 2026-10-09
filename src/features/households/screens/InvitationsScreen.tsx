@@ -7,7 +7,10 @@ import {
     ScrollView,
     Alert,
   } from "react-native"
+import { useSafeAreaInsets } from "react-native-safe-area-context"
 import { colors, fonts, radii } from "../../../theme"
+
+import { BackLink } from "../../../components/navigation/BackLink"
   
   import {
     useInvitations,
@@ -20,6 +23,7 @@ import { colors, fonts, radii } from "../../../theme"
   export function InvitationsScreen({
     navigation,
   }: any) {
+    const insets = useSafeAreaInsets()
     const {
       data: invitations,
       isLoading,
@@ -65,21 +69,27 @@ import { colors, fonts, radii } from "../../../theme"
   
     if (isLoading) {
       return (
-        <View style={styles.center}>
-          <ActivityIndicator
-            color={colors.brand}
-            size="large"
-          />
+        <View style={[styles.container, { paddingTop: insets.top + 16, paddingHorizontal: 24 }]}>
+          <BackLink onPress={() => navigation.goBack()} />
+          <View style={styles.center}>
+            <ActivityIndicator
+              color={colors.brand}
+              size="large"
+            />
+          </View>
         </View>
       )
     }
   
     if (error) {
       return (
-        <View style={styles.center}>
-          <Text style={styles.empty}>
-            No se pudieron cargar las invitaciones.
-          </Text>
+        <View style={[styles.container, { paddingTop: insets.top + 16, paddingHorizontal: 24 }]}>
+          <BackLink onPress={() => navigation.goBack()} />
+          <View style={styles.center}>
+            <Text style={styles.empty}>
+              No se pudieron cargar las invitaciones.
+            </Text>
+          </View>
         </View>
       )
     }
@@ -87,10 +97,12 @@ import { colors, fonts, radii } from "../../../theme"
     return (
       <ScrollView
         style={styles.container}
-        contentContainerStyle={
-          styles.content
-        }
+        contentContainerStyle={[
+          styles.content,
+          { paddingTop: insets.top + 16 },
+        ]}
       >
+        <BackLink onPress={() => navigation.goBack()} />
         <Text style={styles.title}>
           Invitaciones
         </Text>

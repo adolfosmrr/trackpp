@@ -15,29 +15,23 @@ import {
 } from "../features/households/screens/InvitationsScreen"
 
 import { InviteMemberScreen } from "../features/households/screens/InviteMemberScreen"
-import { AiChatScreen } from "../features/ai/screens/AiChatScreen"
 import { AiConversationScreen } from "../features/ai/screens/AiConversationScreen"
 import { FixedExpensesScreen } from "../features/fixedExpenses/screens/FixedExpensesScreen"
-import { CreateFixedExpenseScreen } from "../features/fixedExpenses/screens/CreateFixedExpenseScreen"
 import { EditFixedExpenseScreen } from "../features/fixedExpenses/screens/EditFixedExpenseScreen"
 import { PayFixedExpensePeriodScreen } from "../features/fixedExpenses/screens/PayFixedExpensePeriodScreen"
 import { CorrectFixedExpensePaymentScreen } from "../features/fixedExpenses/screens/CorrectFixedExpensePaymentScreen"
-import { CreateTransactionScreen } from "../features/transactions/screens/CreateTransactionScreen"
 import { PendingChargeScreen } from "../features/pendingCharges/screens/PendingChargeScreen"
 import { PendingChargesScreen } from "../features/pendingCharges/screens/PendingChargesScreen"
 import { colors } from "../theme"
 
 export type AppStackParamList = {
   Main: undefined
-  CreateTransaction: undefined
   CreateHousehold: undefined
   InviteMember: undefined
   Invitations: undefined
-  AiChat: undefined
   AiConversation: { conversationId?: string }
   FixedExpenses: undefined
-  CreateFixedExpense: undefined
-  EditFixedExpense: { fixedExpenseId: string }
+  EditFixedExpense: { fixedExpenseId: string; period?: string }
   PayFixedExpensePeriod: { periodId: string }
   CorrectFixedExpensePayment: { paymentId: string }
   PendingCharges: undefined
@@ -60,12 +54,6 @@ export function AppNavigator() {
         component={
           MainTabsNavigator
         }
-      />
-
-      <Stack.Screen
-        name="CreateTransaction"
-        component={CreateTransactionScreen}
-        options={{ title: "Nueva transacción" }}
       />
 
       <Stack.Screen
@@ -96,13 +84,6 @@ export function AppNavigator() {
       />
 
       <Stack.Screen
-        name="AiChat"
-        component={AiChatScreen}
-        options={{
-          title: "Asistente",
-        }}
-      />
-      <Stack.Screen
         name="AiConversation"
         component={AiConversationScreen}
         options={{ title: "Asistente" }}
@@ -112,11 +93,6 @@ export function AppNavigator() {
         name="FixedExpenses"
         component={FixedExpensesScreen}
         options={{ title: "Gastos fijos" }}
-      />
-      <Stack.Screen
-        name="CreateFixedExpense"
-        component={CreateFixedExpenseScreen}
-        options={{ title: "Nuevo gasto fijo" }}
       />
       <Stack.Screen
         name="EditFixedExpense"

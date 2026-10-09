@@ -18,6 +18,7 @@ import { useHouseholdStore } from "../../../store/householdStore"
 import { SiriProvider } from "../../../components/organisms/apple-intelligence"
 import { useSiri } from "../../../components/organisms/apple-intelligence/context"
 import { useFinancialChat } from "../hooks/useFinancialChat"
+import { BackLink } from "../../../components/navigation/BackLink"
 import { colors, fonts, radii } from "../../../theme"
 
 const suggestions = [
@@ -29,15 +30,15 @@ const suggestions = [
   "¿Cómo evolucionó comida en 3 meses?",
 ]
 
-export function AiConversationScreen({ route }: any) {
+export function AiConversationScreen({ route, navigation }: any) {
   return (
     <SiriProvider>
-      <AiConversationContent route={route} />
+      <AiConversationContent route={route} navigation={navigation} />
     </SiriProvider>
   )
 }
 
-function AiConversationContent({ route }: any) {
+function AiConversationContent({ route, navigation }: any) {
   const insets = useSafeAreaInsets()
   const householdId = useHouseholdStore((state) => state.selectedHouseholdId)
   const [conversationId, setConversationId] = useState<string | null>(
@@ -75,6 +76,9 @@ function AiConversationContent({ route }: any) {
       style={styles.container}
       behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
+      <View style={[styles.header, { paddingTop: insets.top + 16 }]}>
+        <BackLink onPress={() => navigation.goBack()} />
+      </View>
       <ScrollView
         style={styles.messages}
         contentContainerStyle={styles.messagesContent}
@@ -163,7 +167,8 @@ function AiConversationContent({ route }: any) {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
   messages: { flex: 1 },
-  messagesContent: { gap: 12, padding: 20, paddingTop: 80 },
+  header: { paddingHorizontal: 20, paddingBottom: 8 },
+  messagesContent: { gap: 12, padding: 20, paddingTop: 12 },
   emptyState: { gap: 16 },
   subtitle: {
     color: colors.foreground,

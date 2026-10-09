@@ -165,6 +165,19 @@ export function ProfileScreen({ navigation, }: any) {
           </Text>
         </Pressable>
 
+        <Pressable
+          style={styles.inviteButton}
+          onPress={() =>
+            navigation
+              .getParent()
+              ?.navigate("CreateHousehold")
+          }
+        >
+          <Text style={styles.inviteButtonText}>
+            Crear espacio
+          </Text>
+        </Pressable>
+
         <View style={styles.row}>
           <Text style={styles.label}>
             Espacio activo

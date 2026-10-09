@@ -5,6 +5,7 @@ import {
     StyleSheet,
     Modal,
   } from "react-native"
+  import { useNavigation } from "@react-navigation/native"
   import { colors, fonts, radii } from "../../../theme"
   import { useState } from "react"
   import Animated, { interpolate, useAnimatedStyle, type SharedValue } from "react-native-reanimated"
@@ -18,6 +19,7 @@ import {
   
   export function HouseholdSwitcher({ compact = false, collapseProgress }: { compact?: boolean; collapseProgress?: SharedValue<number> }) {
     const [open, setOpen] = useState(false)
+    const navigation = useNavigation<any>()
     const compactAnimatedStyle = useCompactAnimatedStyle(collapseProgress)
   
     const selectedHouseholdId = useHouseholdStore(
@@ -37,6 +39,16 @@ import {
       (membership) =>
         membership.household.id === selectedHouseholdId
     )?.household
+
+    function openCreateHousehold() {
+      setOpen(false)
+      const parent = navigation.getParent?.()
+      if (parent?.getState?.().routeNames?.includes("CreateHousehold")) {
+        parent.navigate("CreateHousehold")
+        return
+      }
+      navigation.navigate("CreateHousehold")
+    }
   
     if (isLoading) {
       return (
@@ -141,6 +153,14 @@ import {
                   </Pressable>
                 )
               })}
+
+              <Pressable
+                accessibilityRole="button"
+                style={styles.createOption}
+                onPress={openCreateHousehold}
+              >
+                <Text style={styles.createOptionText}>+ Crear espacio</Text>
+              </Pressable>
             </Pressable>
           </Pressable>
         </Modal>
@@ -269,5 +289,20 @@ import {
       color: colors.brand,
       fontSize: 18,
       fontWeight: "700",
+    },
+
+    createOption: {
+      alignItems: "center",
+      borderColor: colors.border,
+      borderRadius: radii.sm,
+      borderWidth: 1,
+      padding: 14,
+    },
+
+    createOptionText: {
+      color: colors.brand,
+      fontFamily: fonts.sansMedium,
+      fontSize: 16,
+      fontWeight: "600",
     },
   })
