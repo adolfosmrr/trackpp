@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react"
+import { useQueryClient } from "@tanstack/react-query"
 import { useIsFocused } from "@react-navigation/native"
 
 import {
@@ -67,6 +68,7 @@ import { UpcomingPaymentsSectionIcon } from "../components/icons/UpcomingPayment
 import { useHomeAiInsight } from "../hooks/useHomeAiInsight"
 import { useHomeInsightActionDetails } from "../hooks/useHomeInsightActionDetails"
 import { useDelayedHomeAmounts } from "../hooks/useDelayedHomeAmounts"
+import { PendingChargesBanner } from "../../pendingCharges/components/PendingChargesBanner"
 
 const INSIGHT_SLOT_HEIGHT = 112
 const SCROLL_TRIGGER_DELTA = 3
@@ -85,6 +87,7 @@ export function HomeScreen({
   navigation,
 }: any) {
   const { user } = useAuth()
+  const queryClient = useQueryClient()
   const isFocused = useIsFocused()
   const markedSeenForHousehold = useRef<string | null>(
     null
@@ -400,6 +403,7 @@ export function HomeScreen({
         remindersQuery.refetch(),
         homeInsightQuery.refetch(),
         actionDetailsQuery.refetch(),
+        queryClient.invalidateQueries({ queryKey: ["pending-charges"] }),
       ])
     } finally {
       setRefreshing(false)
@@ -490,6 +494,9 @@ export function HomeScreen({
       <Animated.View
         pointerEvents="none"
         style={topSectionSpacerStyle}
+      />
+      <PendingChargesBanner
+        onPress={() => navigation.navigate("PendingCharges")}
       />
       {insights?.length ? (
         <View>

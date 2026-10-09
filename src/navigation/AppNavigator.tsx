@@ -23,6 +23,8 @@ import { EditFixedExpenseScreen } from "../features/fixedExpenses/screens/EditFi
 import { PayFixedExpensePeriodScreen } from "../features/fixedExpenses/screens/PayFixedExpensePeriodScreen"
 import { CorrectFixedExpensePaymentScreen } from "../features/fixedExpenses/screens/CorrectFixedExpensePaymentScreen"
 import { CreateTransactionScreen } from "../features/transactions/screens/CreateTransactionScreen"
+import { PendingChargeScreen } from "../features/pendingCharges/screens/PendingChargeScreen"
+import { PendingChargesScreen } from "../features/pendingCharges/screens/PendingChargesScreen"
 
 export type AppStackParamList = {
   Main: undefined
@@ -37,6 +39,8 @@ export type AppStackParamList = {
   EditFixedExpense: { fixedExpenseId: string }
   PayFixedExpensePeriod: { periodId: string }
   CorrectFixedExpensePayment: { paymentId: string }
+  PendingCharges: undefined
+  PendingCharge: { chargeId: string }
 }
 
 const Stack =
@@ -126,6 +130,16 @@ export function AppNavigator() {
         name="CorrectFixedExpensePayment"
         component={CorrectFixedExpensePaymentScreen}
         options={{ title: "Corregir pago" }}
+      />
+      <Stack.Screen
+        name="PendingCharges"
+        component={PendingChargesScreen}
+        options={{ title: "Gastos de tarjeta" }}
+      />
+      <Stack.Screen
+        name="PendingCharge"
+        component={PendingChargeScreen}
+        options={{ title: "Cargar gasto" }}
       />
     </Stack.Navigator>
   )

@@ -16,13 +16,22 @@ type HouseholdSelectorSheetProps = {
   selectedHouseholdIds: string[]
   onChange: (householdIds: string[]) => void
   onDone: () => void
+  selectionMode?: "multiple" | "single"
+  title?: string
 }
 
 export const HouseholdSelectorSheet = forwardRef<
   BottomSheetModal,
   HouseholdSelectorSheetProps
 >(function HouseholdSelectorSheet(
-  { memberships, selectedHouseholdIds, onChange, onDone },
+  {
+    memberships,
+    selectedHouseholdIds,
+    onChange,
+    onDone,
+    selectionMode = "multiple",
+    title = "Añadir a",
+  },
   ref,
 ) {
   const insets = useSafeAreaInsets()
@@ -30,6 +39,11 @@ export const HouseholdSelectorSheet = forwardRef<
   const [hasScrolled, setHasScrolled] = useState(false)
 
   function toggleHousehold(householdId: string) {
+    if (selectionMode === "single") {
+      onChange([householdId])
+      return
+    }
+
     const isSelected = selectedHouseholdIds.includes(householdId)
     if (isSelected && selectedHouseholdIds.length === 1) {
       return
@@ -97,7 +111,7 @@ export const HouseholdSelectorSheet = forwardRef<
             hasScrolled && styles.headerShadow,
           ]}
         >
-          <Text style={styles.title}>Añadir a</Text>
+          <Text style={styles.title}>{title}</Text>
         </View>
         <View style={styles.householdsWrap}>
           {memberships.map((membership) => {
@@ -107,8 +121,10 @@ export const HouseholdSelectorSheet = forwardRef<
             return (
               <Pressable
                 key={household.id}
-                accessibilityRole="checkbox"
-                accessibilityState={{ checked: selected }}
+                accessibilityRole={selectionMode === "single" ? "radio" : "checkbox"}
+                accessibilityState={
+                  selectionMode === "single" ? { selected } : { checked: selected }
+                }
                 onPress={() => toggleHousehold(household.id)}
                 style={[
                   styles.option,
