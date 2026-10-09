@@ -4,7 +4,6 @@ export type {
 } from "../categories/types"
 
 export type {
-    CreateTransactionInput,
     Transaction,
     TransactionCategory,
     TransactionType,
