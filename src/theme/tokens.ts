@@ -80,6 +80,69 @@ export const meshColors = {
   ],
 }
 
+type GradientPoint = readonly [number, number]
+
+export type GradientPalette = {
+  colors: readonly [string, string, string, string]
+  points: readonly [GradientPoint, GradientPoint, GradientPoint, GradientPoint]
+  softness: number
+  grain: number
+}
+
+/**
+ * Four-stop fields for GradientBackground.
+ * `topSection` is the approved home panel: dark center, one soft glow
+ * just outside the top-right, and a dark anchor on the right edge.
+ */
+export const gradients = {
+  bosque: {
+    colors: ["#0C1210", "#16382A", "#1F6B4A", "#131413"],
+    points: [
+      [0.35, 0.58],
+      [0.48, 0.18],
+      [1.08, -0.06],
+      [0.22, 1.08],
+    ],
+    softness: 0.2,
+    grain: 0.03,
+  },
+  brillo: {
+    colors: meshColors.auth,
+    points: [
+      [0.22, 0.32],
+      [0.68, 0.16],
+      [0.86, 0.78],
+      [0.14, 0.88],
+    ],
+    softness: 0.16,
+    grain: 0.03,
+  },
+  mentaAzul: {
+    colors: ["#0E1412", "#14302A", "#2BB59A", "#1A2A3A"],
+    points: [
+      [0.3, 0.42],
+      [0.58, 0.14],
+      [1.12, 0.08],
+      [0.18, 0.92],
+    ],
+    softness: 0.16,
+    grain: 0.03,
+  },
+  topSection: {
+    colors: ["#121614", "#16382A", "#3ECF8E", "#0E100F"],
+    points: [
+      [0.4, 0.62],
+      [0.42, 0.12],
+      [1.14, -0.12],
+      [1.18, 0.62],
+    ],
+    softness: 0.08,
+    grain: 0.03,
+  },
+} as const satisfies Record<string, GradientPalette>
+
+export type GradientName = keyof typeof gradients
+
 export const refreshControlColors = {
   tintColor: colors.brand,
   colors: [colors.brand],

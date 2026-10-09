@@ -9,12 +9,9 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import { useSharedValue, type SharedValue } from "react-native-reanimated"
 
-import { colors, meshColors, radii } from "../../theme"
+import { colors, radii } from "../../theme"
+import { GradientBackground } from "../visual/GradientBackground"
 import { GridBackground } from "./GridBackground"
-import { MeshGradient } from "../visual/MeshGradient"
-
-const TOP_SECTION_GRADIENT_COLORS = meshColors.auth
-const SHOW_TOP_SECTION_GRADIENT = false
 
 type TopSectionProps = {
     children?: ReactNode
@@ -53,17 +50,7 @@ export function TopSection({
             ]}
         >
             <View pointerEvents="none" style={styles.backgroundLayer}>
-                {SHOW_TOP_SECTION_GRADIENT && (
-                    <MeshGradient
-                        animated
-                        blur={0.5}
-                        colors={TOP_SECTION_GRADIENT_COLORS}
-                        intensity={1}
-                        noise={0.3}
-                        speed={0.5}
-                        style={StyleSheet.absoluteFill}
-                    />
-                )}
+                <GradientBackground token="topSection" style={StyleSheet.absoluteFill} />
                 <GridBackground />
             </View>
             {renderContent ? renderContent(modeCollapseProgress) : children}
