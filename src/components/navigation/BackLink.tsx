@@ -8,13 +8,26 @@ type BackLinkProps = {
 
 export function BackLink({ onPress }: BackLinkProps) {
   return (
-    <Pressable accessibilityRole="button" hitSlop={8} onPress={onPress}>
+    <Pressable
+      accessibilityLabel="Volver"
+      accessibilityRole="button"
+      hitSlop={8}
+      onPress={onPress}
+      style={styles.hit}
+    >
       <Text style={styles.back}>Volver</Text>
     </Pressable>
   )
 }
 
 const styles = StyleSheet.create({
+  hit: {
+    alignSelf: "flex-start",
+    justifyContent: "center",
+    minHeight: 44,
+    minWidth: 44,
+    paddingRight: 12,
+  },
   back: {
     color: colors.brand,
     fontFamily: fonts.sansMedium,

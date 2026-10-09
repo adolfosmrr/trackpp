@@ -3,6 +3,7 @@ import {
   Text,
   StyleSheet,
 } from "react-native"
+import { formatMoney } from "../../../utils/formatMoney"
 import { colors, fonts, radii } from "../../../theme"
 
 import { formatRelativeTime } from "../../../utils/formatRelativeTime"
@@ -61,7 +62,7 @@ export function ActivityItem({
 
         {getAmount(item) !== null && (
           <Text style={styles.amount}>
-            {formatCurrency(getAmount(item)!)}
+            {formatMoney(getAmount(item)!)}
           </Text>
         )}
       </View>
@@ -181,8 +182,8 @@ function getActivityAction(
       }
 
       return isCurrentUser
-        ? `corregiste un pago de ${name} de ${formatCurrency(oldAmount)} a ${formatCurrency(newAmount)}`
-        : `corrigió un pago de ${name} de ${formatCurrency(oldAmount)} a ${formatCurrency(newAmount)}`
+        ? `corregiste un pago de ${name} de ${formatMoney(oldAmount)} a ${formatMoney(newAmount)}`
+        : `corrigió un pago de ${name} de ${formatMoney(oldAmount)} a ${formatMoney(newAmount)}`
     }
   }
 }
@@ -209,14 +210,6 @@ function getAmount(item: ActivityItemData) {
     : item.metadata.amount
 
   return typeof value === "number" ? value : null
-}
-
-function formatCurrency(amount: number) {
-  return new Intl.NumberFormat("es-AR", {
-    style: "currency",
-    currency: "ARS",
-    maximumFractionDigits: 2,
-  }).format(amount)
 }
 
 const styles = StyleSheet.create({

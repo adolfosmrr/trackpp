@@ -3,6 +3,7 @@ import { colors, fonts, radii } from "../../../theme"
 import { useMemo } from "react"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 
+import { EmptyState } from "../../../components/feedback/EmptyState"
 import { TransactionCard } from "./TransactionCard"
 import type { Transaction, TransactionFilters } from "../types"
 import {
@@ -15,8 +16,9 @@ type TransactionsMovementsSectionProps = {
   transactions: Transaction[]
   householdType: "personal" | "couple"
   userId?: string
-  deletingId: string | null
   onDelete: (transaction: Transaction) => void
+  onCreate: () => void
+  onClearFilters: () => void
   filters: TransactionFilters
   activeFilterCount: number
   onOpenFilters: () => void
@@ -26,8 +28,9 @@ export function TransactionsMovementsSection({
   transactions,
   householdType,
   userId,
-  deletingId,
   onDelete,
+  onCreate,
+  onClearFilters,
   filters,
   activeFilterCount,
   onOpenFilters,
@@ -49,7 +52,7 @@ export function TransactionsMovementsSection({
       <View style={styles.content}>
         <View style={styles.titleRow}>
           <Text style={styles.sectionTitle}>Todos los{"\n"}Movimientos</Text>
-          <Pressable style={styles.filterButton} onPress={onOpenFilters}>
+          <Pressable accessibilityRole="button" style={styles.filterButton} onPress={onOpenFilters}>
             <Text style={styles.filterButtonText}>
               {activeFilterCount ? `Filtrar · ${activeFilterCount}` : "Filtrar"}
             </Text>
@@ -75,7 +78,6 @@ export function TransactionsMovementsSection({
                       actorText={householdType === "couple"
                         ? `Por ${transaction.created_by === userId ? "ti" : transaction.creator?.name ?? "otro miembro"}`
                         : undefined}
-                      deleting={deletingId === transaction.id}
                       onDelete={() => onDelete(transaction)}
                       transaction={transaction}
                     />
@@ -83,12 +85,20 @@ export function TransactionsMovementsSection({
                 </View>
               </View>
             ))
+          ) : transactions.length && !hasFilteredResults ? (
+            <EmptyState
+              title="Nada coincide con estos filtros"
+              body="Probá con otro período o limpiá los filtros para ver todos los movimientos."
+              actionLabel="Limpiar filtros"
+              onAction={onClearFilters}
+            />
           ) : (
-            <Text style={styles.empty}>
-              {transactions.length && !hasFilteredResults
-                ? "No hay movimientos que coincidan con estos filtros."
-                : "Todavía no hay movimientos."}
-            </Text>
+            <EmptyState
+              title="Todavía no cargaste movimientos"
+              body="Anotá un gasto, un ingreso o un gasto fijo desde el botón + Movimiento."
+              actionLabel="Agregar movimiento"
+              onAction={onCreate}
+            />
           )}
         </View>
       </View>
@@ -128,8 +138,8 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     justifyContent: "center",
     marginTop: 4,
+    minHeight: 44,
     paddingHorizontal: 14,
-    paddingVertical: 8,
   },
   filterButtonText: {
     color: colors.foreground,

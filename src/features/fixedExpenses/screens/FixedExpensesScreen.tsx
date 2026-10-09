@@ -11,7 +11,11 @@ import {
   View,
 } from "react-native"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
+import { useQueryClient } from "@tanstack/react-query"
 import { colors, fonts, radii, refreshControlColors } from "../../../theme"
+import { formatMoney } from "../../../utils/formatMoney"
+import { EmptyState } from "../../../components/feedback/EmptyState"
+import { showUndo } from "../../../components/feedback/undo"
 import { useDeleteFixedExpense } from "../hooks/useDeleteFixedExpense"
 import {
   getCurrentFixedExpensePeriod,
@@ -36,6 +40,7 @@ import { useCreateTransactionSheet } from "../../transactions/components/CreateT
 
 export function FixedExpensesScreen({ navigation }: any) {
   const insets = useSafeAreaInsets()
+  const queryClient = useQueryClient()
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [processingPeriodId, setProcessingPeriodId] = useState<string | null>(null)
   const [topSectionHeight, setTopSectionHeight] = useState(0)
@@ -60,12 +65,7 @@ export function FixedExpensesScreen({ navigation }: any) {
   const deleteMutation = useDeleteFixedExpense()
   const payMutation = usePayFixedExpensePeriod()
   const householdsQuery = useHouseholds()
-  const { data: memberships } = householdsQuery
   const selectedHouseholdId = useHouseholdStore((state) => state.selectedHouseholdId)
-  const selectedHousehold = memberships?.find(
-    (membership) => membership.household.id === selectedHouseholdId
-  )
-  const currency = selectedHousehold?.household.currency ?? "ARS"
 
   async function handleRefresh() {
     setRefreshing(true)
@@ -88,30 +88,36 @@ export function FixedExpensesScreen({ navigation }: any) {
   }
 
   function confirmDelete(expense: FixedExpense) {
-    Alert.alert(
-      "¿Eliminar gasto fijo?",
-      `${expense.name} dejará de aparecer entre tus gastos fijos.`,
-      [
-        { text: "Cancelar", style: "cancel" },
-        {
-          text: "Eliminar",
-          style: "destructive",
-          onPress: () => void handleDelete(expense.id),
-        },
-      ]
-    )
-  }
-
-  async function handleDelete(id: string) {
     if (deletingId) return
-    setDeletingId(id)
-    try {
-      await deleteMutation.mutateAsync(id)
-    } catch (deleteError) {
-      Alert.alert("Error", deleteError instanceof Error ? deleteError.message : "No se pudo eliminar el gasto fijo.")
-    } finally {
-      setDeletingId(null)
-    }
+    const queryKey = ["fixed-expenses", selectedHouseholdId] as const
+    const previous = queryClient.getQueryData<FixedExpense[]>(queryKey)
+    queryClient.setQueryData<FixedExpense[]>(
+      queryKey,
+      (current) => current?.filter((item) => item.id !== expense.id),
+    )
+    const restore = () => queryClient.setQueryData(queryKey, previous)
+    setDeletingId(expense.id)
+    showUndo({
+      message: "Eliminaste el gasto fijo",
+      actionLabel: "Deshacer",
+      onAction: () => {
+        restore()
+        setDeletingId(null)
+      },
+      onExpire: async () => {
+        try {
+          await deleteMutation.mutateAsync(expense.id)
+        } catch (deleteError) {
+          restore()
+          Alert.alert(
+            "Error",
+            deleteError instanceof Error ? deleteError.message : "No se pudo eliminar el gasto fijo.",
+          )
+        } finally {
+          setDeletingId(null)
+        }
+      },
+    })
   }
 
   function confirmComplete(period: FixedExpensePeriod) {
@@ -119,7 +125,7 @@ export function FixedExpensesScreen({ navigation }: any) {
 
     Alert.alert(
       "Completar pago",
-      `Se registrará un pago de ${formatCurrency(period.remaining, currency)} para ${period.name}.`,
+      `Se registrará un pago de ${formatMoney(period.remaining)} para ${period.name}.`,
       [
         { text: "Cancelar", style: "cancel" },
         { text: "Confirmar", onPress: () => void handleComplete(period) },
@@ -199,18 +205,14 @@ export function FixedExpensesScreen({ navigation }: any) {
             ) : null
           }
           ListEmptyComponent={
-            <View style={styles.emptyState}>
-              <Text style={styles.empty}>Todavía no tienes gastos fijos.</Text>
-              <Text style={styles.emptyDescription}>
-                Agrega alquiler, servicios, suscripciones u otros gastos recurrentes.
-              </Text>
-              <Pressable
-                style={styles.emptyButton}
-                onPress={() => openCreateTransaction("fixed")}
-              >
-                <Text style={styles.primaryButtonText}>Agregar gasto fijo</Text>
-              </Pressable>
-            </View>
+            <EmptyState
+              title="Todavía no tenés gastos fijos"
+              body="Sumá alquiler, servicios o suscripciones para seguirlos todos los meses."
+              actionLabel="Agregar gasto fijo"
+              onAction={() => {
+                void openCreateTransaction("fixed")
+              }}
+            />
           }
           renderItem={({ item }) => {
             const period = periods?.find((entry) => entry.fixedExpenseId === item.id)
@@ -220,12 +222,7 @@ export function FixedExpensesScreen({ navigation }: any) {
                 <Pressable
                   accessibilityRole="button"
                   accessibilityLabel={`Editar ${item.name}`}
-                  onPress={() =>
-                    navigation.navigate("EditFixedExpense", {
-                      fixedExpenseId: item.id,
-                      period: currentPeriod,
-                    })
-                  }
+                  onPress={() => openEditFixedExpense(item, currentPeriod)}
                 >
                 <View style={styles.cardHeader}>
                   <Text style={styles.name} numberOfLines={1}>
@@ -235,7 +232,7 @@ export function FixedExpensesScreen({ navigation }: any) {
                     {period?.name ?? item.name}
                   </Text>
                   <Text style={styles.amount} numberOfLines={1}>
-                    {formatCurrency(period?.expectedAmount ?? item.amount, currency)}
+                    {formatMoney(period?.expectedAmount ?? item.amount)}
                   </Text>
                 </View>
 
@@ -254,10 +251,10 @@ export function FixedExpensesScreen({ navigation }: any) {
                     {period ? (
                       <>
                         <Text style={styles.infoText}>
-                          Pagado: {formatCurrency(period.totalPaid, currency)}
+                          Pagado: {formatMoney(period.totalPaid)}
                         </Text>
                         <Text style={styles.infoText}>
-                          Pendiente: {formatCurrency(period.remaining, currency)}
+                          Pendiente: {formatMoney(period.remaining)}
                         </Text>
                       </>
                     ) : null}
@@ -276,6 +273,7 @@ export function FixedExpensesScreen({ navigation }: any) {
 
                 <View style={styles.actions}>
                   <Pressable
+                    accessibilityRole="button"
                     style={styles.actionButton}
                     onPress={() => openEditFixedExpense(item, currentPeriod)}
                   >
@@ -358,10 +356,6 @@ export function FixedExpensesScreen({ navigation }: any) {
       />
     </View>
   )
-}
-
-function formatCurrency(amount: number, currency: string) {
-  return new Intl.NumberFormat("es-AR", { style: "currency", currency, maximumFractionDigits: 2 }).format(amount)
 }
 
 function PaymentProgress({ period }: { period: FixedExpensePeriod }) {
@@ -494,7 +488,7 @@ const styles = StyleSheet.create({
   actionButton: {
     alignItems: "center",
     justifyContent: "center",
-    paddingVertical: 8,
+    minHeight: 44,
     paddingHorizontal: 12,
     borderRadius: radii.sm,
     borderColor: colors.borderStrong,

@@ -15,7 +15,6 @@ export type MainTabsParamList = {
   Transactions: undefined
   AiChat: undefined
   Budgets: undefined
-  Profile: undefined
 }
 
 export const TAB_ORDER = [
@@ -23,7 +22,6 @@ export const TAB_ORDER = [
   "Transactions",
   "AiChat",
   "Budgets",
-  "Profile",
 ] as const
 
 const GESTURE_ACTIVATION_DISTANCE = 40

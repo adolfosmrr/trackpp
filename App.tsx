@@ -11,6 +11,8 @@ import { RootNavigator } from "./src/navigation/RootNavigator"
 import { NotificationObserver } from "./src/features/notifications/components/NotificationObserver"
 import { PushTokenRegistrar } from "./src/features/notifications/components/PushTokenRegistrar"
 import { CreateTransactionSheetProvider } from "./src/features/transactions/components/CreateTransactionSheetProvider"
+import { ProfileMenuSheet } from "./src/features/profile/components/ProfileMenuSheet"
+import { UndoSnackbar } from "./src/components/feedback/UndoSnackbar"
 import { colors } from "./src/theme"
 import "./src/features/notifications/services/notificationSetup"
 
@@ -42,6 +44,8 @@ export default function App() {
                 <NotificationObserver />
                 <PushTokenRegistrar />
                 <RootNavigator />
+                <ProfileMenuSheet />
+                <UndoSnackbar />
               </CreateTransactionSheetProvider>
             </BottomSheetModalProvider>
           </AuthProvider>

@@ -3,6 +3,7 @@ import type { ReactNode } from "react"
 import { BottomSheetModal } from "@gorhom/bottom-sheet"
 
 import { CreateTransactionBottomSheet } from "./CreateTransactionBottomSheet"
+import { getLastEntryMode, setLastEntryMode } from "../services/entryPreferences"
 import type { CreateMovementMode, TransactionSheetRequest } from "../types"
 import type { FixedExpense } from "../../fixedExpenses/types"
 
@@ -28,8 +29,10 @@ export function CreateTransactionSheetProvider({ children }: { children: ReactNo
     return () => cancelAnimationFrame(frame)
   }, [mounted])
 
-  function openCreateTransaction(nextMode: CreateMovementMode = "expense") {
-    setRequest({ kind: "create", initialMode: nextMode })
+  async function openCreateTransaction(nextMode?: CreateMovementMode) {
+    const mode = nextMode ?? await getLastEntryMode()
+    await setLastEntryMode(mode)
+    setRequest({ kind: "create", initialMode: mode })
     setMounted(true)
   }
 

@@ -1,57 +1,37 @@
 import { memo } from "react"
-import { Pressable, StyleSheet, Text, View } from "react-native"
+import { Pressable, StyleSheet, View } from "react-native"
 import Animated, { interpolate, useAnimatedStyle, type SharedValue } from "react-native-reanimated"
 
-import { TOP_AVATAR_SIZE, TOP_HEADER_HEIGHT } from "./topSectionCollapse"
+import { TOP_AVATAR_SIZE } from "./topSectionCollapse"
 
-import { PlusIcon } from "../icons/PlusIcon"
 import { ProfileAvatar } from "../profile/ProfileAvatar"
 import type { Profile } from "../../features/profile/services/profileService"
+import { openProfileMenu } from "../../features/profile/profileMenu"
 import { HouseholdSwitcher } from "../../features/households/components/HouseholdSwitcher"
-import { useCreateTransactionSheet } from "../../features/transactions/components/CreateTransactionSheetProvider"
-import { colors, fonts, radii } from "../../theme"
 
 type TopSectionHeaderProps = {
   profile?: Pick<Profile, "name" | "avatar_url"> | null
   collapseProgress: SharedValue<number>
 }
 
-const AnimatedPressable = Animated.createAnimatedComponent(Pressable)
-
 export const TopSectionHeader = memo(function TopSectionHeader({ profile, collapseProgress }: TopSectionHeaderProps) {
-  const { openCreateTransaction } = useCreateTransactionSheet()
   const avatarStyle = useAnimatedStyle(() => ({
     borderRadius: interpolate(collapseProgress.value, [0, 1], [20, 12]),
     height: interpolate(collapseProgress.value, [0, 1], TOP_AVATAR_SIZE),
     width: interpolate(collapseProgress.value, [0, 1], TOP_AVATAR_SIZE),
   }))
-  const addButtonStyle = useAnimatedStyle(() => ({
-    height: interpolate(collapseProgress.value, [0, 1], TOP_HEADER_HEIGHT),
-    paddingHorizontal: interpolate(collapseProgress.value, [0, 1], [0, 12]),
-    width: interpolate(collapseProgress.value, [0, 1], [40, 122]),
-  }))
-  const addIconStyle = useAnimatedStyle(() => ({
-    opacity: interpolate(collapseProgress.value, [0, 0.55, 1], [1, 0, 0]),
-  }))
-  const addTextStyle = useAnimatedStyle(() => ({
-    opacity: interpolate(collapseProgress.value, [0, 0.45, 1], [0, 0, 1]),
-  }))
 
   return (
     <View style={styles.row}>
-      <ProfileAvatar name={profile?.name} uri={profile?.avatar_url} style={avatarStyle} />
-      <HouseholdSwitcher collapseProgress={collapseProgress} compact />
-      <AnimatedPressable
-        accessibilityLabel="Agregar movimiento"
+      <Pressable
+        accessibilityLabel="Abrir perfil"
         accessibilityRole="button"
-        onPress={() => openCreateTransaction()}
-        style={[styles.addButton, addButtonStyle]}
+        hitSlop={12}
+        onPress={openProfileMenu}
       >
-        <Animated.View style={addIconStyle}>
-          <PlusIcon />
-        </Animated.View>
-        <Animated.Text style={[styles.addText, addTextStyle]}>+ Movimiento</Animated.Text>
-      </AnimatedPressable>
+        <ProfileAvatar name={profile?.name} uri={profile?.avatar_url} style={avatarStyle} />
+      </Pressable>
+      <HouseholdSwitcher collapseProgress={collapseProgress} compact />
     </View>
   )
 })
@@ -60,24 +40,7 @@ const styles = StyleSheet.create({
   row: {
     alignItems: "center",
     flexDirection: "row",
+    paddingRight: 168,
     width: "100%",
-  },
-  addButton: {
-    alignItems: "center",
-    backgroundColor: colors.brand,
-    borderRadius: radii.md,
-    height: 40,
-    justifyContent: "center",
-    marginLeft: "auto",
-    flexDirection: "row",
-    overflow: "hidden",
-    width: 40,
-  },
-  addText: {
-    color: colors.brandForeground,
-    fontFamily: fonts.sansSemibold,
-    fontSize: 16,
-    lineHeight: 16,
-    position: "absolute",
   },
 })

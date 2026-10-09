@@ -12,5 +12,6 @@ export function useDashboardInsights() {
     queryKey: ["dashboard-insights", householdId],
     queryFn: () => getDashboardInsights(householdId!),
     enabled: Boolean(householdId),
+    retry: false,
   })
 }

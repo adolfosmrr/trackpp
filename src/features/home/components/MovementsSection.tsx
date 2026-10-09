@@ -1,25 +1,24 @@
 import { Pressable, StyleSheet, Text, View } from "react-native"
-import { useSafeAreaInsets } from "react-native-safe-area-context"
 import type { Transaction } from "../../transactions/types"
+import { EmptyState } from "../../../components/feedback/EmptyState"
 import { colors, fonts, radii } from "../../../theme"
 import { MovementItem } from "./MovementItem"
 
 type MovementsSectionProps = {
   transactions: Transaction[]
   onViewAll: () => void
+  onCreate: () => void
 }
 
-export function MovementsSection({ transactions, onViewAll }: MovementsSectionProps) {
-  const insets = useSafeAreaInsets()
-  const bottomPadding = Math.max(insets.bottom, 0) + 66
+export function MovementsSection({ transactions, onViewAll, onCreate }: MovementsSectionProps) {
   const transactionsByDate = groupTransactionsByDate(transactions)
 
   return (
-    <View style={[styles.section, { paddingBottom: bottomPadding }]}>
+    <View style={styles.section}>
       <View style={styles.content}>
         <View>
           <Text style={styles.sectionTitle}>Movimientos{"\n"}Recientes</Text>
-          <Pressable style={styles.viewAllButton} onPress={onViewAll}>
+          <Pressable accessibilityRole="button" style={styles.viewAllButton} onPress={onViewAll}>
             <Text style={styles.viewAllText}>Ver todos</Text>
           </Pressable>
         </View>
@@ -46,7 +45,12 @@ export function MovementsSection({ transactions, onViewAll }: MovementsSectionPr
               </View>
             ))
           ) : (
-            <Text style={styles.empty}>No hay movimientos recientes.</Text>
+            <EmptyState
+              title="Todavía no cargaste movimientos"
+              body="Anotá un gasto o un ingreso con el botón + Movimiento."
+              actionLabel="Agregar movimiento"
+              onAction={onCreate}
+            />
           )}
         </View>
       </View>
@@ -118,8 +122,8 @@ const styles = StyleSheet.create({
     color: colors.foreground,
   },
   viewAllButton: {
-    height: 28,
-    paddingHorizontal: 10,
+    height: 44,
+    paddingHorizontal: 12,
     backgroundColor: colors.transparent,
     borderColor: colors.borderStrong,
     borderRadius: radii.sm,

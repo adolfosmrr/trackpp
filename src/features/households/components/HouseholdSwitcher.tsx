@@ -68,10 +68,14 @@ import {
         <AnimatedPressable
           accessibilityLabel="Cambiar cuenta"
           accessibilityRole="button"
+          hitSlop={compact ? 10 : 0}
           style={[styles.trigger, compact && styles.compactTrigger, compact && compactAnimatedStyle]}
           onPress={() => setOpen(true)}
         >
-          <Text style={[styles.triggerText, compact && styles.compactTriggerText]}>
+          <Text
+            numberOfLines={1}
+            style={[styles.triggerText, compact && styles.compactTriggerText]}
+          >
             {currentHousehold?.name ?? "Seleccionar espacio"}
           </Text>
   
@@ -207,10 +211,11 @@ import {
       borderColor: colors.borderStrong,
       borderRadius: radii.md,
       borderWidth: 1,
+      flexShrink: 1,
       gap: 8,
       height: 40,
       marginLeft: 15,
-      paddingHorizontal: 20,
+      paddingHorizontal: 12,
     },
 
     compactTriggerText: {

@@ -1,8 +1,11 @@
 import { useState } from "react"
 import { useQueryClient } from "@tanstack/react-query"
-import { Alert, FlatList, Pressable, RefreshControl, StyleSheet, Text, View } from "react-native"
+import { FlatList, Pressable, RefreshControl, StyleSheet, Text, View } from "react-native"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 
+import { EmptyState } from "../../../components/feedback/EmptyState"
+import { showUndo } from "../../../components/feedback/undo"
+import { useHouseholdStore } from "../../../store/householdStore"
 import { ScreenContainer } from "../../../components/layout/ScreenContainer"
 import { FieldChevronIcon } from "../../../components/icons/FieldChevronIcon"
 import { GridBackground } from "../../../components/layout/GridBackground"
@@ -16,8 +19,8 @@ import { colors, fonts, meshColors, radii, refreshControlColors } from "../../..
 export function AiChatScreen({ navigation }: any) {
   const insets = useSafeAreaInsets()
   const queryClient = useQueryClient()
+  const selectedHouseholdId = useHouseholdStore((state) => state.selectedHouseholdId)
   const [refreshing, setRefreshing] = useState(false)
-  const [deletingConversationId, setDeletingConversationId] = useState<string | null>(null)
   const conversationsQuery = useAiConversations()
   const deleteMutation = useDeleteAiConversation()
   const listTopPadding = Math.max(100, insets.top + 20)
@@ -41,31 +44,26 @@ export function AiChatScreen({ navigation }: any) {
   }
 
   function confirmDelete(conversationId: string) {
-    Alert.alert(
-      "¿Eliminar conversación?",
-      "Esta conversación y sus mensajes se eliminarán permanentemente.",
-      [
-        { text: "Cancelar", style: "cancel" },
-        {
-          text: "Eliminar",
-          style: "destructive",
-          onPress: () => void handleDelete(conversationId),
-        },
-      ]
+    const queryKey = ["ai-conversations", selectedHouseholdId] as const
+    const previous = queryClient.getQueryData<AiConversation[]>(queryKey)
+    queryClient.setQueryData<AiConversation[]>(
+      queryKey,
+      (current) => current?.filter((conversation) => conversation.id !== conversationId),
     )
-  }
-
-  async function handleDelete(conversationId: string) {
-    if (deletingConversationId === conversationId) return
-
-    setDeletingConversationId(conversationId)
-    try {
-      await deleteMutation.mutateAsync(conversationId)
-    } catch {
-      Alert.alert("Error", "No se pudo eliminar la conversación.")
-    } finally {
-      setDeletingConversationId(null)
-    }
+    const restore = () => queryClient.setQueryData(queryKey, previous)
+    showUndo({
+      message: "Eliminaste la conversación",
+      actionLabel: "Deshacer",
+      onAction: restore,
+      onExpire: async () => {
+        try {
+          await deleteMutation.mutateAsync(conversationId)
+        } catch {
+          restore()
+          showUndo({ message: "No se pudo eliminar la conversación." })
+        }
+      },
+    })
   }
 
   return (
@@ -98,7 +96,7 @@ export function AiChatScreen({ navigation }: any) {
         }
         ItemSeparatorComponent={() => <View style={styles.conversationGap} />}
         ListHeaderComponent={(
-          <View>
+          <View style={styles.header}>
             <Text style={styles.title}>AIsistente</Text>
             <Pressable style={styles.newConversationButton} onPress={handleNewConversation}>
               <Text style={styles.newConversationText}>Nueva conversación</Text>
@@ -115,7 +113,12 @@ export function AiChatScreen({ navigation }: any) {
           ) : conversationsQuery.error ? (
             <Text style={styles.errorText}>No se pudieron cargar las conversaciones.</Text>
           ) : (
-            <Text style={styles.emptyText}>Aún no tienes conversaciones.</Text>
+            <EmptyState
+              title="Todavía no hablaste con el asistente"
+              body="Preguntale por tus gastos o por cómo viene el mes."
+              actionLabel="Nueva conversación"
+              onAction={handleNewConversation}
+            />
           )
         }
         ListFooterComponent={<View style={styles.listFooter} />}
@@ -127,7 +130,7 @@ export function AiChatScreen({ navigation }: any) {
               conversationId: item.id,
             })}
             onDelete={() => confirmDelete(item.id)}
-            isDeleting={deletingConversationId === item.id}
+            isDeleting={false}
           />
         )}
       />
@@ -167,6 +170,7 @@ function ConversationCard({
             onDelete()
           }}
           hitSlop={8}
+          style={styles.deleteHit}
         >
           <Text style={styles.deleteText}>{isDeleting ? "Eliminando..." : "Eliminar"}</Text>
         </Pressable>
@@ -210,6 +214,9 @@ const styles = StyleSheet.create({
     position: "absolute",
     right: 0,
     top: 0,
+  },
+  header: {
+    paddingRight: 168,
   },
   listContent: { flexGrow: 1 },
   listFooter: { height: 20 },
@@ -288,6 +295,12 @@ const styles = StyleSheet.create({
     fontSize: 14,
     lineHeight: 14,
     textTransform: "uppercase",
+  },
+  deleteHit: {
+    alignItems: "center",
+    justifyContent: "center",
+    minHeight: 44,
+    minWidth: 44,
   },
   deleteText: {
     color: colors.destructive,

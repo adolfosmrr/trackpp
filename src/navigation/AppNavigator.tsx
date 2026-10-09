@@ -17,7 +17,6 @@ import {
 import { InviteMemberScreen } from "../features/households/screens/InviteMemberScreen"
 import { AiConversationScreen } from "../features/ai/screens/AiConversationScreen"
 import { FixedExpensesScreen } from "../features/fixedExpenses/screens/FixedExpensesScreen"
-import { EditFixedExpenseScreen } from "../features/fixedExpenses/screens/EditFixedExpenseScreen"
 import { PayFixedExpensePeriodScreen } from "../features/fixedExpenses/screens/PayFixedExpensePeriodScreen"
 import { CorrectFixedExpensePaymentScreen } from "../features/fixedExpenses/screens/CorrectFixedExpensePaymentScreen"
 import { PendingChargeScreen } from "../features/pendingCharges/screens/PendingChargeScreen"
@@ -31,7 +30,6 @@ export type AppStackParamList = {
   Invitations: undefined
   AiConversation: { conversationId?: string }
   FixedExpenses: undefined
-  EditFixedExpense: { fixedExpenseId: string; period?: string }
   PayFixedExpensePeriod: { periodId: string }
   CorrectFixedExpensePayment: { paymentId: string }
   PendingCharges: undefined
@@ -93,11 +91,6 @@ export function AppNavigator() {
         name="FixedExpenses"
         component={FixedExpensesScreen}
         options={{ title: "Gastos fijos" }}
-      />
-      <Stack.Screen
-        name="EditFixedExpense"
-        component={EditFixedExpenseScreen}
-        options={{ title: "Editar gasto fijo" }}
       />
       <Stack.Screen
         name="PayFixedExpensePeriod"

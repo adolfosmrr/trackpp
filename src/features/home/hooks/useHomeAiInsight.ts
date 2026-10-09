@@ -12,5 +12,6 @@ export function useHomeAiInsight() {
     queryKey: ["home-ai-insight", selectedHouseholdId],
     queryFn: () => getHomeAiInsight(selectedHouseholdId!),
     enabled: Boolean(selectedHouseholdId),
+    retry: false,
   })
 }

@@ -8,7 +8,6 @@ import {
   RefreshControl,
   View,
   Text,
-  Pressable,
   StyleSheet,
   ActivityIndicator,
 } from "react-native"
@@ -44,12 +43,9 @@ import {
 import {
   useDashboard,
 } from "../../dashboard/hooks/useDashboard"
-import { useDashboardInsights } from "../../dashboard/hooks/useDashboardInsights"
-
 import { ActivityItem } from "../../activity/components/ActivityItem"
 import { useActivity } from "../../activity/hooks/useActivity"
 import { useUnreadActivity } from "../../activity/hooks/useUnreadActivity"
-import { useFixedExpenseReminders } from "../../fixedExpenses/hooks/useFixedExpenseReminders"
 import { ScreenContainer } from "../../../components/layout/ScreenContainer"
 import { TopSection } from "../../../components/layout/TopSection"
 import { TopSectionHeader } from "../../../components/layout/TopSectionHeader"
@@ -57,44 +53,20 @@ import { TopSectionHandle } from "../../../components/layout/TopSectionHandle"
 import { HomeBalance } from "../components/HomeBalance"
 import { HomeGreeting } from "../components/HomeGreeting"
 import { HomeIncomeExpenseSummary } from "../components/HomeIncomeExpenseSummary"
-import { HomeInsightCard } from "../components/HomeInsightCard"
-import { HomeInsightSkeleton } from "../components/HomeInsightSkeleton"
-import {
-  HomeInfoCard,
-  type HomeInfoCardVariant,
-} from "../components/HomeInfoCard"
-import { HomeSectionTitle } from "../components/HomeSectionTitle"
-import { HomeSectionToggle } from "../components/HomeSectionToggle"
+import { DueSoonCard } from "../components/DueSoonCard"
+import { HomeAiSection } from "../components/HomeAiSection"
 import { MovementsSection } from "../components/MovementsSection"
-import { StackedCardList } from "../components/StackedCardList"
-import { InsightSectionIcon } from "../components/icons/InsightSectionIcon"
-import { UpcomingPaymentsSectionIcon } from "../components/icons/UpcomingPaymentsSectionIcon"
 import { colors, fonts, radii, refreshControlColors } from "../../../theme"
 import {
-  TOP_INSIGHT_HEIGHT,
-  TOP_INSIGHT_MARGIN_BOTTOM,
-  TOP_INSIGHT_MARGIN_TOP,
-  TOP_SECTION_INSIGHT_COLLAPSE,
   settleTopSectionProgress,
   topSectionCollapseRange,
   topSectionSnapTarget,
 } from "../../../components/layout/topSectionCollapse"
-import { useHomeAiInsight } from "../hooks/useHomeAiInsight"
-import { useHomeInsightActionDetails } from "../hooks/useHomeInsightActionDetails"
+import { useCreateTransactionSheet } from "../../transactions/components/CreateTransactionSheetProvider"
 import { useDelayedHomeAmounts } from "../hooks/useDelayedHomeAmounts"
 import { PendingChargesBanner } from "../../pendingCharges/components/PendingChargesBanner"
 
 const SCROLL_TRIGGER_DELTA = 3
-const INFO_CARD_VARIANTS: HomeInfoCardVariant[] = [
-  "darkGradientText",
-  "light",
-  "gradient",
-]
-const UPCOMING_PAYMENT_VARIANTS: HomeInfoCardVariant[] = [
-  "gradient",
-  "light",
-  "dark",
-]
 
 export function HomeScreen({
   navigation,
@@ -106,14 +78,10 @@ export function HomeScreen({
     null
   )
   const [isCollapsed, setIsCollapsed] = useState(false)
-  const [isExpanded, setIsExpanded] = useState(false)
-  const [isUpcomingPaymentsExpanded, setIsUpcomingPaymentsExpanded] = useState(false)
   const [expandedTopSectionHeight, setExpandedTopSectionHeight] = useState(0)
   const [reduceMotionEnabled, setReduceMotionEnabled] = useState(false)
   const [refreshing, setRefreshing] = useState(false)
   const isCollapsedRef = useRef(false)
-  const showsInsightRef = useRef(false)
-  const measuredIncludesInsight = useRef<boolean | null>(null)
   const collapseProgress = useSharedValue(0)
   const previousScrollY = useSharedValue(0)
   const collapseTriggered = useSharedValue(false)
@@ -167,7 +135,6 @@ export function HomeScreen({
   }, [collapseTriggered])
 
   const commitExpandedHeight = useCallback((height: number) => {
-    measuredIncludesInsight.current = showsInsightRef.current
     setExpandedTopSectionHeight((current) => (current === height ? current : height))
   }, [])
 
@@ -288,15 +255,6 @@ export function HomeScreen({
     },
   )
 
-  const animatedInsightSlotStyle = useAnimatedStyle(() => ({
-    marginBottom: interpolate(collapseProgress.value, [0, 1], TOP_INSIGHT_MARGIN_BOTTOM),
-    marginTop: interpolate(collapseProgress.value, [0, 1], TOP_INSIGHT_MARGIN_TOP),
-    height: interpolate(collapseProgress.value, [0, 1], TOP_INSIGHT_HEIGHT),
-  }))
-  const animatedInsightContentStyle = useAnimatedStyle(() => ({
-    opacity: interpolate(collapseProgress.value, [0, 1], [1, 0]),
-    transform: [{ translateY: interpolate(collapseProgress.value, [0, 1], [0, -12]) }],
-  }))
   const topSectionSpacerStyle = useAnimatedStyle(() => {
     const expanded = expandedHeightShared.value
     if (expanded <= 0) return { height: 0 }
@@ -358,33 +316,7 @@ export function HomeScreen({
     refetch: refetchUnreadActivity,
   } = useUnreadActivity(isCoupleHousehold)
 
-  const remindersQuery = useFixedExpenseReminders()
-  const {
-    data: reminders,
-    error: remindersError,
-  } = remindersQuery
-  const homeInsightQuery = useHomeAiInsight()
-  const actionDetailsQuery = useHomeInsightActionDetails(homeInsightQuery.data)
-  const { actionDetails } = actionDetailsQuery
-  const showsInsight = Boolean(
-    homeInsightQuery.isLoading ||
-      homeInsightQuery.data?.intro ||
-      homeInsightQuery.data?.groups.length
-  )
-  showsInsightRef.current = showsInsight
-
-  useEffect(() => {
-    collapseRangeShared.value = topSectionCollapseRange(showsInsight)
-
-    if (measuredIncludesInsight.current == null) return
-    if (measuredIncludesInsight.current === showsInsight) return
-
-    const delta = showsInsight ? TOP_SECTION_INSIGHT_COLLAPSE : -TOP_SECTION_INSIGHT_COLLAPSE
-    const nextHeight = Math.max(0, expandedHeightShared.value + delta)
-    expandedHeightShared.value = nextHeight
-    measuredIncludesInsight.current = showsInsight
-    setExpandedTopSectionHeight(nextHeight)
-  }, [collapseRangeShared, expandedHeightShared, showsInsight])
+  const { openCreateTransaction } = useCreateTransactionSheet()
 
   const handleExpandedLayout = useCallback((event: LayoutChangeEvent) => {
     const height = event.nativeEvent.layout.height
@@ -589,15 +521,9 @@ export function HomeScreen({
     !dashboardLoading && !!dashboard,
   )
 
-  const insightsQuery = useDashboardInsights()
-  const {
-    data: insights,
-    error: insightsError,
-  } = insightsQuery
-
   const collapsedTopSectionHeight = Math.max(
     0,
-    expandedTopSectionHeight - topSectionCollapseRange(showsInsight),
+    expandedTopSectionHeight - topSectionCollapseRange(false),
   )
   const refreshProgressOffset = isCollapsed ? collapsedTopSectionHeight : expandedTopSectionHeight
 
@@ -608,13 +534,13 @@ export function HomeScreen({
         profileQuery.refetch(),
         householdsQuery.refetch(),
         dashboardQuery.refetch(),
-        insightsQuery.refetch(),
         activityQuery.refetch(),
         refetchUnreadActivity(),
-        remindersQuery.refetch(),
-        homeInsightQuery.refetch(),
-        actionDetailsQuery.refetch(),
         queryClient.invalidateQueries({ queryKey: ["pending-charges"] }),
+        queryClient.invalidateQueries({ queryKey: ["home-ai-insight"] }),
+        queryClient.invalidateQueries({ queryKey: ["dashboard-insights"] }),
+        queryClient.invalidateQueries({ queryKey: ["fixed-expenses"] }),
+        queryClient.invalidateQueries({ queryKey: ["fixed-expense-periods"] }),
       ])
     } finally {
       setRefreshing(false)
@@ -634,19 +560,10 @@ export function HomeScreen({
       console.error("Dashboard error:", dashboardError)
     }
 
-    if (insightsError && __DEV__) {
-      console.error("Dashboard insights error:", insightsError)
-    }
-
-    if (remindersError && __DEV__) {
-      console.error("Fixed expense reminders error:", remindersError)
-    }
   }, [
     profileError,
     householdsError,
     dashboardError,
-    insightsError,
-    remindersError,
   ])
 
   useEffect(() => {
@@ -707,75 +624,17 @@ export function HomeScreen({
         pointerEvents="none"
         style={topSectionSpacerStyle}
       />
+      <DueSoonCard onPress={() => navigation.navigate("FixedExpenses")} />
       <PendingChargesBanner
         onPress={() => navigation.navigate("PendingCharges")}
       />
-      {insights?.length ? (
-        <View>
-          <HomeSectionTitle
-            icon={<InsightSectionIcon />}
-            title="Para tener en cuenta"
-            rightElement={
-              <HomeSectionToggle
-                expanded={isExpanded}
-                onPress={() => setIsExpanded((expanded) => !expanded)}
-              />
-            }
-          />
-
-          <StackedCardList
-            items={insights}
-            expanded={isExpanded}
-            reduceMotionEnabled={reduceMotionEnabled}
-            renderItem={(insight, index) => (
-              <HomeInfoCard
-                icon={insight.categoryIcon}
-                message={insight.message}
-                variant={INFO_CARD_VARIANTS[index % INFO_CARD_VARIANTS.length]}
-              />
-            )}
-          />
-        </View>
-      ) : null}
-
-      {reminders?.length ? (
-        <View>
-          <HomeSectionTitle
-            icon={<UpcomingPaymentsSectionIcon />}
-            title="Próximos pagos"
-            rightElement={
-              <HomeSectionToggle
-                expanded={isUpcomingPaymentsExpanded}
-                onPress={() => setIsUpcomingPaymentsExpanded((expanded) => !expanded)}
-              />
-            }
-          />
-          <StackedCardList
-            items={reminders}
-            expanded={isUpcomingPaymentsExpanded}
-            reduceMotionEnabled={reduceMotionEnabled}
-            renderItem={(reminder, index) => (
-              <Pressable
-                onPress={() => {
-                  if (reminder.remaining > 0) {
-                    navigation.navigate("PayFixedExpensePeriod", {
-                      periodId: reminder.fixedExpensePeriodId,
-                    })
-                  } else {
-                    navigation.navigate("FixedExpenses")
-                  }
-                }}
-              >
-                <HomeInfoCard
-                  icon={reminder.categoryIcon}
-                  message={reminder.message}
-                  variant={UPCOMING_PAYMENT_VARIANTS[index % UPCOMING_PAYMENT_VARIANTS.length]}
-                />
-              </Pressable>
-            )}
-          />
-        </View>
-      ) : null}
+      <MovementsSection
+        transactions={dashboard?.recentTransactions ?? []}
+        onViewAll={() => navigation.navigate("Transactions")}
+        onCreate={() => {
+          void openCreateTransaction()
+        }}
+      />
 
       {isCoupleHousehold ? (
         <View style={styles.activitySection}>
@@ -813,12 +672,9 @@ export function HomeScreen({
             </Text>
           )}
         </View>
-      ) : (
-        <MovementsSection
-          transactions={dashboard?.recentTransactions ?? []}
-          onViewAll={() => navigation.navigate("Transactions")}
-        />
-      )}
+      ) : null}
+
+      <HomeAiSection />
 
         </Animated.ScrollView>
       </ScreenContainer>
@@ -837,30 +693,6 @@ export function HomeScreen({
               expenses={displayedHomeAmounts.expenses}
               income={displayedHomeAmounts.income}
             />
-            {homeInsightQuery.isLoading ? (
-              <Animated.View
-                pointerEvents={isCollapsed ? "none" : "auto"}
-                style={[styles.insightSlot, animatedInsightSlotStyle]}
-              >
-                <Animated.View style={[styles.insightContent, animatedInsightContentStyle]}>
-                  <HomeInsightSkeleton />
-                </Animated.View>
-              </Animated.View>
-            ) : homeInsightQuery.data?.intro || homeInsightQuery.data?.groups.length ? (
-              <Animated.View
-                pointerEvents={isCollapsed ? "none" : "auto"}
-                style={[styles.insightSlot, animatedInsightSlotStyle]}
-              >
-                <Animated.View style={[styles.insightContent, animatedInsightContentStyle]}>
-                  <HomeInsightCard
-                    actionDetails={actionDetails}
-                    insight={homeInsightQuery.data}
-                    isCollapsed={isCollapsed}
-                    variant="plain"
-                  />
-                </Animated.View>
-              </Animated.View>
-            ) : null}
             <TopSectionHandle collapseProgress={collapseProgress} onPress={toggleCollapsed} pan={pan} />
           </View>
         </GestureDetector>
@@ -881,7 +713,7 @@ const styles =
 
     scrollContent: {
       paddingHorizontal: 20,
-      paddingBottom: 0,
+      paddingBottom: 120,
       gap: 24,
     },
 
@@ -931,24 +763,6 @@ const styles =
       fontFamily: fonts.sans,
       fontSize: 40,
       lineHeight: 44,
-    },
-
-    insightSlot: {
-      height: TOP_INSIGHT_HEIGHT[0],
-      marginBottom: TOP_INSIGHT_MARGIN_BOTTOM[0],
-      marginTop: TOP_INSIGHT_MARGIN_TOP[0],
-      overflow: "hidden",
-      position: "relative",
-    },
-
-    insightContent: {
-      alignItems: "stretch",
-      height: TOP_INSIGHT_HEIGHT[0],
-      justifyContent: "center",
-      left: 0,
-      position: "absolute",
-      right: 0,
-      top: 0,
     },
 
     activitySection: {
