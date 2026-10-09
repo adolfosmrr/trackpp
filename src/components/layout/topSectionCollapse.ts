@@ -14,9 +14,6 @@ export const TOP_BALANCE_FONT_SIZE = [60, 40] as const
 export const TOP_SUMMARY_MARGIN_TOP = [50, 10] as const
 export const TOP_SUMMARY_MARGIN_BOTTOM = [10, 30] as const
 export const TOP_SUMMARY_LABEL_FONT_SIZE = [18, 16] as const
-export const TOP_INSIGHT_MARGIN_TOP = [30, 0] as const
-export const TOP_INSIGHT_HEIGHT = [112, 0] as const
-export const TOP_INSIGHT_MARGIN_BOTTOM = [60, 0] as const
 
 const span = ([expanded, collapsed]: readonly [number, number]) => expanded - collapsed
 
@@ -29,13 +26,8 @@ const TOP_SECTION_BODY_COLLAPSE =
   span(TOP_SUMMARY_MARGIN_TOP) +
   span(TOP_SUMMARY_MARGIN_BOTTOM)
 
-export const TOP_SECTION_INSIGHT_COLLAPSE =
-  span(TOP_INSIGHT_MARGIN_TOP) +
-  span(TOP_INSIGHT_HEIGHT) +
-  span(TOP_INSIGHT_MARGIN_BOTTOM)
-
-export function topSectionCollapseRange(showsInsight: boolean) {
-  return TOP_SECTION_BODY_COLLAPSE + (showsInsight ? TOP_SECTION_INSIGHT_COLLAPSE : 0)
+export function topSectionCollapseRange() {
+  return TOP_SECTION_BODY_COLLAPSE
 }
 
 const TOP_SECTION_SPRING = {

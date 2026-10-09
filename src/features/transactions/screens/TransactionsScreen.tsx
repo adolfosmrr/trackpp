@@ -27,7 +27,8 @@ import { showUndo } from "../../../components/feedback/undo"
 import { TransactionFiltersModal } from "../components/TransactionFiltersModal"
 import { useCreateTransactionSheet } from "../components/CreateTransactionSheetProvider"
   import { useTransactions } from "../hooks/useTransactions"
-  import { useDeleteTransaction } from "../hooks/useDeleteTransaction"
+  import { useCreateLinkedTransactions } from "../hooks/useCreateLinkedTransactions"
+import { useDeleteTransaction } from "../hooks/useDeleteTransaction"
   import {
     defaultTransactionFilters,
     type Transaction,
@@ -46,6 +47,7 @@ import { useCreateTransactionSheet } from "../components/CreateTransactionSheetP
     const [filtersVisible, setFiltersVisible] = useState(false)
     const [refreshing, setRefreshing] = useState(false)
     const deleteMutation = useDeleteTransaction()
+    const restoreMutation = useCreateLinkedTransactions()
     const { openCreateTransaction } = useCreateTransactionSheet()
 
     function handleTopSectionLayout(event: LayoutChangeEvent) {
@@ -120,7 +122,7 @@ import { useCreateTransactionSheet } from "../components/CreateTransactionSheetP
       setFiltersVisible(false)
     }
 
-    function requestDelete(transaction: Transaction) {
+    async function requestDelete(transaction: Transaction) {
       const queryKey = ["transactions", selectedHouseholdId] as const
       const previous = queryClient.getQueryData<Transaction[]>(queryKey)
       queryClient.setQueryData<Transaction[]>(
@@ -128,22 +130,35 @@ import { useCreateTransactionSheet } from "../components/CreateTransactionSheetP
         (current) => current?.filter((item) => item.id !== transaction.id),
       )
 
-      const restore = () => queryClient.setQueryData(queryKey, previous)
+      try {
+        await deleteMutation.mutateAsync(transaction.id)
+      } catch (error) {
+        queryClient.setQueryData(queryKey, previous)
+        showUndo({
+          message: isFixedExpenseDeleteError(error)
+            ? "Ese movimiento es de un gasto fijo. Gestionarlo desde Gastos fijos."
+            : "No se pudo eliminar el movimiento.",
+        })
+        return
+      }
+
       showUndo({
         message: "Eliminaste el movimiento",
         actionLabel: "Deshacer",
-        onAction: restore,
-        onExpire: async () => {
-          try {
-            await deleteMutation.mutateAsync(transaction.id)
-          } catch (error) {
-            restore()
-            showUndo({
-              message: isFixedExpenseDeleteError(error)
-                ? "Ese movimiento es de un gasto fijo. Gestionarlo desde Gastos fijos."
-                : "No se pudo eliminar el movimiento.",
-            })
-          }
+        onAction: () => {
+          void restoreMutation.mutateAsync({
+            type: transaction.type,
+            title: transaction.title,
+            description: transaction.description ?? undefined,
+            amount: Math.abs(transaction.amount),
+            transactionDate: transaction.transaction_date,
+            targets: [{
+              householdId: transaction.household_id,
+              categoryId: transaction.category_id,
+            }],
+          }).catch(() => {
+            showUndo({ message: "No se pudo deshacer el movimiento." })
+          })
         },
       })
     }

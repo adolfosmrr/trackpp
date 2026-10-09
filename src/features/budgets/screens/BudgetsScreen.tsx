@@ -8,7 +8,6 @@ import {
   ScrollView,
   StyleSheet,
   ActivityIndicator,
-  Alert,
   LayoutChangeEvent,
   RefreshControl,
 } from "react-native"
@@ -20,6 +19,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context"
 
 import { useBudgets } from "../hooks/useBudgets"
 import { useDeleteBudget } from "../hooks/useDeleteBudget"
+import { createBudget } from "../services/budgetService"
 import { useProfile } from "../../profile/hooks/useProfile"
 import { useHouseholdStore } from "../../../store/householdStore"
 import { useDashboard } from "../../dashboard/hooks/useDashboard"
@@ -83,30 +83,54 @@ function BudgetsScreenContent({ navigation }: { navigation: { navigate: (screen:
     }
   }
 
-  function handleDeleteBudget(budgetId: string) {
+  async function handleDeleteBudget(budgetId: string) {
     const month = getCurrentMonth()
     const queryKey = ["budgets", selectedHouseholdId, month] as const
+    const budget = queryClient
+      .getQueryData<BudgetWithProgress[]>(queryKey)
+      ?.find((item) => item.id === budgetId)
     const previous = queryClient.getQueryData<BudgetWithProgress[]>(queryKey)
     queryClient.setQueryData<BudgetWithProgress[]>(
       queryKey,
-      (current) => current?.filter((budget) => budget.id !== budgetId),
+      (current) => current?.filter((item) => item.id !== budgetId),
     )
-    const restore = () => queryClient.setQueryData(queryKey, previous)
+
+    try {
+      await deleteBudgetMutation.mutateAsync(budgetId)
+    } catch (error) {
+      queryClient.setQueryData(queryKey, previous)
+      showUndo({
+        message: error instanceof Error
+          ? error.message
+          : "No se pudo eliminar el presupuesto.",
+      })
+      return
+    }
+
+    if (!budget) {
+      showUndo({ message: "Eliminaste el presupuesto" })
+      return
+    }
 
     showUndo({
       message: "Eliminaste el presupuesto",
       actionLabel: "Deshacer",
-      onAction: restore,
-      onExpire: async () => {
-        try {
-          await deleteBudgetMutation.mutateAsync(budgetId)
-        } catch (error) {
-          restore()
-          const message = error instanceof Error
-            ? error.message
-            : "No se pudo eliminar el presupuesto."
-          Alert.alert("Error", message)
-        }
+      onAction: () => {
+        void createBudget({
+          householdId: budget.household_id,
+          categoryId: budget.category_id,
+          userId: budget.created_by,
+          name: budget.name,
+          amount: budget.amount,
+          month: budget.month,
+        }).then(() => {
+          void queryClient.invalidateQueries({ queryKey: ["budgets", budget.household_id] })
+          void queryClient.invalidateQueries({ queryKey: ["dashboard", budget.household_id] })
+          void queryClient.invalidateQueries({ queryKey: ["dashboard-insights", budget.household_id] })
+          void queryClient.invalidateQueries({ queryKey: ["activity", budget.household_id] })
+        }).catch(() => {
+          showUndo({ message: "No se pudo deshacer el presupuesto." })
+        })
       },
     })
   }

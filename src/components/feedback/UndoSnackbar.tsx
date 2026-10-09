@@ -1,20 +1,13 @@
-import { useEffect, useSyncExternalStore } from "react"
-import { AppState, Pressable, StyleSheet, Text, View } from "react-native"
+import { useSyncExternalStore } from "react"
+import { Pressable, StyleSheet, Text, View } from "react-native"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 
 import { colors, fonts, radii } from "../../theme"
-import { expireUndo, getUndoEntry, runUndoAction, subscribeUndo } from "./undo"
+import { getUndoEntry, runUndoAction, subscribeUndo } from "./undo"
 
 export function UndoSnackbar() {
   const insets = useSafeAreaInsets()
   const entry = useSyncExternalStore(subscribeUndo, getUndoEntry, getUndoEntry)
-
-  useEffect(() => {
-    const subscription = AppState.addEventListener("change", (state) => {
-      if (state !== "active") void expireUndo()
-    })
-    return () => subscription.remove()
-  }, [])
 
   if (!entry) return null
 

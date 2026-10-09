@@ -87,7 +87,7 @@ export function HomeScreen({
   const collapseTriggered = useSharedValue(false)
   const pullingToRefresh = useSharedValue(false)
   const expandedHeightShared = useSharedValue(0)
-  const collapseRangeShared = useSharedValue(topSectionCollapseRange(false))
+  const collapseRangeShared = useSharedValue(topSectionCollapseRange())
   const reduceMotionShared = useSharedValue(false)
   const panStartProgress = useSharedValue(0)
   const panStartTranslation = useSharedValue(0)
@@ -523,7 +523,7 @@ export function HomeScreen({
 
   const collapsedTopSectionHeight = Math.max(
     0,
-    expandedTopSectionHeight - topSectionCollapseRange(false),
+    expandedTopSectionHeight - topSectionCollapseRange(),
   )
   const refreshProgressOffset = isCollapsed ? collapsedTopSectionHeight : expandedTopSectionHeight
 

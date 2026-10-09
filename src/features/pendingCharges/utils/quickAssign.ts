@@ -10,7 +10,7 @@ import type { PendingBankCharge } from "../types"
 
 const DEFAULT_CATEGORY_NAME = "otros gastos"
 
-export function findPersonalHousehold(
+function findPersonalHousehold(
   memberships: HouseholdMembership[] | undefined,
   selectedHouseholdId: string | null,
 ) {
@@ -22,7 +22,7 @@ export function findPersonalHousehold(
     ?? null
 }
 
-export function pickAssignCategory(categories: Category[], lastCategoryId: string | null) {
+function pickAssignCategory(categories: Category[], lastCategoryId: string | null) {
   if (lastCategoryId) {
     const last = categories.find((category) => category.id === lastCategoryId)
     if (last) return last

@@ -24,7 +24,7 @@ import {
   invalidatePendingCharges,
 } from "../hooks/invalidateChargeQueries"
 import { usePendingCharges } from "../hooks/usePendingCharges"
-import { dismissPendingCharge } from "../services/pendingChargeService"
+import { useDismissPendingCharge } from "../hooks/useDismissPendingCharge"
 import { assignChargeToPersonal } from "../utils/quickAssign"
 import {
   chargeOrigin,
@@ -47,6 +47,7 @@ export function PendingChargesScreen({ navigation }: PendingChargesScreenProps) 
   const [refreshing, setRefreshing] = useState(false)
   const [busyId, setBusyId] = useState<string | null>(null)
   const chargesQuery = usePendingCharges()
+  const dismissMutation = useDismissPendingCharge()
   const { data: memberships } = useHouseholds()
   const selectedHouseholdId = useHouseholdStore((state) => state.selectedHouseholdId)
 
@@ -98,25 +99,21 @@ export function PendingChargesScreen({ navigation }: PendingChargesScreenProps) 
     }
   }
 
-  function dismissCharge(charge: PendingBankCharge) {
+  async function dismissCharge(charge: PendingBankCharge) {
     if (busyId) return
+    setBusyId(charge.id)
     hideCharge(charge.id)
-    showUndo({
-      message: "Descartaste el gasto",
-      actionLabel: "Deshacer",
-      onAction: () => restoreCharge(charge),
-      onExpire: async () => {
-        try {
-          await dismissPendingCharge(charge.id)
-          invalidatePendingCharges(queryClient)
-        } catch (error) {
-          restoreCharge(charge)
-          showUndo({
-            message: error instanceof Error ? error.message : "No se pudo descartar el gasto.",
-          })
-        }
-      },
-    })
+    try {
+      await dismissMutation.mutateAsync(charge.id)
+      showUndo({ message: "Descartaste el gasto" })
+    } catch (error) {
+      restoreCharge(charge)
+      showUndo({
+        message: error instanceof Error ? error.message : "No se pudo descartar el gasto.",
+      })
+    } finally {
+      setBusyId(null)
+    }
   }
 
   return (
@@ -215,6 +212,14 @@ function PendingChargeRow({
       <Pressable
         accessibilityRole="button"
         accessibilityHint="Deslizá a la derecha para cargarlo en Personal o a la izquierda para descartarlo."
+        accessibilityActions={[
+          { name: "assign", label: "Cargar en Personal" },
+          { name: "dismiss", label: "Descartar" },
+        ]}
+        onAccessibilityAction={(event) => {
+          if (event.nativeEvent.actionName === "assign") onAssign()
+          else if (event.nativeEvent.actionName === "dismiss") onDismiss()
+        }}
         onPress={onOpen}
         style={styles.card}
       >

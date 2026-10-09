@@ -2,16 +2,15 @@ type UndoRequest = {
   message: string
   actionLabel?: string
   onAction?: () => void
-  onExpire?: () => Promise<void>
 }
 
 type UndoEntry = UndoRequest & { id: number }
 
 const listeners = new Set<() => void>()
+const HIDE_MS = 4500
 
 let current: UndoEntry | null = null
 let timer: ReturnType<typeof setTimeout> | null = null
-let expiring = false
 
 function emit() {
   listeners.forEach((listener) => listener())
@@ -32,16 +31,14 @@ export function subscribeUndo(listener: () => void) {
 }
 
 export function showUndo(request: UndoRequest) {
-  const previous = current
   clearTimer()
   current = { ...request, id: Date.now() }
   emit()
-  if (previous?.onExpire && !expiring) {
-    void previous.onExpire()
-  }
   timer = setTimeout(() => {
-    void expireUndo()
-  }, 4500)
+    current = null
+    timer = null
+    emit()
+  }, HIDE_MS)
 }
 
 export function runUndoAction() {
@@ -50,21 +47,4 @@ export function runUndoAction() {
   current = null
   emit()
   entry?.onAction?.()
-}
-
-export async function expireUndo() {
-  const entry = current
-  if (!entry || expiring) return
-  expiring = true
-  clearTimer()
-  current = null
-  emit()
-  try {
-    await entry.onExpire?.()
-  } catch {
-    entry.onAction?.()
-    showUndo({ message: "No se pudo completar. Volvé a intentarlo." })
-  } finally {
-    expiring = false
-  }
 }

@@ -23,7 +23,7 @@ export function AiChatScreen({ navigation }: any) {
   const [refreshing, setRefreshing] = useState(false)
   const conversationsQuery = useAiConversations()
   const deleteMutation = useDeleteAiConversation()
-  const listTopPadding = Math.max(100, insets.top + 20)
+  const listTopPadding = Math.max(100, insets.top + 56)
   const conversations = [...(conversationsQuery.data ?? [])].sort(
     (left, right) => Date.parse(right.updatedAt) - Date.parse(left.updatedAt)
   )
@@ -43,27 +43,23 @@ export function AiChatScreen({ navigation }: any) {
     navigation.navigate("AiConversation")
   }
 
-  function confirmDelete(conversationId: string) {
+  async function confirmDelete(conversationId: string) {
     const queryKey = ["ai-conversations", selectedHouseholdId] as const
     const previous = queryClient.getQueryData<AiConversation[]>(queryKey)
     queryClient.setQueryData<AiConversation[]>(
       queryKey,
       (current) => current?.filter((conversation) => conversation.id !== conversationId),
     )
-    const restore = () => queryClient.setQueryData(queryKey, previous)
-    showUndo({
-      message: "Eliminaste la conversación",
-      actionLabel: "Deshacer",
-      onAction: restore,
-      onExpire: async () => {
-        try {
-          await deleteMutation.mutateAsync(conversationId)
-        } catch {
-          restore()
-          showUndo({ message: "No se pudo eliminar la conversación." })
-        }
-      },
-    })
+
+    try {
+      await deleteMutation.mutateAsync(conversationId)
+    } catch {
+      queryClient.setQueryData(queryKey, previous)
+      showUndo({ message: "No se pudo eliminar la conversación." })
+      return
+    }
+
+    showUndo({ message: "Eliminaste la conversación" })
   }
 
   return (

@@ -99,7 +99,7 @@ export function PendingChargeScreen({ navigation, route }: PendingChargeScreenPr
     }
   }
 
-  function handleDismiss() {
+  async function handleDismiss() {
     if (!charge || isSaving) return
     const dismissed = charge
     queryClient.setQueriesData({ queryKey: ["pending-charges"] }, (current: unknown) => {
@@ -113,22 +113,15 @@ export function PendingChargeScreen({ navigation, route }: PendingChargeScreenPr
         return [dismissed, ...current]
       })
     }
-    navigation.goBack()
-    showUndo({
-      message: "Descartaste el gasto",
-      actionLabel: "Deshacer",
-      onAction: restore,
-      onExpire: async () => {
-        try {
-          await dismissMutation.mutateAsync(dismissed.id)
-        } catch (error) {
-          restore()
-          showUndo({
-            message: errorText(error, "No se pudo descartar el gasto."),
-          })
-        }
-      },
-    })
+
+    try {
+      await dismissMutation.mutateAsync(dismissed.id)
+      navigation.goBack()
+      showUndo({ message: "Descartaste el gasto" })
+    } catch (error) {
+      restore()
+      showUndo({ message: errorText(error, "No se pudo descartar el gasto.") })
+    }
   }
 
   return (
@@ -146,7 +139,11 @@ export function PendingChargeScreen({ navigation, route }: PendingChargeScreenPr
         ) : chargeQuery.isError ? (
           <View style={styles.messageBlock}>
             <Text style={styles.message}>No se pudo cargar este gasto.</Text>
-            <Pressable onPress={() => void chargeQuery.refetch()} style={styles.primaryButton}>
+            <Pressable
+              accessibilityRole="button"
+              onPress={() => void chargeQuery.refetch()}
+              style={styles.primaryButton}
+            >
               <Text style={styles.primaryButtonText}>Reintentar</Text>
             </Pressable>
           </View>

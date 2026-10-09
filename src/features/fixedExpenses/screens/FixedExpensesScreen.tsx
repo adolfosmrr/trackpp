@@ -17,6 +17,7 @@ import { formatMoney } from "../../../utils/formatMoney"
 import { EmptyState } from "../../../components/feedback/EmptyState"
 import { showUndo } from "../../../components/feedback/undo"
 import { useDeleteFixedExpense } from "../hooks/useDeleteFixedExpense"
+import { createFixedExpense } from "../services/fixedExpenseService"
 import {
   getCurrentFixedExpensePeriod,
   useFixedExpensePeriods,
@@ -87,7 +88,7 @@ export function FixedExpensesScreen({ navigation }: any) {
     setTopSectionHeight((current) => current || height)
   }
 
-  function confirmDelete(expense: FixedExpense) {
+  async function confirmDelete(expense: FixedExpense) {
     if (deletingId) return
     const queryKey = ["fixed-expenses", selectedHouseholdId] as const
     const previous = queryClient.getQueryData<FixedExpense[]>(queryKey)
@@ -95,27 +96,40 @@ export function FixedExpensesScreen({ navigation }: any) {
       queryKey,
       (current) => current?.filter((item) => item.id !== expense.id),
     )
-    const restore = () => queryClient.setQueryData(queryKey, previous)
     setDeletingId(expense.id)
+
+    try {
+      await deleteMutation.mutateAsync(expense.id)
+    } catch (deleteError) {
+      queryClient.setQueryData(queryKey, previous)
+      showUndo({
+        message: deleteError instanceof Error
+          ? deleteError.message
+          : "No se pudo eliminar el gasto fijo.",
+      })
+      return
+    } finally {
+      setDeletingId(null)
+    }
+
     showUndo({
       message: "Eliminaste el gasto fijo",
       actionLabel: "Deshacer",
       onAction: () => {
-        restore()
-        setDeletingId(null)
-      },
-      onExpire: async () => {
-        try {
-          await deleteMutation.mutateAsync(expense.id)
-        } catch (deleteError) {
-          restore()
-          Alert.alert(
-            "Error",
-            deleteError instanceof Error ? deleteError.message : "No se pudo eliminar el gasto fijo.",
-          )
-        } finally {
-          setDeletingId(null)
-        }
+        void createFixedExpense(expense.household_id, {
+          name: expense.name,
+          amount: expense.amount,
+          categoryId: expense.category_id,
+          chargeDay: expense.charge_day,
+          dueDay: expense.due_day,
+          isActive: true,
+        }).then(() => {
+          void queryClient.invalidateQueries({ queryKey: ["fixed-expenses", expense.household_id] })
+          void queryClient.invalidateQueries({ queryKey: ["fixed-expense-periods", expense.household_id] })
+          void queryClient.invalidateQueries({ queryKey: ["activity", expense.household_id] })
+        }).catch(() => {
+          showUndo({ message: "No se pudo deshacer el gasto fijo." })
+        })
       },
     })
   }
