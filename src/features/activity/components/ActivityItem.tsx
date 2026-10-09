@@ -3,6 +3,7 @@ import {
   Text,
   StyleSheet,
 } from "react-native"
+import { colors, fonts, radii } from "../../../theme"
 
 import { formatRelativeTime } from "../../../utils/formatRelativeTime"
 import { TransactionCard } from "../../transactions/components/TransactionCard"
@@ -220,10 +221,11 @@ function formatCurrency(amount: number) {
 
 const styles = StyleSheet.create({
   container: {
-    padding: 14,
+    padding: 12,
     borderWidth: 1,
-    borderColor: "#eee",
-    borderRadius: 14,
+    borderColor: colors.border,
+    borderRadius: radii.md,
+    backgroundColor: colors.card,
     gap: 10,
   },
 
@@ -237,10 +239,13 @@ const styles = StyleSheet.create({
   action: {
     flex: 1,
     fontWeight: "600",
+    color: colors.foreground,
+    fontFamily: fonts.sansMedium,
   },
 
   time: {
-    color: "#777",
+    color: colors.mutedForeground,
+    fontFamily: fonts.sans,
     fontSize: 12,
   },
 
@@ -253,10 +258,13 @@ const styles = StyleSheet.create({
 
   title: {
     flex: 1,
-    color: "#555",
+    color: colors.mutedForeground,
+    fontFamily: fonts.sans,
   },
 
   amount: {
-    fontWeight: "700",
+    fontWeight: "600",
+    color: colors.foreground,
+    fontFamily: fonts.monoMedium,
   },
 })

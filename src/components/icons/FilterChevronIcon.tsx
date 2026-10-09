@@ -1,10 +1,12 @@
 import Svg, { Path } from "react-native-svg"
 
+import { colors } from "../../theme"
+
 type FilterChevronIconProps = {
   color?: string
 }
 
-export function FilterChevronIcon({ color = "#1C1C1C" }: FilterChevronIconProps) {
+export function FilterChevronIcon({ color = colors.foreground }: FilterChevronIconProps) {
   return (
     <Svg width={7} height={12} viewBox="0 0 7 12" fill="none">
       <Path

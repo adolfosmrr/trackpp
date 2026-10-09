@@ -1,5 +1,7 @@
 import { Pressable, StyleSheet, Text } from "react-native"
 
+import { colors, fonts, radii } from "../../../theme"
+
 type HomeSectionToggleProps = {
   expanded: boolean
   onPress: () => void
@@ -16,16 +18,18 @@ export function HomeSectionToggle({ expanded, onPress }: HomeSectionToggleProps)
 const styles = StyleSheet.create({
   button: {
     height: 28,
-    paddingHorizontal: 20,
-    backgroundColor: "#000000",
-    borderRadius: 999,
+    paddingHorizontal: 10,
+    backgroundColor: colors.transparent,
+    borderColor: colors.borderStrong,
+    borderRadius: radii.sm,
+    borderWidth: 1,
     alignItems: "center",
     justifyContent: "center",
   },
   label: {
-    color: "#FFFFFF",
-    fontFamily: "FamiljenGrotesk-Bold",
+    color: colors.foreground,
+    fontFamily: fonts.sansMedium,
     fontSize: 12,
-    lineHeight: 12,
+    lineHeight: 14,
   },
 })

@@ -1,5 +1,6 @@
 import { useRef, useState } from "react"
 import { Alert, Pressable, StyleSheet, Text, View } from "react-native"
+import { colors, fonts, meshColors } from "../../../theme"
 
 import { GridBackground } from "../../../components/layout/GridBackground"
 import AnimatedText from "../../../components/text/AnimatedText"
@@ -46,11 +47,11 @@ export function AuthScreen() {
     <View style={styles.container}>
       {SHOW_MESH_GRADIENT ? (
         <MeshGradient
-          colors={["#FFF", "#4F3B97", "#14044B", "#FFF"]}
+          colors={meshColors.auth}
           speed={0.5}
           blur={0.5}
           noise={0.3}
-          intensity={1}
+          intensity={0.45}
           animated
           style={styles.meshBackground}
         />
@@ -135,7 +136,7 @@ export function AuthScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.background,
     justifyContent: 'center',
   },
   content: {
@@ -154,10 +155,11 @@ const styles = StyleSheet.create({
     left: 0,
   },
   authMessage: {
-    fontFamily: "FamiljenGrotesk-Bold",
-    fontSize: 45,
+    fontFamily: fonts.sansSemibold,
+    letterSpacing: -1,
+    fontSize: 40,
     lineHeight: 42,
-    color: "#FFF",
+    color: colors.foreground,
     opacity: 0.3
   },
   authMessageClip: {
@@ -183,17 +185,18 @@ const styles = StyleSheet.create({
   line: {
     flex: 1,
     height: 0.5,
-    backgroundColor: "#1c1c1c",
+    backgroundColor: colors.border,
   },
   separatorText: {
-    color: "#1c1c1c",
-    fontFamily: "FamiljenGrotesk-Bold",
+    color: colors.mutedForeground,
+    fontFamily: fonts.sansMedium,
     fontSize: 16,
     lineHeight: 16,
   },
   link: {
     textAlign: "center",
     marginTop: 20,
-    fontFamily: "FamiljenGrotesk-Medium",
+    fontFamily: fonts.sansMedium,
+    color: colors.brand,
   },
 })

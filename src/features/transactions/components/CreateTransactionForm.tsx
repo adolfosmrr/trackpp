@@ -6,6 +6,7 @@ import {
   Text,
   View,
 } from "react-native"
+import { colors, fonts, radii } from "../../../theme"
 import {
   BottomSheetModal,
   BottomSheetTextInput,
@@ -451,14 +452,14 @@ export function CreateTransactionForm({
       <BottomSheetTextInput
         style={[styles.field, styles.input]}
         placeholder="Título"
-        placeholderTextColor="rgba(28, 28, 28, 0.5)"
+        placeholderTextColor={colors.mutedForeground}
         value={title}
         onChangeText={setTitle}
       />
       <BottomSheetTextInput
         style={[styles.field, styles.input]}
         placeholder="Monto"
-        placeholderTextColor="rgba(28, 28, 28, 0.5)"
+        placeholderTextColor={colors.mutedForeground}
         keyboardType="decimal-pad"
         value={amount}
         onChangeText={setAmount}
@@ -592,31 +593,36 @@ const styles = StyleSheet.create({
   targetsSection: { gap: 11 },
   field: {
     width: "100%",
-    borderRadius: 999,
+    borderRadius: radii.sm,
     paddingHorizontal: 20,
     paddingVertical: 15,
   },
   input: {
-    backgroundColor: "#FFFFFF",
-    fontFamily: "FamiljenGrotesk-Bold",
+    backgroundColor: colors.field,
+    borderColor: colors.borderStrong,
+    borderWidth: 1,
+    color: colors.foreground,
+    fontFamily: fonts.sans,
     fontSize: 16,
     lineHeight: 16,
   },
   dayField: {
     alignItems: "center",
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.field,
+    borderColor: colors.borderStrong,
+    borderWidth: 1,
     flexDirection: "row",
     justifyContent: "space-between",
   },
   dayFieldLabel: {
-    color: "rgba(28,28,28,0.5)",
-    fontFamily: "FamiljenGrotesk-Bold",
+    color: colors.mutedForeground,
+    fontFamily: fonts.sansMedium,
     fontSize: 16,
     lineHeight: 16,
   },
   dayInput: {
-    color: "#1C1C1C",
-    fontFamily: "FamiljenGrotesk-Bold",
+    color: colors.foreground,
+    fontFamily: fonts.monoMedium,
     fontSize: 16,
     lineHeight: 16,
     minWidth: 32,
@@ -625,13 +631,15 @@ const styles = StyleSheet.create({
   },
   darkField: {
     alignItems: "center",
-    backgroundColor: "#000000",
+    backgroundColor: colors.field,
+    borderColor: colors.borderStrong,
+    borderWidth: 1,
     flexDirection: "row",
     justifyContent: "space-between",
   },
   fieldLabel: {
-    color: "#FFFFFF",
-    fontFamily: "FamiljenGrotesk-Bold",
+    color: colors.foreground,
+    fontFamily: fonts.sansMedium,
     flexShrink: 0,
     fontSize: 16,
     lineHeight: 16,
@@ -646,24 +654,23 @@ const styles = StyleSheet.create({
     minWidth: 0,
   },
   fieldValue: {
-    color: "#FFFFFF",
+    color: colors.mutedForeground,
     flex: 1,
     flexShrink: 1,
-    fontFamily: "FamiljenGrotesk-Bold",
-    fontSize: 16,
-    lineHeight: 16,
-    opacity: 0.5,
+    fontFamily: fonts.sansMedium,
+    fontSize: 15,
+    lineHeight: 18,
     textAlign: "right",
   },
   categorySection: { gap: 10 },
-  helperText: { color: "#777" },
-  errorText: { color: "#b42318" },
+  helperText: { color: colors.mutedForeground, fontFamily: fonts.sans },
+  errorText: { color: colors.destructive, fontFamily: fonts.sans },
   button: {
     alignItems: "center",
-    backgroundColor: "#111",
-    borderRadius: 999,
+    backgroundColor: colors.brand,
+    borderRadius: radii.sm,
     padding: 16,
   },
   buttonDisabled: { opacity: 0.6 },
-  buttonText: { color: "#fff", fontWeight: "600" },
+  buttonText: { color: colors.brandForeground, fontFamily: fonts.sansSemibold, fontWeight: "600" },
 })

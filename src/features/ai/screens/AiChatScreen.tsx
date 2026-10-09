@@ -11,6 +11,7 @@ import { useAiConversationPreviews } from "../hooks/useAiConversationPreviews"
 import { useAiConversations } from "../hooks/useAiConversations"
 import { useDeleteAiConversation } from "../hooks/useDeleteAiConversation"
 import type { AiConversation } from "../types"
+import { colors, fonts, meshColors, radii, refreshControlColors } from "../../../theme"
 
 export function AiChatScreen({ navigation }: any) {
   const insets = useSafeAreaInsets()
@@ -70,11 +71,11 @@ export function AiChatScreen({ navigation }: any) {
   return (
     <ScreenContainer style={styles.container}>
       <MeshGradient
-        colors={["#FFF", "#4F3B97", "#14044B", "#FFF"]}
+        colors={meshColors.auth}
         speed={0.5}
-        blur={0.5}
-        noise={0.3}
-        intensity={1}
+        blur={0.6}
+        noise={0.2}
+        intensity={0.45}
         animated
         style={styles.meshBackground}
       />
@@ -92,9 +93,7 @@ export function AiChatScreen({ navigation }: any) {
             refreshing={refreshing}
             onRefresh={handleRefresh}
             progressViewOffset={listTopPadding}
-            tintColor="#1C1C1C"
-            colors={["#1C1C1C"]}
-            progressBackgroundColor="#FFFFFF"
+            {...refreshControlColors}
           />
         }
         ItemSeparatorComponent={() => <View style={styles.conversationGap} />}
@@ -203,7 +202,7 @@ export function formatConversationDate(value: string) {
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.background,
   },
   meshBackground: {
     bottom: 0,
@@ -215,15 +214,16 @@ const styles = StyleSheet.create({
   listContent: { flexGrow: 1 },
   listFooter: { height: 20 },
   title: {
-    color: "#1C1C1C",
-    fontFamily: "FamiljenGrotesk-Bold",
-    fontSize: 40,
-    lineHeight: 40,
+    color: colors.foreground,
+    fontFamily: fonts.sansSemibold,
+    fontSize: 28,
+    letterSpacing: -0.6,
+    lineHeight: 32,
   },
   newConversationButton: {
     alignItems: "center",
-    backgroundColor: "#000000",
-    borderRadius: 20,
+    backgroundColor: colors.brand,
+    borderRadius: radii.sm,
     flexDirection: "row",
     justifyContent: "space-between",
     marginTop: 20,
@@ -232,23 +232,26 @@ const styles = StyleSheet.create({
     width: "100%",
   },
   newConversationText: {
-    color: "#FFFFFF",
-    fontFamily: "FamiljenGrotesk-Bold",
+    color: colors.brandForeground,
+    fontFamily: fonts.sansSemibold,
     fontSize: 18,
     lineHeight: 18,
   },
   recentConversationsTitle: {
-    color: "rgba(28,28,28,0.5)",
-    fontFamily: "FamiljenGrotesk-Bold",
-    fontSize: 40,
-    lineHeight: 40,
+    color: colors.mutedForeground,
+    fontFamily: fonts.sansSemibold,
+    fontSize: 22,
+    letterSpacing: -0.3,
+    lineHeight: 26,
     marginBottom: 20,
     marginTop: 40,
   },
   conversationGap: { height: 10 },
   conversationCard: {
-    backgroundColor: "#000000",
-    borderRadius: 20,
+    backgroundColor: colors.card,
+    borderColor: colors.border,
+    borderRadius: radii.md,
+    borderWidth: 1,
     paddingHorizontal: 20,
     paddingVertical: 15,
     width: "100%",
@@ -260,15 +263,15 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
   },
   preview: {
-    color: "#FFFFFF",
+    color: colors.foreground,
     flex: 1,
     flexShrink: 1,
-    fontFamily: "FamiljenGrotesk-Regular",
+    fontFamily: fonts.sans,
     fontSize: 18,
     lineHeight: 18,
   },
   separator: {
-    backgroundColor: "rgba(255,255,255,0.5)",
+    backgroundColor: colors.border,
     height: 1,
     marginVertical: 15,
     width: "100%",
@@ -280,19 +283,19 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
   },
   date: {
-    color: "rgba(255,255,255,0.5)",
-    fontFamily: "Satoshi-Bold",
+    color: colors.mutedForeground,
+    fontFamily: fonts.mono,
     fontSize: 14,
     lineHeight: 14,
     textTransform: "uppercase",
   },
   deleteText: {
-    color: "#FF2F2F",
-    fontFamily: "FamiljenGrotesk-Regular",
+    color: colors.destructive,
+    fontFamily: fonts.sans,
     fontSize: 12,
     lineHeight: 12,
   },
-  loadingText: { color: "rgba(28,28,28,0.5)", marginTop: 20 },
-  errorText: { color: "#B42318", marginTop: 20 },
-  emptyText: { color: "rgba(28,28,28,0.5)", marginTop: 20 },
+  loadingText: { color: colors.mutedForeground, fontFamily: fonts.sans, marginTop: 20 },
+  errorText: { color: colors.destructive, fontFamily: fonts.sans, marginTop: 20 },
+  emptyText: { color: colors.mutedForeground, fontFamily: fonts.sans, marginTop: 20 },
 })

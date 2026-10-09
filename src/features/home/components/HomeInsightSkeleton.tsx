@@ -1,4 +1,6 @@
 import { AccessibilityInfo, StyleSheet, View } from "react-native"
+
+import { colors, radii } from "../../../theme"
 import { useEffect, useState } from "react"
 import Animated, {
   cancelAnimation,
@@ -66,8 +68,8 @@ const styles = StyleSheet.create({
     minHeight: 70,
   },
   line: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 9999,
+    backgroundColor: colors.foreground,
+    borderRadius: radii.xs,
     height: 18,
   },
   firstLine: {

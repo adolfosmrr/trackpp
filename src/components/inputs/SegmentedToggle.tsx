@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react"
 import { LayoutChangeEvent, Pressable, StyleSheet, Text, View } from "react-native"
+import { colors, fonts, radii } from "../../theme"
 import Animated, {
   Easing,
   useAnimatedStyle,
@@ -111,16 +112,18 @@ const styles = StyleSheet.create({
   container: {
     flexDirection: "row",
     padding: 4,
-    borderRadius: 100,
-    backgroundColor: "#F3F3F3",
+    borderRadius: radii.sm,
+    backgroundColor: colors.control,
+    borderColor: colors.border,
+    borderWidth: 1,
   },
   indicator: {
     position: "absolute",
     left: 4,
     top: 4,
     bottom: 4,
-    borderRadius: 50,
-    backgroundColor: "#1C1C1C",
+    borderRadius: radii.xs,
+    backgroundColor: colors.brand,
   },
   option: {
     flex: 1,
@@ -130,12 +133,12 @@ const styles = StyleSheet.create({
     zIndex: 1,
   },
   text: {
-    fontFamily: "FamiljenGrotesk-Medium",
+    fontFamily: fonts.sansMedium,
   },
   selectedText: {
-    color: "#FFFFFF",
+    color: colors.brandForeground,
   },
   unselectedText: {
-    color: "#1C1C1C",
+    color: colors.mutedForeground,
   },
 })

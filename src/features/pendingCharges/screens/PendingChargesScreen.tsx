@@ -8,6 +8,7 @@ import {
   Text,
   View,
 } from "react-native"
+import { colors, fonts, radii } from "../../../theme"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 
 import { usePendingCharges } from "../hooks/usePendingCharges"
@@ -59,7 +60,7 @@ export function PendingChargesScreen({ navigation }: PendingChargesScreenProps) 
       </Text>
 
       {chargesQuery.isLoading ? (
-        <ActivityIndicator color="#1C1C1C" style={styles.loader} />
+        <ActivityIndicator color={colors.brand} style={styles.loader} />
       ) : chargesQuery.isError ? (
         <View style={styles.empty}>
           <Text style={styles.emptyText}>No se pudieron cargar los gastos de tarjeta.</Text>
@@ -101,7 +102,7 @@ export function PendingChargesScreen({ navigation }: PendingChargesScreenProps) 
 
 const styles = StyleSheet.create({
   screen: {
-    backgroundColor: "#F4F4F4",
+    backgroundColor: colors.background,
     flex: 1,
   },
   content: {
@@ -109,19 +110,20 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
   },
   back: {
-    color: "#1C1C1C",
-    fontFamily: "FamiljenGrotesk-Medium",
+    color: colors.brand,
+    fontFamily: fonts.sansMedium,
     fontSize: 16,
   },
   title: {
-    color: "#1C1C1C",
-    fontFamily: "FamiljenGrotesk-Bold",
-    fontSize: 32,
+    color: colors.foreground,
+    fontFamily: fonts.sansSemibold,
+    letterSpacing: -0.6,
+    fontSize: 28,
     lineHeight: 36,
   },
   lead: {
-    color: "#666666",
-    fontFamily: "FamiljenGrotesk-Regular",
+    color: colors.mutedForeground,
+    fontFamily: fonts.sans,
     fontSize: 16,
     lineHeight: 22,
   },
@@ -132,8 +134,10 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   card: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 28,
+    backgroundColor: colors.card,
+    borderColor: colors.border,
+    borderRadius: radii.md,
+    borderWidth: 1,
     gap: 8,
     paddingHorizontal: 20,
     paddingVertical: 18,
@@ -145,42 +149,44 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
   },
   merchant: {
-    color: "#1C1C1C",
+    color: colors.foreground,
     flex: 1,
-    fontFamily: "FamiljenGrotesk-Bold",
+    fontFamily: fonts.sansSemibold,
     fontSize: 18,
     lineHeight: 22,
   },
   amount: {
-    color: "#1C1C1C",
-    fontFamily: "FamiljenGrotesk-Bold",
-    fontSize: 18,
+    color: colors.foreground,
+    fontFamily: fonts.monoSemibold,
+    fontSize: 16,
     lineHeight: 22,
   },
   meta: {
-    color: "#777777",
-    fontFamily: "FamiljenGrotesk-Regular",
+    color: colors.mutedForeground,
+    fontFamily: fonts.sans,
     fontSize: 14,
   },
   empty: {
     gap: 16,
   },
   emptyText: {
-    color: "#666666",
-    fontFamily: "FamiljenGrotesk-Regular",
+    color: colors.mutedForeground,
+    fontFamily: fonts.sans,
     fontSize: 16,
     lineHeight: 22,
   },
   secondaryButton: {
     alignSelf: "flex-start",
-    backgroundColor: "#1C1C1C",
-    borderRadius: 999,
+    backgroundColor: colors.transparent,
+    borderColor: colors.borderStrong,
+    borderRadius: radii.sm,
+    borderWidth: 1,
     paddingHorizontal: 18,
     paddingVertical: 12,
   },
   secondaryButtonText: {
-    color: "#FFFFFF",
-    fontFamily: "FamiljenGrotesk-Bold",
+    color: colors.foreground,
+    fontFamily: fonts.sansMedium,
     fontSize: 15,
   },
 })

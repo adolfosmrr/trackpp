@@ -13,6 +13,7 @@ import Animated, {
 import { BalanceHiddenIcon } from "../../../components/icons/BalanceHiddenIcon"
 import { BalanceVisibleIcon } from "../../../components/icons/BalanceVisibleIcon"
 import { AnimatedAmount } from "../../../components/animated/AnimatedAmount"
+import { colors, fonts } from "../../../theme"
 
 type HomeBalanceProps = {
   balance: number
@@ -126,18 +127,19 @@ const styles = StyleSheet.create({
     flexDirection: "row",
   },
   label: {
-    color: "#FFFFFF",
-    fontFamily: "Satoshi-Regular",
-    fontSize: 18,
-    opacity: 0.5,
+    color: colors.mutedForeground,
+    fontFamily: fonts.sans,
+    fontSize: 14,
+    letterSpacing: 0.2,
   },
   visibilityButton: {
     marginLeft: 15,
   },
   amount: {
-    color: "#FFFFFF",
-    fontFamily: "FamiljenGrotesk-Bold",
+    color: colors.foreground,
+    fontFamily: fonts.monoSemibold,
     fontSize: 60,
+    letterSpacing: -1,
     lineHeight: 66,
   },
   amountRow: {

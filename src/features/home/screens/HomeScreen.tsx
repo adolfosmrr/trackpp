@@ -65,6 +65,7 @@ import { MovementsSection } from "../components/MovementsSection"
 import { StackedCardList } from "../components/StackedCardList"
 import { InsightSectionIcon } from "../components/icons/InsightSectionIcon"
 import { UpcomingPaymentsSectionIcon } from "../components/icons/UpcomingPaymentsSectionIcon"
+import { colors, fonts, radii, refreshControlColors } from "../../../theme"
 import { useHomeAiInsight } from "../hooks/useHomeAiInsight"
 import { useHomeInsightActionDetails } from "../hooks/useHomeInsightActionDetails"
 import { useDelayedHomeAmounts } from "../hooks/useDelayedHomeAmounts"
@@ -451,7 +452,7 @@ export function HomeScreen({
   ) {
     return (
       <View style={styles.center}>
-        <ActivityIndicator size="large" />
+        <ActivityIndicator color={colors.brand} size="large" />
       </View>
     )
   }
@@ -463,7 +464,7 @@ export function HomeScreen({
   ) {
     return (
       <View style={styles.center}>
-        <Text>
+        <Text style={styles.activityStatus}>
           No se pudieron cargar los datos.
         </Text>
       </View>
@@ -481,9 +482,7 @@ export function HomeScreen({
               refreshing={refreshing}
               onRefresh={handleRefresh}
               progressViewOffset={refreshProgressOffset}
-              tintColor="#1C1C1C"
-              colors={["#1C1C1C"]}
-              progressBackgroundColor="#FFFFFF"
+              {...refreshControlColors}
             />
           }
           style={[styles.scrollView, !topSectionHeight && styles.hiddenScroll]}
@@ -677,6 +676,7 @@ const styles =
     screen: {
       flex: 1,
       position: "relative",
+      backgroundColor: colors.background,
     },
 
     topSectionOverlay: {
@@ -693,6 +693,7 @@ const styles =
       justifyContent: "center",
       gap: 20,
       padding: 24,
+      backgroundColor: colors.background,
     },
 
     greetingContainer: {
@@ -701,16 +702,16 @@ const styles =
     },
 
     helloText: {
-      color: "#FFFFFF",
-      fontFamily: "FamiljenGrotesk-Regular",
+      color: colors.foreground,
+      fontFamily: fonts.sans,
       fontSize: 30,
       lineHeight: 34,
       opacity: 0.5,
     },
 
     userNameText: {
-      color: "#FFFFFF",
-      fontFamily: "FamiljenGrotesk-Regular",
+      color: colors.foreground,
+      fontFamily: fonts.sans,
       fontSize: 40,
       lineHeight: 44,
     },
@@ -741,7 +742,8 @@ const styles =
     },
 
     activityStatus: {
-      color: "#777",
+      color: colors.mutedForeground,
+      fontFamily: fonts.sans,
     },
 
     sectionHeader: {
@@ -752,25 +754,29 @@ const styles =
     },
 
     sectionTitle: {
-      fontSize: 20,
-      fontWeight: "700",
+      color: colors.foreground,
+      fontFamily: fonts.sansSemibold,
+      fontSize: 16,
     },
 
     activityBadge: {
-      backgroundColor: "#111",
-      borderRadius: 999,
-      paddingHorizontal: 10,
-      paddingVertical: 5,
+      backgroundColor: colors.brandMuted,
+      borderColor: colors.brandBorder,
+      borderRadius: radii.sm,
+      borderWidth: 1,
+      paddingHorizontal: 8,
+      paddingVertical: 4,
     },
 
     activityBadgeText: {
-      color: "#fff",
+      color: colors.brand,
+      fontFamily: fonts.sansMedium,
       fontSize: 12,
-      fontWeight: "700",
     },
 
     empty: {
-      color: "#777",
+      color: colors.mutedForeground,
+      fontFamily: fonts.sans,
       textAlign: "center",
       paddingVertical: 24,
     },

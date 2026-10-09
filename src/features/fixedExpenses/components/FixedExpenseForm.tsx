@@ -9,6 +9,7 @@ import {
   View,
   Alert,
 } from "react-native"
+import { colors, fonts, radii } from "../../../theme"
 
 import { useCategories } from "../../categories/hooks/useCategories"
 import type { FixedExpenseInput } from "../types"
@@ -81,6 +82,7 @@ export function FixedExpenseForm({
       <TextInput
         style={styles.input}
         placeholder="Nombre"
+        placeholderTextColor={colors.mutedForeground}
         maxLength={100}
         value={name}
         onChangeText={setName}
@@ -89,6 +91,7 @@ export function FixedExpenseForm({
       <TextInput
         style={styles.input}
         placeholder="Monto"
+        placeholderTextColor={colors.mutedForeground}
         keyboardType="decimal-pad"
         value={amount}
         onChangeText={setAmount}
@@ -96,7 +99,7 @@ export function FixedExpenseForm({
 
       <View style={styles.section}>
         <Text style={styles.label}>Categoría</Text>
-        {isLoading ? <ActivityIndicator /> : null}
+        {isLoading ? <ActivityIndicator color={colors.brand} /> : null}
         {isError ? (
           <Text style={styles.error}>No se pudieron cargar las categorías.</Text>
         ) : (
@@ -148,6 +151,7 @@ function DayInput({
       <TextInput
         style={styles.input}
         placeholder="1 a 31"
+        placeholderTextColor={colors.mutedForeground}
         keyboardType="number-pad"
         maxLength={2}
         value={value}
@@ -163,16 +167,16 @@ function isValidDay(value: number) {
 
 const styles = StyleSheet.create({
   container: { padding: 24, gap: 16 },
-  input: { borderWidth: 1, borderColor: "#ccc", borderRadius: 10, padding: 14 },
+  input: { borderWidth: 1, borderColor: colors.borderStrong, borderRadius: radii.sm, backgroundColor: colors.field, color: colors.foreground, fontFamily: fonts.sans, padding: 12 },
   section: { gap: 10 },
-  label: { fontSize: 16, fontWeight: "600" },
+  label: { color: colors.foreground, fontFamily: fonts.sansMedium, fontSize: 15, fontWeight: "600" },
   chips: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
-  chip: { borderWidth: 1, borderColor: "#ccc", borderRadius: 20, paddingHorizontal: 12, paddingVertical: 9 },
-  selectedChip: { backgroundColor: "#111", borderColor: "#111" },
-  chipText: { fontWeight: "600" },
-  selectedChipText: { color: "#fff", fontWeight: "600" },
-  error: { color: "#b42318" },
-  button: { marginTop: 8, padding: 16, borderRadius: 10, backgroundColor: "#111", alignItems: "center" },
+  chip: { borderWidth: 1, borderColor: colors.borderStrong, borderRadius: radii.sm, paddingHorizontal: 12, paddingVertical: 9 },
+  selectedChip: { backgroundColor: colors.brand, borderColor: colors.brand },
+  chipText: { color: colors.foreground, fontFamily: fonts.sansMedium, fontWeight: "600" },
+  selectedChipText: { color: colors.brandForeground, fontFamily: fonts.sansMedium, fontWeight: "600" },
+  error: { color: colors.destructive, fontFamily: fonts.sans },
+  button: { marginTop: 8, padding: 12, borderRadius: radii.sm, backgroundColor: colors.brand, alignItems: "center" },
   disabled: { opacity: 0.6 },
-  buttonText: { color: "#fff", fontWeight: "600" },
+  buttonText: { color: colors.brandForeground, fontFamily: fonts.sansSemibold, fontWeight: "600" },
 })

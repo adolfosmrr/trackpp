@@ -25,6 +25,7 @@ import { CorrectFixedExpensePaymentScreen } from "../features/fixedExpenses/scre
 import { CreateTransactionScreen } from "../features/transactions/screens/CreateTransactionScreen"
 import { PendingChargeScreen } from "../features/pendingCharges/screens/PendingChargeScreen"
 import { PendingChargesScreen } from "../features/pendingCharges/screens/PendingChargesScreen"
+import { colors } from "../theme"
 
 export type AppStackParamList = {
   Main: undefined
@@ -51,6 +52,7 @@ export function AppNavigator() {
     <Stack.Navigator
       screenOptions={{
         headerShown: false,
+        contentStyle: { backgroundColor: colors.background },
       }}
     >
       <Stack.Screen

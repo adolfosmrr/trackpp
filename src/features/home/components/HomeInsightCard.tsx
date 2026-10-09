@@ -9,6 +9,7 @@ import {
   InsightActionPopover,
   type InsightActionDetail,
 } from "./InsightActionPopover"
+import { colors, fonts, radii } from "../../../theme"
 import { HomeInsightGroup } from "./HomeInsightGroup"
 
 export type HomeInsightCardProps = {
@@ -69,9 +70,11 @@ function getGroupSeparator(groupCount: number, groupIndex: number) {
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: "#F5F5F5",
-    borderRadius: 20,
-    padding: 16,
+    backgroundColor: colors.card,
+    borderColor: colors.border,
+    borderRadius: radii.md,
+    borderWidth: 1,
+    padding: 12,
   },
   plainCard: {
     backgroundColor: "transparent",
@@ -80,16 +83,15 @@ const styles = StyleSheet.create({
     position: "relative",
   },
   messageText: {
-    color: "#1C1C1C",
-    fontFamily: "FamiljenGrotesk-Medium",
+    color: colors.foreground,
+    fontFamily: fonts.sans,
     fontSize: 14,
-    lineHeight: 18,
+    lineHeight: 20,
   },
   plainMessage: {
-    color: "#FFFFFF",
-    fontFamily: "FamiljenGrotesk-Bold",
+    color: colors.mutedForeground,
+    fontFamily: fonts.sansMedium,
     fontSize: 22,
     lineHeight: 28,
-    opacity: 0.5,
   },
 })

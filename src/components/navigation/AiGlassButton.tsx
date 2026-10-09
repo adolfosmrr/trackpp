@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react"
 import { Platform, Pressable, StyleSheet, Text, View } from "react-native"
+import { colors, fonts } from "../../theme"
 import {
   GlassView,
   isGlassEffectAPIAvailable,
@@ -77,7 +78,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   fallbackSurface: {
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.brand,
   },
   pressableContent: {
     flex: 1,
@@ -85,8 +86,8 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   label: {
-    color: "#1C1C1C",
-    fontFamily: "FamiljenGrotesk-Bold",
+    color: colors.brandForeground,
+    fontFamily: fonts.sansSemibold,
     fontSize: 16,
   },
 })

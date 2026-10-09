@@ -9,15 +9,11 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import { useSharedValue, type SharedValue } from "react-native-reanimated"
 
+import { colors, meshColors, radii } from "../../theme"
 import { GridBackground } from "./GridBackground"
 import { MeshGradient } from "../visual/MeshGradient"
 
-const TOP_SECTION_GRADIENT_COLORS: [string, string, string, string] = [
-    "#14044B",
-    "#D7D7D7",
-    "#4F3B97",
-    "#14044B",
-]
+const TOP_SECTION_GRADIENT_COLORS = meshColors.auth
 const SHOW_TOP_SECTION_GRADIENT = false
 
 type TopSectionProps = {
@@ -77,13 +73,13 @@ export function TopSection({
 
 const styles = StyleSheet.create({
     container: {
-        borderBottomLeftRadius: 60,
-        borderBottomRightRadius: 60,
+        borderBottomColor: colors.border,
+        borderBottomWidth: 1,
     },
     backgroundLayer: {
-        backgroundColor: "#000000",
-        borderBottomLeftRadius: 60,
-        borderBottomRightRadius: 60,
+        backgroundColor: colors.background,
+        borderBottomLeftRadius: radii.xl,
+        borderBottomRightRadius: radii.xl,
         bottom: 0,
         left: 0,
         overflow: "hidden",

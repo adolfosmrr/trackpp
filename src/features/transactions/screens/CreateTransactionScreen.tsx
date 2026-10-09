@@ -8,6 +8,7 @@ import {
   StyleSheet,
   Alert,
 } from "react-native"
+import { colors, fonts, radii } from "../../../theme"
 
 import { useCreateTransaction } from "../hooks/useCreateTransaction"
 import { useCategories } from "../../categories/hooks/useCategories"
@@ -115,6 +116,7 @@ export function CreateTransactionScreen({ navigation }: any) {
       <TextInput
         style={styles.input}
         placeholder="Título"
+        placeholderTextColor={colors.mutedForeground}
         value={title}
         onChangeText={setTitle}
       />
@@ -122,6 +124,7 @@ export function CreateTransactionScreen({ navigation }: any) {
       <TextInput
         style={styles.input}
         placeholder="Monto"
+        placeholderTextColor={colors.mutedForeground}
         keyboardType="decimal-pad"
         value={amount}
         onChangeText={setAmount}
@@ -192,6 +195,7 @@ export function CreateTransactionScreen({ navigation }: any) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: colors.background,
     padding: 24,
     gap: 16,
   },
@@ -204,30 +208,35 @@ const styles = StyleSheet.create({
   typeButton: {
     flex: 1,
     padding: 14,
-    borderRadius: 10,
+    borderRadius: radii.sm,
     borderWidth: 1,
-    borderColor: "#ccc",
+    borderColor: colors.borderStrong,
     alignItems: "center",
   },
 
   typeButtonSelected: {
-    backgroundColor: "#111",
-    borderColor: "#111",
+    backgroundColor: colors.brand,
+    borderColor: colors.brand,
   },
 
   typeText: {
+    color: colors.foreground,
+    fontFamily: fonts.sansMedium,
     fontWeight: "600",
   },
 
   typeTextSelected: {
-    color: "#fff",
+    color: colors.brandForeground,
   },
 
   input: {
     borderWidth: 1,
-    borderColor: "#ccc",
-    borderRadius: 10,
-    padding: 14,
+    borderColor: colors.borderStrong,
+    borderRadius: radii.sm,
+    backgroundColor: colors.field,
+    color: colors.foreground,
+    fontFamily: fonts.sans,
+    padding: 12,
   },
 
   categorySection: {
@@ -235,7 +244,9 @@ const styles = StyleSheet.create({
   },
 
   sectionTitle: {
-    fontSize: 16,
+    color: colors.foreground,
+    fontFamily: fonts.sansSemibold,
+    fontSize: 15,
     fontWeight: "600",
   },
 
@@ -246,37 +257,41 @@ const styles = StyleSheet.create({
   categoryChip: {
     paddingHorizontal: 14,
     paddingVertical: 10,
-    borderRadius: 20,
+    borderRadius: radii.sm,
     borderWidth: 1,
-    borderColor: "#ccc",
+    borderColor: colors.borderStrong,
   },
 
   categoryChipSelected: {
-    backgroundColor: "#111",
-    borderColor: "#111",
+    backgroundColor: colors.brand,
+    borderColor: colors.brand,
   },
 
   categoryChipText: {
+    color: colors.foreground,
+    fontFamily: fonts.sansMedium,
     fontWeight: "600",
   },
 
   categoryChipTextSelected: {
-    color: "#fff",
+    color: colors.brandForeground,
   },
 
   helperText: {
-    color: "#777",
+    color: colors.mutedForeground,
+    fontFamily: fonts.sans,
   },
 
   errorText: {
-    color: "#b42318",
+    color: colors.destructive,
+    fontFamily: fonts.sans,
   },
 
   button: {
     marginTop: 10,
-    padding: 16,
-    borderRadius: 10,
-    backgroundColor: "#111",
+    padding: 12,
+    borderRadius: radii.sm,
+    backgroundColor: colors.brand,
     alignItems: "center",
   },
 
@@ -285,7 +300,8 @@ const styles = StyleSheet.create({
   },
 
   buttonText: {
-    color: "#fff",
+    color: colors.brandForeground,
+    fontFamily: fonts.sansSemibold,
     fontWeight: "600",
   },
 })

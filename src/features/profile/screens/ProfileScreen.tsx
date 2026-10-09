@@ -7,6 +7,8 @@ import {
   ActivityIndicator,
 } from "react-native"
 
+import { colors, fonts, radii } from "../../../theme"
+
 import { supabase } from "../../../services/supabase"
 
 import { useAuth } from "../../auth/context/AuthContext"
@@ -60,7 +62,7 @@ export function ProfileScreen({ navigation, }: any) {
   ) {
     return (
       <View style={styles.center}>
-        <ActivityIndicator size="large" />
+        <ActivityIndicator color={colors.brand} size="large" />
       </View>
     )
   }
@@ -79,7 +81,7 @@ export function ProfileScreen({ navigation, }: any) {
   ) {
     return (
       <View style={styles.center}>
-        <Text>
+        <Text style={styles.email}>
           No se pudo cargar el perfil.
         </Text>
 
@@ -278,6 +280,7 @@ function formatHouseholdType(
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: colors.background,
   },
 
   content: {
@@ -287,6 +290,7 @@ const styles = StyleSheet.create({
   },
   center: {
     flex: 1,
+    backgroundColor: colors.background,
     alignItems: "center",
     justifyContent: "center",
     gap: 20,
@@ -303,39 +307,48 @@ const styles = StyleSheet.create({
     width: 72,
     height: 72,
     borderRadius: 36,
-    backgroundColor: "#111",
+    backgroundColor: colors.control,
+    borderColor: colors.border,
+    borderWidth: 1,
     alignItems: "center",
     justifyContent: "center",
     marginBottom: 4,
   },
 
   avatarText: {
-    color: "#fff",
+    color: colors.foreground,
+    fontFamily: fonts.sansSemibold,
     fontSize: 24,
     fontWeight: "700",
   },
 
   name: {
+    color: colors.foreground,
+    fontFamily: fonts.sansSemibold,
     fontSize: 24,
-    fontWeight: "700",
+    fontWeight: "600",
   },
 
   email: {
     fontSize: 14,
-    color: "#777",
+    color: colors.mutedForeground,
+    fontFamily: fonts.sans,
   },
 
   section: {
     borderWidth: 1,
-    borderColor: "#ddd",
-    borderRadius: 16,
+    backgroundColor: colors.card,
+    borderColor: colors.border,
+    borderRadius: radii.md,
     padding: 18,
     gap: 14,
   },
 
   sectionTitle: {
-    fontSize: 16,
-    fontWeight: "700",
+    color: colors.foreground,
+    fontFamily: fonts.sansSemibold,
+    fontSize: 15,
+    fontWeight: "600",
   },
 
   row: {
@@ -345,53 +358,61 @@ const styles = StyleSheet.create({
   },
 
   label: {
-    color: "#777",
+    color: colors.mutedForeground,
+    fontFamily: fonts.sans,
   },
 
   value: {
     flex: 1,
     textAlign: "right",
     fontWeight: "600",
+    color: colors.foreground,
+    fontFamily: fonts.sansMedium,
   },
 
   separator: {
     height: 1,
-    backgroundColor: "#eee",
+    backgroundColor: colors.border,
   },
 
   logoutButton: {
     padding: 16,
-    borderRadius: 12,
+    borderRadius: radii.sm,
     borderWidth: 1,
-    borderColor: "#ddd",
+    borderColor: colors.border,
     alignItems: "center",
   },
 
   logoutText: {
     fontWeight: "600",
-    color: "#b42318",
+    color: colors.destructive,
+    fontFamily: fonts.sansMedium,
   },
   inviteButton: {
     marginTop: 8,
     padding: 14,
     borderWidth: 1,
-    borderColor: "#ddd",
-    borderRadius: 10,
+    borderColor: colors.border,
+    borderRadius: radii.sm,
     alignItems: "center",
   },
 
   inviteButtonText: {
-    fontWeight: "700",
+    color: colors.foreground,
+    fontFamily: fonts.sansMedium,
+    fontWeight: "600",
   },
   actionButton: {
     padding: 16,
     borderWidth: 1,
-    borderColor: "#ddd",
-    borderRadius: 12,
+    borderColor: colors.border,
+    borderRadius: radii.sm,
     alignItems: "center",
   },
   
   actionButtonText: {
-    fontWeight: "700",
+    color: colors.foreground,
+    fontFamily: fonts.sansMedium,
+    fontWeight: "600",
   },
 })

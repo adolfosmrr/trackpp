@@ -10,8 +10,7 @@ import {
   Text,
   View,
 } from "react-native"
-import Svg, { Defs, LinearGradient, Rect, Stop } from "react-native-svg"
-
+import { colors, fonts, radii, refreshControlColors } from "../../../theme"
 import { useDeleteFixedExpense } from "../hooks/useDeleteFixedExpense"
 import {
   getCurrentFixedExpensePeriod,
@@ -143,7 +142,7 @@ export function FixedExpensesScreen({ navigation }: any) {
   }
 
   if (isLoading || periodsLoading || profileLoading || dashboardLoading) {
-    return <View style={styles.center}><ActivityIndicator size="large" /></View>
+    return <View style={styles.center}><ActivityIndicator color={colors.brand} size="large" /></View>
   }
 
   if (error || periodsError || profileError || dashboardError) {
@@ -151,7 +150,7 @@ export function FixedExpensesScreen({ navigation }: any) {
 
     return (
       <View style={styles.center}>
-        <Text>No se pudieron cargar los gastos fijos.</Text>
+        <Text style={styles.empty}>No se pudieron cargar los gastos fijos.</Text>
         {__DEV__ && loadError instanceof Error ? (
           <Text style={styles.errorDetail}>{loadError.message}</Text>
         ) : null}
@@ -172,9 +171,7 @@ export function FixedExpensesScreen({ navigation }: any) {
               refreshing={refreshing}
               onRefresh={handleRefresh}
               progressViewOffset={topSectionHeight}
-              tintColor="#1C1C1C"
-              colors={["#1C1C1C"]}
-              progressBackgroundColor="#FFFFFF"
+              {...refreshControlColors}
             />
           }
           ListHeaderComponent={
@@ -271,25 +268,6 @@ export function FixedExpensesScreen({ navigation }: any) {
                   {period && period.remaining > 0 ? (
                     <>
                       <View style={styles.gradientButton}>
-                        <Svg pointerEvents="none" style={StyleSheet.absoluteFill}>
-                          <Defs>
-                            <LinearGradient
-                              id="fixed-expense-complete-gradient"
-                              x1="0%"
-                              y1="0%"
-                              x2="100%"
-                              y2="100%"
-                            >
-                              <Stop offset="0" stopColor="#BFFFC7" />
-                              <Stop offset="1" stopColor="#18A5A7" />
-                            </LinearGradient>
-                          </Defs>
-                          <Rect
-                            width="100%"
-                            height="100%"
-                            fill="url(#fixed-expense-complete-gradient)"
-                          />
-                        </Svg>
                         <Pressable
                           accessibilityLabel="Pago completado"
                           disabled={processingPeriodId !== null}
@@ -388,7 +366,7 @@ function getStatusLabel(status: string) {
 }
 
 const styles = StyleSheet.create({
-  screenWrapper: { flex: 1, position: "relative" },
+  screenWrapper: { flex: 1, position: "relative", backgroundColor: colors.background },
   topSectionOverlay: {
     left: 0,
     position: "absolute",
@@ -397,21 +375,15 @@ const styles = StyleSheet.create({
     zIndex: 10,
   },
   hiddenList: { opacity: 0 },
-  center: { flex: 1, alignItems: "center", justifyContent: "center", padding: 24 },
+  center: { flex: 1, backgroundColor: colors.background, alignItems: "center", justifyContent: "center", padding: 24 },
   list: { gap: 12, paddingHorizontal: 20, paddingTop: 20, paddingBottom: 24 },
-  primaryButtonText: { color: "#fff", fontWeight: "600" },
+  primaryButtonText: { color: colors.brandForeground, fontFamily: fonts.sansSemibold, fontWeight: "600" },
   card: {
-    backgroundColor: "#EEEEEE",
-    padding: 20,
-    borderRadius: 20,
-    shadowColor: "#000000",
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 12,
-    elevation: 6,
+    backgroundColor: colors.card,
+    borderColor: colors.border,
+    borderWidth: 1,
+    padding: 14,
+    borderRadius: radii.md,
   },
   cardHeader: {
     flexDirection: "row",
@@ -423,22 +395,22 @@ const styles = StyleSheet.create({
   name: {
     flex: 1,
     flexShrink: 1,
-    color: "#1C1C1C",
-    fontFamily: "FamiljenGrotesk-Bold",
-    fontSize: 24,
+    color: colors.foreground,
+    fontFamily: fonts.sansSemibold,
+    fontSize: 16,
   },
   amount: {
     flexShrink: 1,
-    color: "#1C1C1C",
-    fontFamily: "FamiljenGrotesk-Bold",
-    fontSize: 24,
+    color: colors.foreground,
+    fontFamily: fonts.monoSemibold,
+    fontSize: 16,
     lineHeight: 24,
     textAlign: "right",
   },
   separator: {
     width: "100%",
     height: 1,
-    backgroundColor: "#000000",
+    backgroundColor: colors.border,
   },
   infoGrid: {
     flexDirection: "row",
@@ -450,8 +422,8 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   infoText: {
-    color: "rgba(28,28,28,0.7)",
-    fontFamily: "Satoshi-Bold",
+    color: colors.mutedForeground,
+    fontFamily: fonts.sans,
     fontSize: 12,
     lineHeight: 12,
   },
@@ -460,29 +432,29 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   status: {
-    color: "rgba(28,28,28,0.7)",
-    fontFamily: "Satoshi-Bold",
+    color: colors.mutedForeground,
+    fontFamily: fonts.sans,
     fontSize: 16,
     lineHeight: 16,
   },
   disabled: { opacity: 0.55 },
   progressSection: { gap: 6 },
   progressLabel: {
-    color: "rgba(28,28,28,0.7)",
-    fontFamily: "Satoshi-Bold",
+    color: colors.mutedForeground,
+    fontFamily: fonts.sans,
     fontSize: 12,
     lineHeight: 12,
   },
   progressTrack: {
-    height: 8,
+    height: 6,
     overflow: "hidden",
-    borderRadius: 4,
-    backgroundColor: "#B6B6B6",
+    borderRadius: radii.xs,
+    backgroundColor: colors.control,
   },
   progressFill: {
     height: "100%",
-    borderRadius: 4,
-    backgroundColor: "#000000",
+    borderRadius: radii.xs,
+    backgroundColor: colors.brand,
   },
   actions: {
     flexDirection: "row",
@@ -493,30 +465,33 @@ const styles = StyleSheet.create({
   actionButton: {
     alignItems: "center",
     justifyContent: "center",
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    borderRadius: 999,
-    backgroundColor: "#000000",
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: radii.sm,
+    borderColor: colors.borderStrong,
+    borderWidth: 1,
+    backgroundColor: colors.transparent,
   },
   actionButtonText: {
-    color: "#FFFFFF",
-    fontFamily: "FamiljenGrotesk-Bold",
+    color: colors.foreground,
+    fontFamily: fonts.sansMedium,
     fontSize: 12,
     lineHeight: 12,
   },
   gradientActionButton: {
-    backgroundColor: "transparent",
+    backgroundColor: colors.brand,
+    borderColor: colors.brand,
   },
   completeActionButtonText: {
-    color: "#1C1C1C",
+    color: colors.brandForeground,
   },
   gradientButton: {
-    borderRadius: 999,
+    borderRadius: radii.sm,
     overflow: "hidden",
   },
-  empty: { color: "#777", textAlign: "center", padding: 24 },
+  empty: { color: colors.mutedForeground, fontFamily: fonts.sans, textAlign: "center", padding: 24 },
   emptyState: { alignItems: "center", gap: 8, paddingVertical: 24 },
-  emptyDescription: { color: "#777", textAlign: "center", paddingHorizontal: 16 },
-  emptyButton: { marginTop: 8, padding: 14, borderRadius: 10, backgroundColor: "#111" },
-  errorDetail: { color: "#b42318", textAlign: "center" },
+  emptyDescription: { color: colors.mutedForeground, fontFamily: fonts.sans, textAlign: "center", paddingHorizontal: 16 },
+  emptyButton: { marginTop: 8, padding: 12, borderRadius: radii.sm, backgroundColor: colors.brand },
+  errorDetail: { color: colors.destructive, fontFamily: fonts.sans, textAlign: "center" },
 })

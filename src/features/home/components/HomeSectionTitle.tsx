@@ -1,6 +1,8 @@
 import type { ReactNode } from "react"
 import { StyleSheet, Text, View } from "react-native"
 
+import { colors, fonts } from "../../../theme"
+
 type HomeSectionTitleProps = {
   title: string
   icon: ReactNode
@@ -24,7 +26,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     flexDirection: "row",
     justifyContent: "space-between",
-    marginBottom: 20,
+    marginBottom: 12,
   },
   leading: {
     alignItems: "center",
@@ -32,9 +34,9 @@ const styles = StyleSheet.create({
     flexDirection: "row",
   },
   title: {
-    color: "#1C1C1C",
-    fontFamily: "FamiljenGrotesk-Bold",
-    fontSize: 20,
+    color: colors.foreground,
+    fontFamily: fonts.sansSemibold,
+    fontSize: 16,
     lineHeight: 20,
   },
 })

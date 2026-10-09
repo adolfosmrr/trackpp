@@ -1,4 +1,6 @@
-import { Alert, ActivityIndicator, Text, View } from "react-native"
+import { Alert, ActivityIndicator, StyleSheet, Text, View } from "react-native"
+
+import { colors, fonts } from "../../../theme"
 
 import { FixedExpenseForm } from "../components/FixedExpenseForm"
 import { getCurrentFixedExpensePeriod } from "../hooks/useFixedExpensePeriods"
@@ -27,11 +29,19 @@ export function EditFixedExpenseScreen({ route, navigation }: any) {
   }
 
   if (isLoading) {
-    return <ActivityIndicator />
+    return (
+      <View style={styles.center}>
+        <ActivityIndicator color={colors.brand} />
+      </View>
+    )
   }
 
   if (!expense) {
-    return <View><Text>No se encontró el gasto fijo.</Text></View>
+    return (
+      <View style={styles.center}>
+        <Text style={styles.message}>No se encontró el gasto fijo.</Text>
+      </View>
+    )
   }
 
   return (
@@ -50,3 +60,18 @@ export function EditFixedExpenseScreen({ route, navigation }: any) {
     />
   )
 }
+
+const styles = StyleSheet.create({
+  center: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: colors.background,
+    padding: 24,
+  },
+  message: {
+    color: colors.foreground,
+    fontFamily: fonts.sans,
+    textAlign: "center",
+  },
+})

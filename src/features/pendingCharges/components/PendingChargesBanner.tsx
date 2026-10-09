@@ -1,4 +1,5 @@
 import { Pressable, StyleSheet, Text, View } from "react-native"
+import { colors, fonts, radii } from "../../../theme"
 
 import { usePendingCharges } from "../hooks/usePendingCharges"
 
@@ -39,8 +40,10 @@ export function PendingChargesBanner({ onPress }: PendingChargesBannerProps) {
 const styles = StyleSheet.create({
   card: {
     alignItems: "center",
-    backgroundColor: "#1C1C1C",
-    borderRadius: 28,
+    backgroundColor: colors.card,
+    borderColor: colors.brandBorder,
+    borderRadius: radii.md,
+    borderWidth: 1,
     flexDirection: "row",
     gap: 14,
     paddingHorizontal: 18,
@@ -48,16 +51,16 @@ const styles = StyleSheet.create({
   },
   badge: {
     alignItems: "center",
-    backgroundColor: "#FFFFFF",
-    borderRadius: 999,
+    backgroundColor: colors.brandMuted,
+    borderRadius: radii.sm,
     height: 32,
     justifyContent: "center",
     minWidth: 32,
     paddingHorizontal: 8,
   },
   badgeText: {
-    color: "#1C1C1C",
-    fontFamily: "FamiljenGrotesk-Bold",
+    color: colors.brand,
+    fontFamily: fonts.monoSemibold,
     fontSize: 16,
   },
   copy: {
@@ -65,14 +68,14 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   title: {
-    color: "#FFFFFF",
-    fontFamily: "FamiljenGrotesk-Bold",
+    color: colors.foreground,
+    fontFamily: fonts.sansSemibold,
     fontSize: 16,
     lineHeight: 20,
   },
   subtitle: {
-    color: "rgba(255,255,255,0.65)",
-    fontFamily: "FamiljenGrotesk-Regular",
+    color: colors.mutedForeground,
+    fontFamily: fonts.sans,
     fontSize: 14,
     lineHeight: 18,
   },

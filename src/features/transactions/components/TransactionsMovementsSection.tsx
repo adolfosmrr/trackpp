@@ -1,4 +1,5 @@
 import { Pressable, StyleSheet, Text, View } from "react-native"
+import { colors, fonts, radii } from "../../../theme"
 import { useMemo } from "react"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 
@@ -97,20 +98,21 @@ export function TransactionsMovementsSection({
 
 const styles = StyleSheet.create({
   section: {
-    backgroundColor: "#E6E6E6",
-    borderTopLeftRadius: 60,
-    borderTopRightRadius: 60,
-    marginHorizontal: -20,
-    paddingTop: 50,
+    backgroundColor: colors.transparent,
+    borderTopColor: colors.border,
+    borderTopWidth: 1,
+    marginHorizontal: 0,
+    paddingTop: 16,
   },
   content: {
     paddingHorizontal: 20,
   },
   sectionTitle: {
-    color: "#1C1C1C",
-    fontFamily: "FamiljenGrotesk-Bold",
-    fontSize: 40,
-    lineHeight: 40,
+    color: colors.foreground,
+    fontFamily: fonts.sansSemibold,
+    fontSize: 22,
+    letterSpacing: -0.4,
+    lineHeight: 26,
   },
   titleRow: {
     alignItems: "flex-start",
@@ -120,16 +122,18 @@ const styles = StyleSheet.create({
   },
   filterButton: {
     alignItems: "center",
-    backgroundColor: "#000000",
-    borderRadius: 999,
+    backgroundColor: colors.transparent,
+    borderColor: colors.borderStrong,
+    borderRadius: radii.sm,
+    borderWidth: 1,
     justifyContent: "center",
     marginTop: 4,
     paddingHorizontal: 14,
     paddingVertical: 8,
   },
   filterButtonText: {
-    color: "#FFFFFF",
-    fontFamily: "FamiljenGrotesk-Bold",
+    color: colors.foreground,
+    fontFamily: fonts.sansMedium,
     fontSize: 12,
     lineHeight: 12,
   },
@@ -143,15 +147,15 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   transactionDate: {
-    color: "#1C1C1C",
-    fontFamily: "Satoshi-Bold",
-    fontSize: 16,
+    color: colors.mutedForeground,
+    fontFamily: fonts.monoMedium,
+    fontSize: 12,
     lineHeight: 16,
-    marginBottom: 20,
-    opacity: 0.5,
+    marginBottom: 10,
   },
   empty: {
-    color: "#777",
+    color: colors.mutedForeground,
+    fontFamily: fonts.sans,
     marginTop: 40,
     textAlign: "center",
   },

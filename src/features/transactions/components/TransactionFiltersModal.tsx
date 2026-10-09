@@ -7,6 +7,7 @@ import {
   TextInput,
   View,
 } from "react-native"
+import { colors, fonts, radii } from "../../../theme"
 import { useEffect, useState, type ReactNode } from "react"
 
 import { FilterChevronIcon } from "../../../components/icons/FilterChevronIcon"
@@ -242,7 +243,7 @@ function Option({ label, selected, onPress, grid = false }: { label: string; sel
   return (
     <Pressable style={[styles.option, grid && styles.gridOption, selected && styles.selectedOption]} onPress={onPress}>
       <Text style={[styles.optionText, selected && styles.selectedOptionText]}>{label}</Text>
-      <FilterChevronIcon color={selected ? "#FFFFFF" : "#1C1C1C"} />
+      <FilterChevronIcon color={selected ? colors.brandForeground : colors.foreground} />
     </Pressable>
   )
 }
@@ -252,6 +253,7 @@ function DateInput({ value, placeholder, onChangeText }: { value: string; placeh
     <TextInput
       value={value}
       placeholder={placeholder}
+      placeholderTextColor={colors.mutedForeground}
       onChangeText={onChangeText}
       autoCapitalize="none"
       keyboardType="numbers-and-punctuation"
@@ -262,17 +264,19 @@ function DateInput({ value, placeholder, onChangeText }: { value: string; placeh
 
 const styles = StyleSheet.create({
   backdrop: {
-    backgroundColor: "rgba(0, 0, 0, 0.45)",
+    backgroundColor: colors.overlay,
     flex: 1,
     justifyContent: "flex-end",
   },
   sheet: {
-    backgroundColor: "#F5F5F5",
+    backgroundColor: colors.background,
     maxHeight: "88%",
   },
   sheetHeader: {
     alignItems: "center",
-    backgroundColor: "#000000",
+    backgroundColor: colors.background,
+    borderBottomColor: colors.border,
+    borderBottomWidth: 1,
     flexDirection: "row",
     justifyContent: "space-between",
     paddingHorizontal: 20,
@@ -280,24 +284,15 @@ const styles = StyleSheet.create({
     paddingBottom: 10,
     zIndex: 10,
   },
-  sheetHeaderShadow: {
-    elevation: 8,
-    shadowColor: "#000000",
-    shadowOffset: {
-      width: 0,
-      height: 6,
-    },
-    shadowOpacity: 0.35,
-    shadowRadius: 10,
-  },
+  sheetHeaderShadow: {},
   title: {
-    color: "#FFFFFF",
-    fontFamily: "FamiljenGrotesk-Bold",
-    fontSize: 24,
+    color: colors.foreground,
+    fontFamily: fonts.sansSemibold,
+    fontSize: 20,
     lineHeight: 24,
   },
   close: {
-    color: "#FFFFFF",
+    color: colors.mutedForeground,
     fontSize: 30,
     lineHeight: 30,
   },
@@ -310,10 +305,10 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   groupTitle: {
-    color: "#1C1C1C",
-    fontFamily: "FamiljenGrotesk-Bold",
-    fontSize: 30,
-    lineHeight: 30,
+    color: colors.foreground,
+    fontFamily: fonts.sansSemibold,
+    fontSize: 15,
+    lineHeight: 20,
   },
   options: {
     gap: 10,
@@ -324,8 +319,10 @@ const styles = StyleSheet.create({
   },
   option: {
     alignItems: "center",
-    backgroundColor: "#FFFFFF",
-    borderRadius: 999,
+    backgroundColor: colors.card,
+    borderColor: colors.border,
+    borderRadius: radii.sm,
+    borderWidth: 1,
     flexDirection: "row",
     justifyContent: "space-between",
     paddingHorizontal: 20,
@@ -336,24 +333,26 @@ const styles = StyleSheet.create({
     minWidth: 0,
   },
   selectedOption: {
-    backgroundColor: "#000000",
+    backgroundColor: colors.brand,
+    borderColor: colors.brand,
   },
   optionText: {
-    color: "#1C1C1C",
+    color: colors.foreground,
     flexShrink: 1,
-    fontFamily: "FamiljenGrotesk-Black",
+    fontFamily: fonts.sansMedium,
     fontSize: 16,
     lineHeight: 16,
   },
   selectedOptionText: {
-    color: "#FFFFFF",
+    color: colors.brandForeground,
   },
   dateInput: {
-    backgroundColor: "#FFFFFF",
-    borderColor: "#D0D0D0",
-    borderRadius: 10,
+    backgroundColor: colors.field,
+    borderColor: colors.borderStrong,
+    borderRadius: radii.sm,
     borderWidth: 1,
-    color: "#1C1C1C",
+    color: colors.foreground,
+    fontFamily: fonts.sans,
     paddingHorizontal: 12,
     paddingVertical: 9,
   },
@@ -361,8 +360,8 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   actions: {
-    backgroundColor: "#000000",
-    borderTopColor: "#DDDDDD",
+    backgroundColor: colors.background,
+    borderTopColor: colors.border,
     borderTopWidth: 1,
     flexDirection: "row",
     gap: 10,
@@ -371,30 +370,30 @@ const styles = StyleSheet.create({
   clearButton: {
     alignItems: "center",
     backgroundColor: "transparent",
-    borderColor: "#FFFFFF",
-    borderRadius: 999,
+    borderColor: colors.borderStrong,
+    borderRadius: radii.sm,
     borderWidth: 1,
     flex: 1,
     justifyContent: "center",
     paddingVertical: 13,
   },
   clearText: {
-    color: "#FFFFFF",
-    fontFamily: "FamiljenGrotesk-Bold",
+    color: colors.foreground,
+    fontFamily: fonts.sansMedium,
     fontSize: 16,
     lineHeight: 16,
   },
   applyButton: {
     alignItems: "center",
-    backgroundColor: "#FFFFFF",
-    borderRadius: 999,
+    backgroundColor: colors.brand,
+    borderRadius: radii.sm,
     flex: 1,
     justifyContent: "center",
     paddingVertical: 13,
   },
   applyText: {
-    color: "#1C1C1C",
-    fontFamily: "FamiljenGrotesk-Bold",
+    color: colors.brandForeground,
+    fontFamily: fonts.sansSemibold,
     fontSize: 16,
     lineHeight: 16,
   },

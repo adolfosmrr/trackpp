@@ -1,6 +1,7 @@
 import { StyleSheet, Text, View } from "react-native"
 import Animated, { interpolate, useAnimatedStyle, type SharedValue } from "react-native-reanimated"
 import { AnimatedAmount } from "../../../components/animated/AnimatedAmount"
+import { colors, fonts } from "../../../theme"
 
 type HomeIncomeExpenseSummaryProps = {
   income: number
@@ -19,13 +20,23 @@ export function HomeIncomeExpenseSummary({
   }))
   return (
     <Animated.View style={[styles.container, containerStyle]}>
-      <SummaryItem collapseProgress={collapseProgress} label="Ingresos" amount={income} />
-      <SummaryItem collapseProgress={collapseProgress} label="Gastos" amount={expenses} />
+      <SummaryItem collapseProgress={collapseProgress} label="Ingresos" amount={income} tone="income" />
+      <SummaryItem collapseProgress={collapseProgress} label="Gastos" amount={expenses} tone="expense" />
     </Animated.View>
   )
 }
 
-function SummaryItem({ label, amount, collapseProgress }: { label: string; amount: number; collapseProgress: SharedValue<number> }) {
+function SummaryItem({
+  label,
+  amount,
+  collapseProgress,
+  tone,
+}: {
+  label: string
+  amount: number
+  collapseProgress: SharedValue<number>
+  tone: "income" | "expense"
+}) {
   const labelStyle = useAnimatedStyle(() => ({
     fontSize: interpolate(collapseProgress.value, [0, 1], [18, 16]),
   }))
@@ -41,7 +52,7 @@ function SummaryItem({ label, amount, collapseProgress }: { label: string; amoun
           minimumFontScale: 0.8,
           numberOfLines: 1,
         }}
-        style={styles.amount}
+        style={[styles.amount, tone === "expense" ? styles.expenseAmount : styles.incomeAmount]}
       />
     </View>
   )
@@ -63,15 +74,19 @@ const styles = StyleSheet.create({
     flexShrink: 1,
   },
   label: {
-    color: "#FFFFFF",
-    fontFamily: "Satoshi-Regular",
-    fontSize: 18,
-    opacity: 0.5,
+    color: colors.mutedForeground,
+    fontFamily: fonts.sans,
+    fontSize: 13,
   },
   amount: {
-    color: "#FFFFFF",
     flexShrink: 1,
-    fontFamily: "FamiljenGrotesk-Bold",
-    fontSize: 20,
+    fontFamily: fonts.monoMedium,
+    fontSize: 18,
+  },
+  incomeAmount: {
+    color: colors.brand,
+  },
+  expenseAmount: {
+    color: colors.destructive,
   },
 })

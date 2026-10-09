@@ -8,6 +8,7 @@ import {
   Alert,
   RefreshControl,
 } from "react-native"
+import { colors, fonts, refreshControlColors } from "../../../theme"
   import { useMemo, useState } from "react"
 
   import { useAuth } from "../../auth/context/AuthContext"
@@ -169,7 +170,7 @@ import { useCreateTransactionSheet } from "../components/CreateTransactionSheetP
     if (isLoading || profileLoading || dashboardLoading) {
       return (
         <View style={styles.center}>
-          <ActivityIndicator size="large" />
+          <ActivityIndicator color={colors.brand} size="large" />
         </View>
       )
     }
@@ -177,7 +178,7 @@ import { useCreateTransactionSheet } from "../components/CreateTransactionSheetP
     if (error || profileError || dashboardError) {
       return (
         <View style={styles.center}>
-          <Text>No se pudieron cargar los movimientos.</Text>
+          <Text style={styles.empty}>No se pudieron cargar los movimientos.</Text>
         </View>
       )
     }
@@ -195,9 +196,7 @@ import { useCreateTransactionSheet } from "../components/CreateTransactionSheetP
               refreshing={refreshing}
               onRefresh={handleRefresh}
               progressViewOffset={topSectionHeight}
-              tintColor="#1C1C1C"
-              colors={["#1C1C1C"]}
-              progressBackgroundColor="#FFFFFF"
+              {...refreshControlColors}
             />
           }
           ListHeaderComponent={
@@ -285,6 +284,7 @@ import { useCreateTransactionSheet } from "../components/CreateTransactionSheetP
     screenWrapper: {
       flex: 1,
       position: "relative",
+      backgroundColor: colors.background,
     },
 
     topSectionOverlay: {
@@ -301,6 +301,7 @@ import { useCreateTransactionSheet } from "../components/CreateTransactionSheetP
 
     center: {
       flex: 1,
+      backgroundColor: colors.background,
       alignItems: "center",
       justifyContent: "center",
     },
@@ -314,6 +315,7 @@ import { useCreateTransactionSheet } from "../components/CreateTransactionSheetP
     empty: {
       textAlign: "center",
       marginTop: 40,
-      color: "#777",
+      color: colors.mutedForeground,
+      fontFamily: fonts.sans,
     },
   })

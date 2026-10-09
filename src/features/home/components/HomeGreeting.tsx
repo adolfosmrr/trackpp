@@ -1,4 +1,6 @@
 import { StyleSheet, View } from "react-native"
+
+import { colors, fonts } from "../../../theme"
 import Animated, { interpolate, useAnimatedStyle, type SharedValue } from "react-native-reanimated"
 
 type HomeGreetingProps = {
@@ -52,28 +54,27 @@ const styles = StyleSheet.create({
     top: 0,
   },
   helloText: {
-    color: "#FFFFFF",
-    fontFamily: "FamiljenGrotesk-Regular",
+    color: colors.mutedForeground,
+    fontFamily: fonts.sans,
     fontSize: 30,
     lineHeight: 34,
-    opacity: 0.5,
   },
   nameText: {
-    color: "#FFFFFF",
-    fontFamily: "FamiljenGrotesk-Regular",
+    color: colors.foreground,
+    fontFamily: fonts.sans,
     fontSize: 40,
+    letterSpacing: -0.8,
     lineHeight: 44,
   },
   collapsedHelloText: {
-    color: "#FFFFFF",
-    fontFamily: "FamiljenGrotesk-Regular",
+    color: colors.mutedForeground,
+    fontFamily: fonts.sans,
     fontSize: 20,
     lineHeight: 20,
-    opacity: 0.5,
   },
   collapsedNameText: {
-    color: "#FFFFFF",
-    fontFamily: "FamiljenGrotesk-Regular",
+    color: colors.foreground,
+    fontFamily: fonts.sansMedium,
     fontSize: 20,
     lineHeight: 20,
     marginLeft: 8,

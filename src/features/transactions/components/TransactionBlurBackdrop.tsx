@@ -1,5 +1,6 @@
 import { useState } from "react"
 import { Pressable, StyleSheet, View, type ViewProps } from "react-native"
+import { colors } from "../../../theme"
 import Animated, {
   Extrapolation,
   interpolate,
@@ -61,6 +62,6 @@ export function TransactionBlurBackdrop({
 
 const styles = StyleSheet.create({
   overlay: {
-    backgroundColor: "rgba(0,0,0,0.12)",
+    backgroundColor: colors.overlay,
   },
 })

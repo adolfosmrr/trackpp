@@ -5,6 +5,7 @@ import {
   TextInput,
   View,
 } from "react-native"
+import { colors, fonts, radii } from "../../../theme"
 
 import { supabase } from "../../../services/supabase"
 
@@ -52,7 +53,7 @@ export const LoginForm = forwardRef<LoginFormHandle, LoginFormProps>(
         <TextInput
           style={styles.input}
           placeholder="Tú correo va acá"
-          placeholderTextColor="#8D8D8D"
+          placeholderTextColor={colors.mutedForeground}
           autoCapitalize="none"
           keyboardType="email-address"
           value={email}
@@ -62,7 +63,7 @@ export const LoginForm = forwardRef<LoginFormHandle, LoginFormProps>(
         <TextInput
           style={styles.input}
           placeholder="Y tú contraseña acá"
-          placeholderTextColor="#8D8D8D"
+          placeholderTextColor={colors.mutedForeground}
           secureTextEntry
           value={password}
           onChangeText={setPassword}
@@ -83,11 +84,12 @@ const styles = StyleSheet.create({
     marginBottom: 20
   },
   input: {
-    borderWidth: 0,
-    borderRadius: 9999,
-    backgroundColor: "#1C1C1C",
-    color: "#FFFFFF",
-    fontFamily: "FamiljenGrotesk-Medium",
+    borderWidth: 1,
+    borderColor: colors.borderStrong,
+    borderRadius: radii.sm,
+    backgroundColor: colors.field,
+    color: colors.foreground,
+    fontFamily: fonts.sans,
     fontSize: 16,
     paddingVertical: 14,
     paddingHorizontal: 20

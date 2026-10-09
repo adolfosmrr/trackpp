@@ -1,4 +1,5 @@
 import { Pressable, StyleSheet, Text } from "react-native"
+import { colors, fonts, radii } from "../../../theme"
 
 import { MatrixTextMorph } from "../../../components/text/MatrixTextMorph"
 
@@ -38,18 +39,18 @@ export function PrimaryAuthButton({
 
 const styles = StyleSheet.create({
   button: {
-    padding: 14,
-    borderRadius: 50,
-    backgroundColor: "#F3F3F3",
+    padding: 12,
+    borderRadius: radii.sm,
+    backgroundColor: colors.brand,
     alignItems: "center",
   },
   disabled: {
     opacity: 0.6,
   },
   buttonText: {
-    color: "#000000",
+    color: colors.brandForeground,
     fontWeight: "600",
-    fontSize: 16,
-    fontFamily: "FamiljenGrotesk-Medium",
+    fontSize: 15,
+    fontFamily: fonts.sansSemibold,
   },
 })

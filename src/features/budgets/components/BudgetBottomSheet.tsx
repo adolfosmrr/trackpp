@@ -7,6 +7,7 @@ import {
   View,
   useWindowDimensions,
 } from "react-native"
+import { colors, fonts, radii } from "../../../theme"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import {
   BottomSheetModal,
@@ -164,7 +165,7 @@ function BudgetForm({
         <BottomSheetTextInput
           style={[styles.field, styles.input]}
           placeholder="Nombre del presupuesto"
-          placeholderTextColor="rgba(28, 28, 28, 0.5)"
+          placeholderTextColor={colors.mutedForeground}
           value={name}
           onChangeText={setName}
         />
@@ -194,7 +195,7 @@ function BudgetForm({
         <BottomSheetTextInput
           style={[styles.field, styles.input]}
           placeholder={isCreate ? "Monto mensual" : "Nuevo monto"}
-          placeholderTextColor="rgba(28, 28, 28, 0.5)"
+          placeholderTextColor={colors.mutedForeground}
           keyboardType="decimal-pad"
           value={amount}
           onChangeText={setAmount}
@@ -230,12 +231,12 @@ function BudgetForm({
 
 const styles = StyleSheet.create({
   background: {
-    backgroundColor: "#E6E6E6",
-    borderTopLeftRadius: 60,
-    borderTopRightRadius: 60,
+    backgroundColor: colors.popover,
+    borderTopLeftRadius: radii.lg,
+    borderTopRightRadius: radii.lg,
   },
   handleIndicator: {
-    backgroundColor: "#1c1c1c",
+    backgroundColor: colors.borderStrong,
   },
   content: {
     padding: 24,
@@ -245,30 +246,37 @@ const styles = StyleSheet.create({
     marginTop: 40,
   },
   title: {
-    fontSize: 22,
-    fontWeight: "700",
+    color: colors.foreground,
+    fontFamily: fonts.sansSemibold,
+    fontSize: 20,
+    fontWeight: "600",
   },
   field: {
     width: "100%",
-    borderRadius: 999,
+    borderRadius: radii.sm,
     paddingHorizontal: 20,
     paddingVertical: 15,
   },
   input: {
-    backgroundColor: "#FFFFFF",
-    fontFamily: "FamiljenGrotesk-Bold",
+    backgroundColor: colors.field,
+    borderColor: colors.borderStrong,
+    borderWidth: 1,
+    color: colors.foreground,
+    fontFamily: fonts.sans,
     fontSize: 16,
     lineHeight: 16,
   },
   darkField: {
     alignItems: "center",
-    backgroundColor: "#000000",
+    backgroundColor: colors.field,
+    borderColor: colors.borderStrong,
+    borderWidth: 1,
     flexDirection: "row",
     justifyContent: "space-between",
   },
   fieldLabel: {
-    color: "#FFFFFF",
-    fontFamily: "FamiljenGrotesk-Bold",
+    color: colors.foreground,
+    fontFamily: fonts.sansMedium,
     flexShrink: 0,
     fontSize: 16,
     lineHeight: 16,
@@ -283,26 +291,25 @@ const styles = StyleSheet.create({
     minWidth: 0,
   },
   fieldValue: {
-    color: "#FFFFFF",
+    color: colors.mutedForeground,
     flex: 1,
     flexShrink: 1,
-    fontFamily: "FamiljenGrotesk-Bold",
-    fontSize: 16,
-    lineHeight: 16,
-    opacity: 0.5,
+    fontFamily: fonts.sansMedium,
+    fontSize: 15,
+    lineHeight: 18,
     textAlign: "right",
   },
   button: {
     alignItems: "center",
-    backgroundColor: "#111",
-    borderRadius: 999,
+    backgroundColor: colors.brand,
+    borderRadius: radii.sm,
     padding: 16,
   },
   buttonDisabled: {
     opacity: 0.6,
   },
   buttonText: {
-    color: "#fff",
-    fontFamily: "FamiljenGrotesk-Bold",
+    color: colors.brandForeground,
+    fontFamily: fonts.sansSemibold,
   },
 })

@@ -8,6 +8,7 @@ import {
 } from "react-native"
 
 import type { HomeAiInsightAction } from "../../dashboard/types/homeAiInsight"
+import { colors, fonts, radii } from "../../../theme"
 
 export type InsightActionDetail =
   | {
@@ -102,13 +103,14 @@ function DetailContent({ detail }: { detail: InsightActionDetail }) {
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 16,
+    backgroundColor: colors.popover,
+    borderColor: colors.border,
+    borderRadius: radii.md,
+    borderWidth: 1,
     padding: 12,
     marginTop: 12,
     width: "100%",
     zIndex: 2,
-    elevation: 2,
   },
   header: {
     alignItems: "center",
@@ -116,9 +118,9 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
   },
   title: {
-    color: "#1C1C1C",
+    color: colors.foreground,
     flex: 1,
-    fontFamily: "FamiljenGrotesk-Medium",
+    fontFamily: fonts.sansMedium,
     fontSize: 14,
     lineHeight: 18,
   },
@@ -126,26 +128,26 @@ const styles = StyleSheet.create({
     marginLeft: 12,
   },
   closeText: {
-    color: "#1C1C1C",
-    fontFamily: "FamiljenGrotesk-Medium",
+    color: colors.mutedForeground,
+    fontFamily: fonts.sansMedium,
     fontSize: 16,
   },
   detail: {
-    color: "#1C1C1C",
-    fontFamily: "FamiljenGrotesk-Medium",
+    color: colors.foreground,
+    fontFamily: fonts.sansMedium,
     fontSize: 14,
     lineHeight: 18,
     marginTop: 8,
   },
   meta: {
-    color: "#1C1C1C",
-    fontFamily: "FamiljenGrotesk-Medium",
+    color: colors.foreground,
+    fontFamily: fonts.sansMedium,
     fontSize: 14,
     lineHeight: 18,
   },
   fallback: {
-    color: "#1C1C1C",
-    fontFamily: "FamiljenGrotesk-Medium",
+    color: colors.foreground,
+    fontFamily: fonts.sansMedium,
     fontSize: 14,
     lineHeight: 18,
     marginTop: 8,

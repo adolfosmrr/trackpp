@@ -1,4 +1,6 @@
 import { StyleSheet } from "react-native"
+
+import { colors } from "../../theme"
 import { Gesture, GestureDetector } from "react-native-gesture-handler"
 import Animated, {
   cancelAnimation,
@@ -92,7 +94,7 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   handle: {
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.borderStrong,
     borderRadius: 9999,
     height: 5,
     width: 20,
