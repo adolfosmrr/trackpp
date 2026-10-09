@@ -7,7 +7,7 @@ import {
   type StyleProp,
   type ViewStyle,
 } from "react-native"
-import { Canvas, Fill, Shader, Skia, vec } from "@shopify/react-native-skia"
+import { Canvas, Fill, Group, Shader, Skia, vec } from "@shopify/react-native-skia"
 import { useDerivedValue, useFrameCallback, useSharedValue } from "react-native-reanimated"
 
 import { gradients, type GradientName, type GradientPalette } from "../../theme"
@@ -16,14 +16,31 @@ type GradientBackgroundProps = {
   token?: GradientName
   animated?: boolean
   grain?: number
+  /** Draw a dot at each former grid intersection. Spacing is in layout points. */
+  dotSpacing?: number
+  /** Bottom-only corner radius. The field is clipped to it; content above stays unclipped. */
+  bottomRadius?: number
   style?: StyleProp<ViewStyle>
+}
+
+type DotField = {
+  spacing: number
+  radius: number
+  color: readonly [number, number, number, number]
 }
 
 type FieldProps = {
   palette: GradientPalette
   grainAmount: number
+  dots: DotField
+  bottomRadius: number
   style?: StyleProp<ViewStyle>
 }
+
+const DOT_RADIUS = 1.15
+// Same ink as colors.gridLine, a little stronger so a small dot still reads.
+const DOT_COLOR: DotField["color"] = [237 / 255, 239 / 255, 238 / 255, 0.2]
+const NO_DOTS: DotField = { spacing: 0, radius: 0, color: [0, 0, 0, 0] }
 
 const DRIFT_SPEED = 0.2
 
@@ -40,6 +57,9 @@ uniform float2 point0;
 uniform float2 point1;
 uniform float2 point2;
 uniform float2 point3;
+uniform float dotSpacing;
+uniform float dotRadius;
+uniform float4 dotColor;
 
 float hash(float2 p) {
   float3 p3 = fract(float3(p.xyx) * 0.1031);
@@ -76,6 +96,12 @@ half4 main(float2 fragCoord) {
   float3 col = (color0.rgb * w0 + color1.rgb * w1 + color2.rgb * w2 + color3.rgb * w3) / total;
   col += (hash(fragCoord) * 2.0 - 1.0) * grain;
   col = clamp(col, 0.0, 1.0);
+  float spacing = max(dotSpacing, 1.0);
+  float2 gridLocal = mod(fragCoord, float2(spacing));
+  float2 gridDelta = min(gridLocal, float2(spacing) - gridLocal);
+  float gridDist = length(gridDelta);
+  float dotMask = (1.0 - smoothstep(max(dotRadius - 0.5, 0.0), dotRadius + 0.45, gridDist)) * step(0.5, dotSpacing);
+  col = mix(col, dotColor.rgb, dotMask * dotColor.a);
   return half4(col, 1.0);
 }
 `)
@@ -125,6 +151,7 @@ function buildUniforms(
   width: number,
   height: number,
   grainAmount: number,
+  dots: DotField,
   time: number
 ) {
   "worklet"
@@ -141,59 +168,109 @@ function buildUniforms(
     point1: vec(palette.points[1][0], palette.points[1][1]),
     point2: vec(palette.points[2][0], palette.points[2][1]),
     point3: vec(palette.points[3][0], palette.points[3][1]),
+    dotSpacing: dots.spacing,
+    dotRadius: dots.radius,
+    dotColor: dots.color,
   }
+}
+
+function useBottomClip(width: number, height: number, radius: number) {
+  return useMemo(() => {
+    if (radius <= 0 || width <= 1 || height <= 1) return null
+    const corner = Math.min(radius, width / 2, height / 2)
+    return Skia.Path.RRect({
+      rect: { x: 0, y: 0, width, height },
+      topLeft: vec(0, 0),
+      topRight: vec(0, 0),
+      bottomRight: vec(corner, corner),
+      bottomLeft: vec(corner, corner),
+    })
+  }, [height, radius, width])
 }
 
 function GradientCanvas({
   uniforms,
   onLayout,
   fallbackColor,
+  width,
+  height,
+  bottomRadius,
   style,
 }: {
   uniforms: ComponentProps<typeof Shader>["uniforms"]
   onLayout: (event: LayoutChangeEvent) => void
   fallbackColor: string
+  width: number
+  height: number
+  bottomRadius: number
   style?: StyleProp<ViewStyle>
 }) {
+  const clip = useBottomClip(width, height, bottomRadius)
+  const roundedStyle = bottomRadius > 0
+    ? {
+        borderBottomLeftRadius: bottomRadius,
+        borderBottomRightRadius: bottomRadius,
+      }
+    : null
+
   if (!GRADIENT_SHADER) {
     return (
       <View
         pointerEvents="none"
-        style={[styles.fill, style, { backgroundColor: fallbackColor }]}
+        style={[styles.fill, roundedStyle, style, { backgroundColor: fallbackColor }]}
       />
     )
   }
 
+  const field = (
+    <Fill>
+      <Shader source={GRADIENT_SHADER} uniforms={uniforms} />
+    </Fill>
+  )
+
   return (
-    <View pointerEvents="none" onLayout={onLayout} style={[styles.fill, style]}>
+    <View pointerEvents="none" onLayout={onLayout} style={[styles.fill, roundedStyle, style]}>
       <Canvas style={StyleSheet.absoluteFill}>
-        <Fill>
-          <Shader source={GRADIENT_SHADER} uniforms={uniforms} />
-        </Fill>
+        {clip ? <Group clip={clip}>{field}</Group> : field}
       </Canvas>
     </View>
   )
 }
 
-const StaticGradient = memo(function StaticGradient({ palette, grainAmount, style }: FieldProps) {
+const StaticGradient = memo(function StaticGradient({
+  palette,
+  grainAmount,
+  dots,
+  bottomRadius,
+  style,
+}: FieldProps) {
   const { width, height, onLayout } = useFieldSize()
   const colors = usePaletteColors(palette)
   const uniforms = useMemo(
-    () => buildUniforms(palette, colors, width, height, grainAmount, 0),
-    [colors, grainAmount, height, palette, width]
+    () => buildUniforms(palette, colors, width, height, grainAmount, dots, 0),
+    [colors, dots, grainAmount, height, palette, width]
   )
 
   return (
     <GradientCanvas
+      bottomRadius={bottomRadius}
       fallbackColor={palette.colors[0]}
+      height={height}
       onLayout={onLayout}
       style={style}
       uniforms={uniforms}
+      width={width}
     />
   )
 })
 
-const AnimatedGradient = memo(function AnimatedGradient({ palette, grainAmount, style }: FieldProps) {
+const AnimatedGradient = memo(function AnimatedGradient({
+  palette,
+  grainAmount,
+  dots,
+  bottomRadius,
+  style,
+}: FieldProps) {
   const { width, height, onLayout } = useFieldSize()
   const colors = usePaletteColors(palette)
   const [reduceMotionEnabled, setReduceMotionEnabled] = useState(false)
@@ -225,20 +302,23 @@ const AnimatedGradient = memo(function AnimatedGradient({ palette, grainAmount, 
   }, motionEnabled)
 
   const stillUniforms = useMemo(
-    () => buildUniforms(palette, colors, width, height, grainAmount, 0),
-    [colors, grainAmount, height, palette, width]
+    () => buildUniforms(palette, colors, width, height, grainAmount, dots, 0),
+    [colors, dots, grainAmount, height, palette, width]
   )
   const driftingUniforms = useDerivedValue(
-    () => buildUniforms(palette, colors, width, height, grainAmount, time.value),
-    [colors, grainAmount, height, palette, time, width]
+    () => buildUniforms(palette, colors, width, height, grainAmount, dots, time.value),
+    [colors, dots, grainAmount, height, palette, time, width]
   )
 
   return (
     <GradientCanvas
+      bottomRadius={bottomRadius}
       fallbackColor={palette.colors[0]}
+      height={height}
       onLayout={onLayout}
       style={style}
       uniforms={motionEnabled ? driftingUniforms : stillUniforms}
+      width={width}
     />
   )
 })
@@ -247,13 +327,30 @@ export const GradientBackground = memo(function GradientBackground({
   token = "topSection",
   animated = false,
   grain,
+  dotSpacing = 0,
+  bottomRadius = 0,
   style,
 }: GradientBackgroundProps) {
   const palette = gradients[token]
   const grainAmount = grain ?? palette.grain
+  const dots = useMemo<DotField>(
+    () =>
+      dotSpacing > 0
+        ? { spacing: dotSpacing, radius: DOT_RADIUS, color: DOT_COLOR }
+        : NO_DOTS,
+    [dotSpacing]
+  )
   const Field = animated ? AnimatedGradient : StaticGradient
 
-  return <Field grainAmount={grainAmount} palette={palette} style={style} />
+  return (
+    <Field
+      bottomRadius={bottomRadius}
+      dots={dots}
+      grainAmount={grainAmount}
+      palette={palette}
+      style={style}
+    />
+  )
 })
 
 const styles = StyleSheet.create({

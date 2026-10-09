@@ -11,7 +11,6 @@ import { useSharedValue, type SharedValue } from "react-native-reanimated"
 
 import { colors, radii } from "../../theme"
 import { GradientBackground } from "../visual/GradientBackground"
-import { GridBackground } from "./GridBackground"
 
 type TopSectionProps = {
     children?: ReactNode
@@ -50,8 +49,12 @@ export function TopSection({
             ]}
         >
             <View pointerEvents="none" style={styles.backgroundLayer}>
-                <GradientBackground token="topSection" style={StyleSheet.absoluteFill} />
-                <GridBackground />
+                <GradientBackground
+                    bottomRadius={radii.xl}
+                    dotSpacing={15}
+                    token="topSection"
+                    style={StyleSheet.absoluteFill}
+                />
             </View>
             {renderContent ? renderContent(modeCollapseProgress) : children}
         </View>

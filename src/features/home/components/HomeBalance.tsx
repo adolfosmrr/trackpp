@@ -88,7 +88,7 @@ export const HomeBalance = memo(function HomeBalance({
         <Animated.View style={[styles.amountHolder, amountHolderStyle]}>
           <AnimatedAmount
             value={balance}
-            formatter={(value) => `${currencySymbol} ${formatAmount(value)}`}
+            formatter={(value) => `${currencySymbol}${formatAmount(value)}`}
             animatedStyle={[amountStyle, amountVisibilityStyle]}
             style={styles.amount}
             textProps={{
