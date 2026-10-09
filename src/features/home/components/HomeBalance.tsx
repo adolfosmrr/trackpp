@@ -37,36 +37,19 @@ export const HomeBalance = memo(function HomeBalance({
   const [isBalanceVisible, setIsBalanceVisible] = useState(true)
   const reduceMotionEnabled = useReducedMotion()
   const visibilityProgress = useSharedValue(1)
-  const amountWidth = useSharedValue(0)
   const containerStyle = useAnimatedStyle(() => ({
     marginTop: interpolate(collapseProgress.value, [0, 1], TOP_BALANCE_MARGIN_TOP),
   }))
   const amountStyle = useAnimatedStyle(() => ({
-    transformOrigin: "left top",
-    transform: [
-      {
-        scale: interpolate(
-          collapseProgress.value,
-          [0, 1],
-          [1, TOP_BALANCE_FONT_SIZE[1] / TOP_BALANCE_FONT_SIZE[0]]
-        ),
-      },
-    ],
+    fontSize: interpolate(collapseProgress.value, [0, 1], TOP_BALANCE_FONT_SIZE),
+    lineHeight: interpolate(collapseProgress.value, [0, 1], TOP_BALANCE_AMOUNT_HEIGHT),
   }))
   const amountHolderStyle = useAnimatedStyle(() => ({
     height: interpolate(collapseProgress.value, [0, 1], TOP_BALANCE_AMOUNT_HEIGHT),
   }))
-  const collapsedVisibilityStyle = useAnimatedStyle(() => {
-    const scale = interpolate(
-      collapseProgress.value,
-      [0, 1],
-      [1, TOP_BALANCE_FONT_SIZE[1] / TOP_BALANCE_FONT_SIZE[0]]
-    )
-    return {
-      opacity: interpolate(collapseProgress.value, [0, 0.6, 1], [0, 0, 1]),
-      transform: [{ translateX: -amountWidth.value * (1 - scale) }],
-    }
-  })
+  const collapsedVisibilityStyle = useAnimatedStyle(() => ({
+    opacity: interpolate(collapseProgress.value, [0, 0.6, 1], [0, 0, 1]),
+  }))
   const expandedVisibilityStyle = useAnimatedStyle(() => ({
     height: interpolate(collapseProgress.value, [0, 1], TOP_BALANCE_LABEL_HEIGHT),
     opacity: interpolate(collapseProgress.value, [0, 0.4, 1], [1, 1, 0]),
@@ -102,12 +85,7 @@ export const HomeBalance = memo(function HomeBalance({
         </Pressable>
       </Animated.View>
       <View style={styles.amountRow}>
-        <Animated.View
-          onLayout={(event) => {
-            amountWidth.value = event.nativeEvent.layout.width
-          }}
-          style={[styles.amountHolder, amountHolderStyle]}
-        >
+        <Animated.View style={[styles.amountHolder, amountHolderStyle]}>
           <AnimatedAmount
             value={balance}
             formatter={(value) => `${currencySymbol} ${formatAmount(value)}`}
