@@ -3,27 +3,36 @@ import { useQueryClient } from "@tanstack/react-query"
 import { FlatList, Pressable, RefreshControl, StyleSheet, Text, View } from "react-native"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 
+import { GlassButton, liquidGlassEnabled } from "../../../components/buttons/GlassButton"
 import { EmptyState } from "../../../components/feedback/EmptyState"
 import { showUndo } from "../../../components/feedback/undo"
 import { useHouseholdStore } from "../../../store/householdStore"
 import { ScreenContainer } from "../../../components/layout/ScreenContainer"
 import { FieldChevronIcon } from "../../../components/icons/FieldChevronIcon"
-import { GridBackground } from "../../../components/layout/GridBackground"
-import { MeshGradient } from "../../../components/visual/MeshGradient"
+import { GradientBackground } from "../../../components/visual/GradientBackground"
 import { useAiConversationPreviews } from "../hooks/useAiConversationPreviews"
 import { useAiConversations } from "../hooks/useAiConversations"
 import { useDeleteAiConversation } from "../hooks/useDeleteAiConversation"
 import type { AiConversation } from "../types"
-import { colors, fonts, meshColors, radii, refreshControlColors } from "../../../theme"
+import { colors, fonts, radii, refreshControlColors } from "../../../theme"
 
-export function AiChatScreen({ navigation }: any) {
+type AiChatScreenProps = {
+  navigation: {
+    navigate(
+      screen: "AiConversation",
+      params?: { conversationId?: string },
+    ): void
+  }
+}
+
+export function AiChatScreen({ navigation }: AiChatScreenProps) {
   const insets = useSafeAreaInsets()
   const queryClient = useQueryClient()
   const selectedHouseholdId = useHouseholdStore((state) => state.selectedHouseholdId)
   const [refreshing, setRefreshing] = useState(false)
   const conversationsQuery = useAiConversations()
   const deleteMutation = useDeleteAiConversation()
-  const listTopPadding = Math.max(100, insets.top + 56)
+  const listTopPadding = Math.max(100, insets.top + 20)
   const conversations = [...(conversationsQuery.data ?? [])].sort(
     (left, right) => Date.parse(right.updatedAt) - Date.parse(left.updatedAt)
   )
@@ -64,16 +73,7 @@ export function AiChatScreen({ navigation }: any) {
 
   return (
     <ScreenContainer style={styles.container}>
-      <MeshGradient
-        colors={meshColors.auth}
-        speed={0.5}
-        blur={0.6}
-        noise={0.2}
-        intensity={0.45}
-        animated
-        style={styles.meshBackground}
-      />
-      <GridBackground />
+      <GradientBackground dotSpacing={15} token="topSection" />
       <FlatList
         data={conversations}
         keyExtractor={(conversation) => conversation.id}
@@ -92,12 +92,27 @@ export function AiChatScreen({ navigation }: any) {
         }
         ItemSeparatorComponent={() => <View style={styles.conversationGap} />}
         ListHeaderComponent={(
-          <View style={styles.header}>
+          <View>
             <Text style={styles.title}>AIsistente</Text>
-            <Pressable style={styles.newConversationButton} onPress={handleNewConversation}>
-              <Text style={styles.newConversationText}>Nueva conversación</Text>
-              <FieldChevronIcon />
-            </Pressable>
+            <GlassButton
+              accessibilityLabel="Nueva conversación"
+              fallbackStyle={styles.newConversationButton}
+              glassStyle={styles.newConversationGlass}
+              onPress={handleNewConversation}
+              style={styles.newConversationContent}
+            >
+              <Text
+                style={[
+                  styles.newConversationText,
+                  liquidGlassEnabled && styles.newConversationTextOnGlass,
+                ]}
+              >
+                Nueva conversación
+              </Text>
+              <FieldChevronIcon
+                color={liquidGlassEnabled ? colors.foreground : colors.brandForeground}
+              />
+            </GlassButton>
             <Text style={styles.recentConversationsTitle}>
               Conversaciones{"\n"}recientes
             </Text>
@@ -175,7 +190,7 @@ function ConversationCard({
   )
 }
 
-export function getConversationPreview(value: string) {
+function getConversationPreview(value: string) {
   const normalized = value.trim()
 
   if (normalized.length <= 20) {
@@ -185,7 +200,7 @@ export function getConversationPreview(value: string) {
   return `${normalized.slice(0, 20)}...`
 }
 
-export function formatConversationDate(value: string) {
+function formatConversationDate(value: string) {
   const date = new Date(value)
   const weekday = new Intl.DateTimeFormat("es-ES", {
     weekday: "short",
@@ -203,16 +218,6 @@ export function formatConversationDate(value: string) {
 const styles = StyleSheet.create({
   container: {
     backgroundColor: colors.background,
-  },
-  meshBackground: {
-    bottom: 0,
-    left: 0,
-    position: "absolute",
-    right: 0,
-    top: 0,
-  },
-  header: {
-    paddingRight: 168,
   },
   listContent: { flexGrow: 1 },
   listFooter: { height: 20 },
@@ -234,11 +239,27 @@ const styles = StyleSheet.create({
     paddingVertical: 15,
     width: "100%",
   },
+  newConversationGlass: {
+    borderRadius: radii.sm,
+    marginTop: 20,
+    width: "100%",
+  },
+  newConversationContent: {
+    alignItems: "center",
+    flexDirection: "row",
+    justifyContent: "space-between",
+    paddingHorizontal: 20,
+    paddingVertical: 15,
+    width: "100%",
+  },
   newConversationText: {
     color: colors.brandForeground,
     fontFamily: fonts.sansSemibold,
     fontSize: 18,
     lineHeight: 18,
+  },
+  newConversationTextOnGlass: {
+    color: colors.foreground,
   },
   recentConversationsTitle: {
     color: colors.mutedForeground,
@@ -306,5 +327,4 @@ const styles = StyleSheet.create({
   },
   loadingText: { color: colors.mutedForeground, fontFamily: fonts.sans, marginTop: 20 },
   errorText: { color: colors.destructive, fontFamily: fonts.sans, marginTop: 20 },
-  emptyText: { color: colors.mutedForeground, fontFamily: fonts.sans, marginTop: 20 },
 })
