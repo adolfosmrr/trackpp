@@ -1,4 +1,3 @@
-import { View, StyleSheet } from "react-native"
 import { createNativeBottomTabNavigator } from "@react-navigation/bottom-tabs/unstable"
 
 import { HomeScreen } from "../features/home/screens/HomeScreen"
@@ -10,7 +9,6 @@ import { useHouseholdStore } from "../store/householdStore"
 import { useActivityRealtime } from "../features/activity/hooks/useActivityRealtime"
 import { useFixedExpenseNotificationSync } from "../features/fixedExpenses/hooks/useFixedExpenseNotificationSync"
 import { usePendingCharges } from "../features/pendingCharges/hooks/usePendingCharges"
-import { AddMovementButton } from "../components/navigation/AddMovementButton"
 import {
     withMainTabsSwipe,
     type MainTabsParamList,
@@ -41,7 +39,6 @@ export function MainTabsNavigator() {
     const pendingCount = pendingChargesQuery.data?.length ?? 0
 
     return (
-        <View style={styles.host}>
         <Tab.Navigator
             screenOptions={{
                 headerShown: false,
@@ -103,13 +100,5 @@ export function MainTabsNavigator() {
                 }}
             />
         </Tab.Navigator>
-        <AddMovementButton />
-        </View>
     )
 }
-
-const styles = StyleSheet.create({
-    host: {
-        flex: 1,
-    },
-})

@@ -6,6 +6,7 @@ import { ProfileAvatar } from "../profile/ProfileAvatar"
 import type { Profile } from "../../features/profile/services/profileService"
 import { openProfileMenu } from "../../features/profile/profileMenu"
 import { HouseholdSwitcher } from "../../features/households/components/HouseholdSwitcher"
+import { AddMovementButton } from "../navigation/AddMovementButton"
 
 type TopSectionHeaderProps = {
   profile?: Pick<Profile, "name" | "avatar_url"> | null
@@ -24,6 +25,8 @@ export const TopSectionHeader = memo(function TopSectionHeader({ profile }: TopS
         <ProfileAvatar name={profile?.name} uri={profile?.avatar_url} />
       </Pressable>
       <HouseholdSwitcher compact />
+      <View style={styles.spacer} />
+      <AddMovementButton />
     </View>
   )
 })
@@ -32,7 +35,10 @@ const styles = StyleSheet.create({
   row: {
     alignItems: "center",
     flexDirection: "row",
-    paddingRight: 168,
     width: "100%",
+  },
+  spacer: {
+    flex: 1,
+    minWidth: 12,
   },
 })
