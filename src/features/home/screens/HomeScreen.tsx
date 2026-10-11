@@ -685,7 +685,7 @@ export function HomeScreen({
       >
         <GestureDetector gesture={pan}>
           <View collapsable={false} style={styles.panelGesture}>
-            <TopSectionHeader collapseProgress={collapseProgress} profile={profile} />
+            <TopSectionHeader profile={profile} />
             <HomeGreeting displayName={displayName} collapseProgress={collapseProgress} />
             <HomeBalance balance={displayedHomeAmounts.balance} collapseProgress={collapseProgress} isCollapsed={isCollapsed} />
             <HomeIncomeExpenseSummary

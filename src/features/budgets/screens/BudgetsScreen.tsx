@@ -369,7 +369,7 @@ function BudgetsScreenContent() {
         style={styles.topSectionOverlay}
         renderContent={(collapseProgress) => (
           <>
-            <TopSectionHeader collapseProgress={collapseProgress} profile={profile} />
+            <TopSectionHeader profile={profile} />
             <HomeGreeting displayName={profile?.name?.trim()} collapseProgress={collapseProgress} />
             <HomeBalance
               balance={dashboard?.balance ?? 0}

@@ -1,6 +1,5 @@
 import { memo } from "react"
 import { Pressable, StyleSheet, View } from "react-native"
-import type { SharedValue } from "react-native-reanimated"
 
 import { ProfileAvatar } from "../profile/ProfileAvatar"
 import type { Profile } from "../../features/profile/services/profileService"
@@ -10,7 +9,6 @@ import { AddMovementButton } from "../navigation/AddMovementButton"
 
 type TopSectionHeaderProps = {
   profile?: Pick<Profile, "name" | "avatar_url"> | null
-  collapseProgress: SharedValue<number>
 }
 
 export const TopSectionHeader = memo(function TopSectionHeader({ profile }: TopSectionHeaderProps) {
