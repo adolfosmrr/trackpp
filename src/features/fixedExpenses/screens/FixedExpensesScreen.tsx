@@ -2,10 +2,10 @@ import { useState } from "react"
 import {
   ActivityIndicator,
   Alert,
-  FlatList,
   LayoutChangeEvent,
   Pressable,
   RefreshControl,
+  ScrollView,
   StyleSheet,
   Text,
   View,
@@ -14,7 +14,6 @@ import { useSafeAreaInsets } from "react-native-safe-area-context"
 import { useQueryClient } from "@tanstack/react-query"
 import { colors, fonts, radii, refreshControlColors } from "../../../theme"
 import { formatMoney } from "../../../utils/formatMoney"
-import { EmptyState } from "../../../components/feedback/EmptyState"
 import { showUndo } from "../../../components/feedback/undo"
 import { useDeleteFixedExpense } from "../hooks/useDeleteFixedExpense"
 import { createFixedExpense } from "../services/fixedExpenseService"
@@ -22,6 +21,7 @@ import {
   getCurrentFixedExpensePeriod,
   useFixedExpensePeriods,
 } from "../hooks/useFixedExpensePeriods"
+import { FixedExpenseList } from "../components/FixedExpenseList"
 import { useFixedExpenses } from "../hooks/useFixedExpenses"
 import { usePayFixedExpensePeriod } from "../hooks/usePayFixedExpensePeriod"
 import type { FixedExpense, FixedExpensePeriod } from "../types"
@@ -59,7 +59,6 @@ export function FixedExpensesScreen({ navigation }: any) {
     currentPeriod
   )
   const {
-    data: periods,
     isLoading: periodsLoading,
     error: periodsError,
   } = periodsQuery
@@ -194,9 +193,7 @@ export function FixedExpensesScreen({ navigation }: any) {
   return (
     <View style={styles.screenWrapper}>
       <ScreenContainer paddingHorizontal={0}>
-        <FlatList
-          data={data}
-          keyExtractor={(item) => item.id}
+        <ScrollView
           style={!topSectionHeight ? styles.hiddenList : undefined}
           contentContainerStyle={styles.list}
           refreshControl={
@@ -207,89 +204,30 @@ export function FixedExpensesScreen({ navigation }: any) {
               {...refreshControlColors}
             />
           }
-          ListHeaderComponent={
-            topSectionHeight > 0 ? (
-              <View>
-                <View style={{ height: topSectionHeight }} />
-                <View style={styles.backRow}>
-                  <BackLink onPress={() => navigation.goBack()} />
-                </View>
-                <NotificationPermissionBanner />
+        >
+          {topSectionHeight > 0 ? (
+            <View>
+              <View style={{ height: topSectionHeight }} />
+              <View style={styles.backRow}>
+                <BackLink onPress={() => navigation.goBack()} />
               </View>
-            ) : null
-          }
-          ListEmptyComponent={
-            <EmptyState
-              title="Todavía no tenés gastos fijos"
-              body="Sumá alquiler, servicios o suscripciones para seguirlos todos los meses."
-              actionLabel="Agregar gasto fijo"
-              onAction={() => {
-                void openCreateTransaction("fixed")
-              }}
-            />
-          }
-          renderItem={({ item }) => {
-            const period = periods?.find((entry) => entry.fixedExpenseId === item.id)
-
-            return (
-              <View style={styles.card}>
-                <Pressable
-                  accessibilityRole="button"
-                  accessibilityLabel={`Editar ${item.name}`}
-                  onPress={() => openEditFixedExpense(item, currentPeriod)}
-                >
-                <View style={styles.cardHeader}>
-                  <Text style={styles.name} numberOfLines={1}>
-                    {period?.category?.icon ?? item.category?.icon
-                      ? `${period?.category?.icon ?? item.category?.icon} `
-                      : ""}
-                    {period?.name ?? item.name}
-                  </Text>
-                  <Text style={styles.amount} numberOfLines={1}>
-                    {formatMoney(period?.expectedAmount ?? item.amount)}
-                  </Text>
-                </View>
-
-                <View style={styles.separator} />
-
-                <View style={styles.infoGrid}>
-                  <View style={styles.infoColumn}>
-                    <Text style={styles.infoText}>
-                      Inicia: {String(item.charge_day).padStart(2, "0")} cada mes
-                    </Text>
-                    <Text style={styles.infoText}>
-                      Vence: {String(item.due_day).padStart(2, "0")} cada mes
-                    </Text>
-                  </View>
-                  <View style={styles.infoColumn}>
-                    {period ? (
-                      <>
-                        <Text style={styles.infoText}>
-                          Pagado: {formatMoney(period.totalPaid)}
-                        </Text>
-                        <Text style={styles.infoText}>
-                          Pendiente: {formatMoney(period.remaining)}
-                        </Text>
-                      </>
-                    ) : null}
-                  </View>
-                </View>
-
-                <View style={styles.separator} />
-
-                {period ? (
-                  <View style={styles.statusProgress}>
-                    <Text style={styles.status}>{getStatusLabel(period.status)}</Text>
-                    <PaymentProgress period={period} />
-                  </View>
-                ) : null}
-                </Pressable>
-
+              <NotificationPermissionBanner />
+            </View>
+          ) : null}
+          <FixedExpenseList
+            emptyBody="Sumá alquiler, servicios o suscripciones para seguirlos todos los meses."
+            onCreate={() => {
+              void openCreateTransaction("fixed")
+            }}
+            onEdit={openEditFixedExpense}
+            renderActions={(expense, period) => {
+              const lastPayment = period?.lastPayment
+              return (
                 <View style={styles.actions}>
                   <Pressable
                     accessibilityRole="button"
                     style={styles.actionButton}
-                    onPress={() => openEditFixedExpense(item, currentPeriod)}
+                    onPress={() => openEditFixedExpense(expense, currentPeriod)}
                   >
                     <Text style={styles.actionButtonText}>Editar</Text>
                   </Pressable>
@@ -297,10 +235,10 @@ export function FixedExpensesScreen({ navigation }: any) {
                   <Pressable
                     style={styles.actionButton}
                     disabled={deletingId !== null}
-                    onPress={() => confirmDelete(item)}
+                    onPress={() => confirmDelete(expense)}
                   >
                     <Text style={styles.actionButtonText}>
-                      {deletingId === item.id ? "Eliminando..." : "Eliminar"}
+                      {deletingId === expense.id ? "Eliminando..." : "Eliminar"}
                     </Text>
                   </Pressable>
 
@@ -330,21 +268,22 @@ export function FixedExpensesScreen({ navigation }: any) {
                     </>
                   ) : null}
 
-                  {period?.lastPayment ? (
+                  {lastPayment ? (
                     <Pressable
                       accessibilityLabel="Corregir último pago"
                       disabled={processingPeriodId !== null}
                       style={[styles.actionButton, processingPeriodId !== null && styles.disabled]}
-                      onPress={() => navigation.navigate("CorrectFixedExpensePayment", { paymentId: period.lastPayment!.id })}
+                      onPress={() => navigation.navigate("CorrectFixedExpensePayment", { paymentId: lastPayment.id })}
                     >
                       <Text style={styles.actionButtonText}>Corregir Último Pago</Text>
                     </Pressable>
                   ) : null}
                 </View>
-              </View>
-            )
-          }}
-        />
+              )
+            }}
+            variant="detail"
+          />
+        </ScrollView>
       </ScreenContainer>
       <TopSection
         mode="collapsed"
@@ -372,34 +311,6 @@ export function FixedExpensesScreen({ navigation }: any) {
   )
 }
 
-function PaymentProgress({ period }: { period: FixedExpensePeriod }) {
-  const paymentPercentage = period.expectedAmount > 0
-    ? (period.totalPaid / period.expectedAmount) * 100
-    : 0
-  const progressPercentage = Math.max(0, Math.min(paymentPercentage, 100))
-  const visiblePercentage = Math.round(progressPercentage)
-
-  return (
-    <View style={styles.progressSection} accessible accessibilityLabel={`${visiblePercentage}% pagado`}>
-      <Text style={styles.progressLabel}>{visiblePercentage}% pagado</Text>
-      <View style={styles.progressTrack}>
-        <View style={[styles.progressFill, { width: `${progressPercentage}%` }]} />
-      </View>
-    </View>
-  )
-}
-
-function getStatusLabel(status: string) {
-  switch (status) {
-    case "upcoming": return "Próximo"
-    case "pending": return "Pendiente"
-    case "partial": return "Parcial"
-    case "paid": return "Pagado"
-    case "overdue": return "Vencido"
-    default: return status
-  }
-}
-
 const styles = StyleSheet.create({
   screenWrapper: { flex: 1, position: "relative", backgroundColor: colors.background },
   topSectionOverlay: {
@@ -414,85 +325,7 @@ const styles = StyleSheet.create({
   fallback: { flex: 1, backgroundColor: colors.background, paddingHorizontal: 24 },
   backRow: { marginBottom: 12 },
   list: { gap: 12, paddingHorizontal: 20, paddingTop: 20, paddingBottom: 24 },
-  primaryButtonText: { color: colors.brandForeground, fontFamily: fonts.sansSemibold, fontWeight: "600" },
-  card: {
-    backgroundColor: colors.card,
-    borderColor: colors.border,
-    borderWidth: 1,
-    padding: 14,
-    borderRadius: radii.md,
-  },
-  cardHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: 12,
-    marginBottom: 15,
-  },
-  name: {
-    flex: 1,
-    flexShrink: 1,
-    color: colors.foreground,
-    fontFamily: fonts.sansSemibold,
-    fontSize: 16,
-  },
-  amount: {
-    flexShrink: 1,
-    color: colors.foreground,
-    fontFamily: fonts.monoSemibold,
-    fontSize: 16,
-    lineHeight: 24,
-    textAlign: "right",
-  },
-  separator: {
-    width: "100%",
-    height: 1,
-    backgroundColor: colors.border,
-  },
-  infoGrid: {
-    flexDirection: "row",
-    width: "100%",
-    marginVertical: 15,
-  },
-  infoColumn: {
-    width: "50%",
-    gap: 8,
-  },
-  infoText: {
-    color: colors.mutedForeground,
-    fontFamily: fonts.sans,
-    fontSize: 12,
-    lineHeight: 12,
-  },
-  statusProgress: {
-    marginTop: 15,
-    gap: 8,
-  },
-  status: {
-    color: colors.mutedForeground,
-    fontFamily: fonts.sans,
-    fontSize: 16,
-    lineHeight: 16,
-  },
   disabled: { opacity: 0.55 },
-  progressSection: { gap: 6 },
-  progressLabel: {
-    color: colors.mutedForeground,
-    fontFamily: fonts.sans,
-    fontSize: 12,
-    lineHeight: 12,
-  },
-  progressTrack: {
-    height: 6,
-    overflow: "hidden",
-    borderRadius: radii.xs,
-    backgroundColor: colors.control,
-  },
-  progressFill: {
-    height: "100%",
-    borderRadius: radii.xs,
-    backgroundColor: colors.brand,
-  },
   actions: {
     flexDirection: "row",
     flexWrap: "wrap",
@@ -527,8 +360,5 @@ const styles = StyleSheet.create({
     overflow: "hidden",
   },
   empty: { color: colors.mutedForeground, fontFamily: fonts.sans, textAlign: "center", padding: 24 },
-  emptyState: { alignItems: "center", gap: 8, paddingVertical: 24 },
-  emptyDescription: { color: colors.mutedForeground, fontFamily: fonts.sans, textAlign: "center", paddingHorizontal: 16 },
-  emptyButton: { marginTop: 8, padding: 12, borderRadius: radii.sm, backgroundColor: colors.brand },
   errorDetail: { color: colors.destructive, fontFamily: fonts.sans, textAlign: "center" },
 })
