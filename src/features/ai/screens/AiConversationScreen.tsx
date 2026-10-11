@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
@@ -21,6 +21,8 @@ import { useHouseholdStore } from "../../../store/householdStore"
 import { SiriProvider } from "../../../components/organisms/apple-intelligence"
 import { useSiri } from "../../../components/organisms/apple-intelligence/context"
 import { useFinancialChat } from "../hooks/useFinancialChat"
+import { useTypewriter } from "../hooks/useTypewriter"
+import type { AiMessage } from "../types"
 import { BackLink } from "../../../components/navigation/BackLink"
 import { colors, fonts, radii } from "../../../theme"
 
@@ -43,6 +45,26 @@ export function AiConversationScreen({ route, navigation }: AiConversationScreen
   )
 }
 
+function MessageBubble({
+  message,
+  reveal,
+  onRevealComplete,
+}: {
+  message: AiMessage
+  reveal: boolean
+  onRevealComplete: () => void
+}) {
+  const content = useTypewriter(message.content, reveal, onRevealComplete)
+  const isUser = message.role === "user"
+
+  return (
+    <View style={[styles.message, isUser ? styles.userMessage : styles.assistantMessage]}>
+      <Text style={styles.messageRole}>{isUser ? "Tú" : "IA"}</Text>
+      <Text style={isUser ? styles.userMessageContent : styles.messageContent}>{content}</Text>
+    </View>
+  )
+}
+
 function AiConversationContent({ route, navigation }: AiConversationScreenProps) {
   const insets = useSafeAreaInsets()
   const householdId = useHouseholdStore((state) => state.selectedHouseholdId)
@@ -50,7 +72,8 @@ function AiConversationContent({ route, navigation }: AiConversationScreenProps)
     route.params?.conversationId ?? null
   )
   const [input, setInput] = useState("")
-  const { messages, sendMessage, isPending, error, isLoadingMessages } =
+  const messagesRef = useRef<ScrollView>(null)
+  const { messages, sendMessage, retry, revealMessageId, completeReveal, isPending, error, isLoadingMessages } =
     useFinancialChat(conversationId, setConversationId)
   const { toggle, isActive } = useSiri()
   const errorMessage =
@@ -85,9 +108,11 @@ function AiConversationContent({ route, navigation }: AiConversationScreenProps)
         <BackLink onPress={() => navigation.goBack()} />
       </View>
       <ScrollView
+        ref={messagesRef}
         style={styles.messages}
         contentContainerStyle={styles.messagesContent}
         keyboardShouldPersistTaps="handled"
+        onContentSizeChange={() => messagesRef.current?.scrollToEnd({ animated: false })}
       >
         {!conversationId && !messages.length ? (
           <View style={styles.emptyState}>
@@ -100,8 +125,7 @@ function AiConversationContent({ route, navigation }: AiConversationScreenProps)
                   key={suggestion}
                   style={styles.suggestion}
                   onPress={() => {
-                    setInput(suggestion)
-                    sendMessage(suggestion)
+                    if (sendMessage(suggestion)) setInput("")
                   }}
                   disabled={isPending || !householdId}
                 >
@@ -115,18 +139,12 @@ function AiConversationContent({ route, navigation }: AiConversationScreenProps)
         {isLoadingMessages && conversationId ? <ActivityIndicator color={colors.brand} /> : null}
 
         {messages.map((message) => (
-          <View
+          <MessageBubble
             key={message.id}
-            style={[
-              styles.message,
-              message.role === "user" ? styles.userMessage : styles.assistantMessage,
-            ]}
-          >
-            <Text style={styles.messageRole}>{message.role === "user" ? "Tú" : "IA"}</Text>
-            <Text style={message.role === "user" ? styles.userMessageContent : styles.messageContent}>
-              {message.content}
-            </Text>
-          </View>
+            message={message}
+            reveal={message.id === revealMessageId}
+            onRevealComplete={completeReveal}
+          />
         ))}
 
         {isPending ? (
@@ -135,7 +153,20 @@ function AiConversationContent({ route, navigation }: AiConversationScreenProps)
             <Text style={styles.messageRole}>Pensando...</Text>
           </View>
         ) : null}
-        {error ? <Text style={styles.error}>{errorMessage}</Text> : null}
+        {error ? (
+          <View style={styles.errorRow}>
+            <Text style={styles.error}>{errorMessage}</Text>
+            <Pressable
+              accessibilityLabel="Reintentar"
+              accessibilityRole="button"
+              disabled={isPending}
+              onPress={retry}
+              style={styles.retry}
+            >
+              <Text style={styles.retryText}>Reintentar</Text>
+            </Pressable>
+          </View>
+        ) : null}
       </ScrollView>
 
       <View style={[styles.composerWrapper, { paddingBottom: Math.max(insets.bottom, 8) }]}>
@@ -148,7 +179,7 @@ function AiConversationContent({ route, navigation }: AiConversationScreenProps)
             placeholderTextColor={colors.mutedForeground}
             multiline
             maxLength={500}
-            editable={!isPending && Boolean(householdId)}
+            editable={Boolean(householdId)}
             onSubmitEditing={handleSend}
           />
           <Pressable
@@ -203,7 +234,20 @@ const styles = StyleSheet.create({
   messageContent: { color: colors.foreground, fontFamily: fonts.sans, lineHeight: 21 },
   userMessageContent: { color: colors.foreground, fontFamily: fonts.sans, lineHeight: 21 },
   thinking: { alignItems: "center", flexDirection: "row", gap: 8 },
+  errorRow: { alignItems: "flex-start", gap: 8 },
   error: { color: colors.destructive, fontFamily: fonts.sans },
+  retry: {
+    alignItems: "center",
+    justifyContent: "center",
+    minHeight: 44,
+    minWidth: 44,
+    paddingHorizontal: 8,
+  },
+  retryText: {
+    color: colors.brand,
+    fontFamily: fonts.sansMedium,
+    fontSize: 15,
+  },
   composerWrapper: {
     paddingHorizontal: 20,
     width: "100%",

@@ -1,8 +1,7 @@
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 
 import { useHouseholdStore } from "../../../store/householdStore"
-import { ApiError } from "../../../services/api"
 import { askFinancialAssistant } from "../services/aiService"
 import { useAiMessages } from "./useAiMessages"
 
@@ -17,18 +16,25 @@ export function useFinancialChat(
     (state) => state.selectedHouseholdId
   )
   const [messages, setMessages] = useState<AiMessage[]>([])
+  const [revealMessageId, setRevealMessageId] = useState<string | null>(null)
+  const preserveMessages = useRef(false)
   const persistedMessagesQuery = useAiMessages(conversationId)
 
   useEffect(() => {
+    if (preserveMessages.current) {
+      preserveMessages.current = false
+      return
+    }
     setMessages([])
+    setRevealMessageId(null)
   }, [conversationId, householdId])
 
   useEffect(() => {
-    if (!conversationId) {
-      setMessages([])
-    } else if (persistedMessagesQuery.data) {
-      setMessages(persistedMessagesQuery.data)
-    }
+    if (!conversationId || !persistedMessagesQuery.data) return
+    setMessages((current) => {
+      if (current.some((message) => isOptimisticMessageId(message.id))) return current
+      return persistedMessagesQuery.data
+    })
   }, [conversationId, persistedMessagesQuery.data])
 
   const mutation = useMutation({
@@ -58,11 +64,14 @@ export function useFinancialChat(
         return
       }
 
+      const assistantMessageId = `${Date.now()}-assistant`
+      preserveMessages.current = !variables.selectedConversationId
       onConversationCreated(response.conversationId)
+      setRevealMessageId(assistantMessageId)
       setMessages((current) => [
         ...current,
         {
-          id: `${Date.now()}-assistant`,
+          id: assistantMessageId,
           conversationId: response.conversationId,
           role: "assistant",
           content: response.answer,
@@ -80,20 +89,6 @@ export function useFinancialChat(
         queryKey: ["ai-conversations", householdId],
       })
     },
-    onError: (error, variables) => {
-      if (
-        error instanceof ApiError &&
-        (error.code === "AI_DAILY_LIMIT_REACHED" ||
-          error.status === 400 ||
-          error.status === 429)
-      ) {
-        setMessages((current) =>
-          current.filter(
-            (message) => message.id !== variables.optimisticMessageId
-          )
-        )
-      }
-    },
   })
 
   function sendMessage(message: string) {
@@ -104,6 +99,7 @@ export function useFinancialChat(
 
     const selectedConversationId = conversationId ?? undefined
     const optimisticMessageId = `${Date.now()}-user`
+    setRevealMessageId(null)
     setMessages((current) => [
       ...current,
       {
@@ -123,11 +119,36 @@ export function useFinancialChat(
     return true
   }
 
+  function retry() {
+    if (!householdId || mutation.isPending) return
+    const lastUserMessage = [...messages].reverse().find((message) => message.role === "user")
+    if (!lastUserMessage) return
+
+    setRevealMessageId(null)
+    mutation.mutate({
+      householdId,
+      message: lastUserMessage.content,
+      selectedConversationId: conversationId ?? undefined,
+      optimisticMessageId: lastUserMessage.id,
+    })
+  }
+
+  function completeReveal() {
+    setRevealMessageId(null)
+  }
+
   return {
     messages,
     sendMessage,
+    retry,
+    revealMessageId,
+    completeReveal,
     isPending: mutation.isPending,
     error: mutation.error,
     isLoadingMessages: persistedMessagesQuery.isLoading,
   }
+}
+
+function isOptimisticMessageId(id: string) {
+  return id.endsWith("-user") || id.endsWith("-assistant")
 }
