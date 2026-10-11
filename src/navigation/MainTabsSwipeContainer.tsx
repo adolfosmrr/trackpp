@@ -75,8 +75,8 @@ export function MainTabsSwipeContainer({ children }: { children: ReactNode }) {
   )
 }
 
-export function withMainTabsSwipe(Component: ComponentType<any>) {
-  return function MainTabsSwipeScreen(props: any) {
+export function withMainTabsSwipe<Props extends object>(Component: ComponentType<Props>) {
+  return function MainTabsSwipeScreen(props: Props) {
     return (
       <MainTabsSwipeContainer>
         {createElement(Component, props)}
