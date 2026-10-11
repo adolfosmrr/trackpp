@@ -10,6 +10,7 @@ import {
   Text,
   View,
 } from "react-native"
+import type { NativeStackScreenProps } from "@react-navigation/native-stack"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import { useQueryClient } from "@tanstack/react-query"
 import { colors, fonts, radii, refreshControlColors } from "../../../theme"
@@ -38,8 +39,11 @@ import { TopSection } from "../../../components/layout/TopSection"
 import { TopSectionHeader } from "../../../components/layout/TopSectionHeader"
 import { BackLink } from "../../../components/navigation/BackLink"
 import { useCreateTransactionSheet } from "../../transactions/components/CreateTransactionSheetProvider"
+import type { AppStackParamList } from "../../../navigation/types"
 
-export function FixedExpensesScreen({ navigation }: any) {
+type FixedExpensesScreenProps = NativeStackScreenProps<AppStackParamList, "FixedExpenses">
+
+export function FixedExpensesScreen({ navigation }: FixedExpensesScreenProps) {
   const insets = useSafeAreaInsets()
   const queryClient = useQueryClient()
   const [deletingId, setDeletingId] = useState<string | null>(null)

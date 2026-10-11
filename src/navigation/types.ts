@@ -21,3 +21,5 @@ export type AppStackParamList = {
   PendingCharges: undefined
   PendingCharge: { chargeId: string }
 }
+
+export type RootParamList = AppStackParamList

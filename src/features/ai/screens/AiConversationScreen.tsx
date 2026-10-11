@@ -13,7 +13,10 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import Svg, { Path } from "react-native-svg"
 
+import type { NativeStackScreenProps } from "@react-navigation/native-stack"
+
 import { ApiError } from "../../../services/api"
+import type { AppStackParamList } from "../../../navigation/types"
 import { useHouseholdStore } from "../../../store/householdStore"
 import { SiriProvider } from "../../../components/organisms/apple-intelligence"
 import { useSiri } from "../../../components/organisms/apple-intelligence/context"
@@ -30,7 +33,9 @@ const suggestions = [
   "¿Cómo evolucionó comida en 3 meses?",
 ]
 
-export function AiConversationScreen({ route, navigation }: any) {
+type AiConversationScreenProps = NativeStackScreenProps<AppStackParamList, "AiConversation">
+
+export function AiConversationScreen({ route, navigation }: AiConversationScreenProps) {
   return (
     <SiriProvider>
       <AiConversationContent route={route} navigation={navigation} />
@@ -38,7 +43,7 @@ export function AiConversationScreen({ route, navigation }: any) {
   )
 }
 
-function AiConversationContent({ route, navigation }: any) {
+function AiConversationContent({ route, navigation }: AiConversationScreenProps) {
   const insets = useSafeAreaInsets()
   const householdId = useHouseholdStore((state) => state.selectedHouseholdId)
   const [conversationId, setConversationId] = useState<string | null>(

@@ -7,6 +7,7 @@ import {
     ScrollView,
     Alert,
   } from "react-native"
+import type { NativeStackScreenProps } from "@react-navigation/native-stack"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import { colors, fonts, radii } from "../../../theme"
 
@@ -19,10 +20,11 @@ import { BackLink } from "../../../components/navigation/BackLink"
   import {
     useAcceptInvitation,
   } from "../hooks/useAcceptInvitation"
+  import type { AppStackParamList } from "../../../navigation/types"
   
   export function InvitationsScreen({
     navigation,
-  }: any) {
+  }: NativeStackScreenProps<AppStackParamList, "Invitations">) {
     const insets = useSafeAreaInsets()
     const {
       data: invitations,

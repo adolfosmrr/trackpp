@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { useQueryClient } from "@tanstack/react-query"
-import { useIsFocused } from "@react-navigation/native"
+import { useIsFocused, type CompositeScreenProps } from "@react-navigation/native"
+import type { NativeBottomTabScreenProps } from "@react-navigation/bottom-tabs/unstable"
+import type { NativeStackScreenProps } from "@react-navigation/native-stack"
 
 import {
   AccessibilityInfo,
@@ -65,12 +67,16 @@ import {
 import { useCreateTransactionSheet } from "../../transactions/components/CreateTransactionSheetProvider"
 import { useDelayedHomeAmounts } from "../hooks/useDelayedHomeAmounts"
 import { PendingChargesBanner } from "../../pendingCharges/components/PendingChargesBanner"
+import type { AppStackParamList, MainTabsParamList } from "../../../navigation/types"
 
 const SCROLL_TRIGGER_DELTA = 3
 
-export function HomeScreen({
-  navigation,
-}: any) {
+type HomeScreenProps = CompositeScreenProps<
+  NativeBottomTabScreenProps<MainTabsParamList, "Home">,
+  NativeStackScreenProps<AppStackParamList>
+>
+
+export function HomeScreen({ navigation }: HomeScreenProps) {
   const { user } = useAuth()
   const queryClient = useQueryClient()
   const isFocused = useIsFocused()

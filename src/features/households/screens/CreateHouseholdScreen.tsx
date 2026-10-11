@@ -8,6 +8,7 @@ import {
   StyleSheet,
   Alert,
 } from "react-native"
+import type { NativeStackScreenProps } from "@react-navigation/native-stack"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import { colors, fonts, radii } from "../../../theme"
 
@@ -16,10 +17,11 @@ import { BackLink } from "../../../components/navigation/BackLink"
 import {
   useCreateHousehold,
 } from "../hooks/useCreateHousehold"
+import type { AppStackParamList } from "../../../navigation/types"
 
 export function CreateHouseholdScreen({
   navigation,
-}: any) {
+}: NativeStackScreenProps<AppStackParamList, "CreateHousehold">) {
   const insets = useSafeAreaInsets()
   const [name, setName] =
     useState("")

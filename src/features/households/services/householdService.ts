@@ -39,7 +39,7 @@ export async function createHousehold({
   name: string
   currency: string
 }) {
-  const response = await apiFetch(
+  const response = await apiFetch<{ household: HouseholdMembership["household"] }>(
     "/households",
     {
       method: "POST",

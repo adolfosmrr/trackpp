@@ -8,16 +8,18 @@ import {
   StyleSheet,
   Alert,
 } from "react-native"
+import type { NativeStackScreenProps } from "@react-navigation/native-stack"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import { colors, fonts, radii } from "../../../theme"
 
 import { BackLink } from "../../../components/navigation/BackLink"
 
 import { useCreateInvitation } from "../hooks/useCreateInvitation"
+import type { AppStackParamList } from "../../../navigation/types"
 
 export function InviteMemberScreen({
   navigation,
-}: any) {
+}: NativeStackScreenProps<AppStackParamList, "InviteMember">) {
   const insets = useSafeAreaInsets()
   const [email, setEmail] =
     useState("")

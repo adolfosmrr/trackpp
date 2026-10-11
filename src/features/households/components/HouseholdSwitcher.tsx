@@ -5,7 +5,7 @@ import {
     StyleSheet,
     Modal,
   } from "react-native"
-  import { useNavigation } from "@react-navigation/native"
+  import { useNavigation, type NavigationProp, type ParamListBase } from "@react-navigation/native"
   import { colors, fonts, radii } from "../../../theme"
   import { GlassButton } from "../../../components/buttons/GlassButton"
   import { useState } from "react"
@@ -14,10 +14,11 @@ import {
   import { useHouseholdStore } from "../../../store/householdStore"
 
   import { ChevronDownIcon } from "../../../components/icons/ChevronDownIcon"
+  import type { AppStackParamList } from "../../../navigation/types"
 
   export function HouseholdSwitcher({ compact = false }: { compact?: boolean }) {
     const [open, setOpen] = useState(false)
-    const navigation = useNavigation<any>()
+    const navigation = useNavigation<NavigationProp<ParamListBase>>()
   
     const selectedHouseholdId = useHouseholdStore(
       (state) => state.selectedHouseholdId
@@ -39,8 +40,8 @@ import {
 
     function openCreateHousehold() {
       setOpen(false)
-      const parent = navigation.getParent?.()
-      if (parent?.getState?.().routeNames?.includes("CreateHousehold")) {
+      const parent = navigation.getParent<NavigationProp<AppStackParamList>>()
+      if (parent && parent.getState().routeNames.includes("CreateHousehold")) {
         parent.navigate("CreateHousehold")
         return
       }

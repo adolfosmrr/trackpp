@@ -8,6 +8,7 @@ import {
   TextInput,
   View,
 } from "react-native"
+import type { NativeStackScreenProps } from "@react-navigation/native-stack"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import { colors, fonts, radii } from "../../../theme"
 
@@ -16,8 +17,17 @@ import { formatMoney } from "../../../utils/formatMoney"
 
 import { useFixedExpensePeriods } from "../hooks/useFixedExpensePeriods"
 import { usePayFixedExpensePeriod } from "../hooks/usePayFixedExpensePeriod"
+import type { AppStackParamList } from "../../../navigation/types"
 
-export function PayFixedExpensePeriodScreen({ route, navigation }: any) {
+type PayFixedExpensePeriodScreenProps = NativeStackScreenProps<
+  AppStackParamList,
+  "PayFixedExpensePeriod"
+>
+
+export function PayFixedExpensePeriodScreen({
+  route,
+  navigation,
+}: PayFixedExpensePeriodScreenProps) {
   const insets = useSafeAreaInsets()
   const periodsQuery = useFixedExpensePeriods()
   const { data: periods, isLoading } = periodsQuery
