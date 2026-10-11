@@ -3,7 +3,7 @@ import { AccessibilityInfo } from "react-native"
 
 const WORD_INTERVAL_MS = 40
 
-function useReduceMotion() {
+export function useReduceMotion() {
   const [reduceMotion, setReduceMotion] = useState(false)
 
   useEffect(() => {

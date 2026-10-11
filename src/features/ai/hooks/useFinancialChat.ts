@@ -7,6 +7,8 @@ import { useAiMessages } from "./useAiMessages"
 
 import type { AiMessage } from "../types"
 
+export const THINKING_PLACEHOLDER = "Trabajando…"
+
 export function useFinancialChat(
   conversationId: string | null,
   onConversationCreated: (conversationId: string) => void
@@ -48,6 +50,7 @@ export function useFinancialChat(
       message: string
       selectedConversationId: string | undefined
       optimisticMessageId: string
+      thinkingMessageId: string
     }) =>
       askFinancialAssistant(
         householdId,
@@ -61,23 +64,31 @@ export function useFinancialChat(
         (variables.selectedConversationId &&
           variables.selectedConversationId !== conversationId)
       ) {
+        setMessages((current) =>
+          current.filter((message) => message.id !== variables.thinkingMessageId)
+        )
         return
       }
 
-      const assistantMessageId = `${Date.now()}-assistant`
+      const assistantMessage: AiMessage = {
+        id: `${Date.now()}-assistant`,
+        conversationId: response.conversationId,
+        role: "assistant",
+        content: response.answer,
+        createdAt: new Date().toISOString(),
+      }
       preserveMessages.current = !variables.selectedConversationId
       onConversationCreated(response.conversationId)
-      setRevealMessageId(assistantMessageId)
-      setMessages((current) => [
-        ...current,
-        {
-          id: assistantMessageId,
-          conversationId: response.conversationId,
-          role: "assistant",
-          content: response.answer,
-          createdAt: new Date().toISOString(),
-        },
-      ])
+      setRevealMessageId(assistantMessage.id)
+      setMessages((current) => {
+        const index = current.findIndex(
+          (message) => message.id === variables.thinkingMessageId
+        )
+        if (index === -1) return [...current, assistantMessage]
+        return current.map((message, messageIndex) =>
+          messageIndex === index ? assistantMessage : message
+        )
+      })
 
       void queryClient.invalidateQueries({
         queryKey: [
@@ -89,6 +100,11 @@ export function useFinancialChat(
         queryKey: ["ai-conversations", householdId],
       })
     },
+    onError: (_error, variables) => {
+      setMessages((current) =>
+        current.filter((message) => message.id !== variables.thinkingMessageId)
+      )
+    },
   })
 
   function sendMessage(message: string) {
@@ -98,7 +114,9 @@ export function useFinancialChat(
     }
 
     const selectedConversationId = conversationId ?? undefined
-    const optimisticMessageId = `${Date.now()}-user`
+    const stamp = Date.now()
+    const optimisticMessageId = `${stamp}-user`
+    const thinkingMessageId = `${stamp}-thinking`
     setRevealMessageId(null)
     setMessages((current) => [
       ...current,
@@ -109,12 +127,14 @@ export function useFinancialChat(
         content: trimmedMessage,
         createdAt: new Date().toISOString(),
       },
+      thinkingBubble(thinkingMessageId, selectedConversationId ?? "pending"),
     ])
     mutation.mutate({
       householdId,
       message: trimmedMessage,
       selectedConversationId,
       optimisticMessageId,
+      thinkingMessageId,
     })
     return true
   }
@@ -124,12 +144,18 @@ export function useFinancialChat(
     const lastUserMessage = [...messages].reverse().find((message) => message.role === "user")
     if (!lastUserMessage) return
 
+    const thinkingMessageId = `${Date.now()}-thinking`
     setRevealMessageId(null)
+    setMessages((current) => [
+      ...current.filter((message) => !message.pending),
+      thinkingBubble(thinkingMessageId, conversationId ?? "pending"),
+    ])
     mutation.mutate({
       householdId,
       message: lastUserMessage.content,
       selectedConversationId: conversationId ?? undefined,
       optimisticMessageId: lastUserMessage.id,
+      thinkingMessageId,
     })
   }
 
@@ -149,6 +175,17 @@ export function useFinancialChat(
   }
 }
 
+function thinkingBubble(id: string, conversationId: string): AiMessage {
+  return {
+    id,
+    conversationId,
+    role: "assistant",
+    content: THINKING_PLACEHOLDER,
+    createdAt: new Date().toISOString(),
+    pending: true,
+  }
+}
+
 function isOptimisticMessageId(id: string) {
-  return id.endsWith("-user") || id.endsWith("-assistant")
+  return id.endsWith("-user") || id.endsWith("-assistant") || id.endsWith("-thinking")
 }

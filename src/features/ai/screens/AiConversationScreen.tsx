@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react"
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react"
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
@@ -12,17 +12,29 @@ import {
 } from "react-native"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import Svg, { Path } from "react-native-svg"
+import Animated, {
+  cancelAnimation,
+  Easing,
+  useAnimatedStyle,
+  useSharedValue,
+  withRepeat,
+  withTiming,
+} from "react-native-reanimated"
+import { scheduleOnRN } from "react-native-worklets"
 
 import type { NativeStackScreenProps } from "@react-navigation/native-stack"
 
 import { ApiError } from "../../../services/api"
 import type { AppStackParamList } from "../../../navigation/types"
 import { useHouseholdStore } from "../../../store/householdStore"
-import { useFinancialChat } from "../hooks/useFinancialChat"
-import { useTypewriter } from "../hooks/useTypewriter"
+import { GradientBackground } from "../../../components/visual/GradientBackground"
+import { THINKING_PLACEHOLDER, useFinancialChat } from "../hooks/useFinancialChat"
+import { useReduceMotion, useTypewriter } from "../hooks/useTypewriter"
 import type { AiMessage } from "../types"
 import { BackLink } from "../../../components/navigation/BackLink"
 import { colors, fonts, radii } from "../../../theme"
+
+const FIELD_FADE_MS = 400
 
 const suggestions = [
   "¿Qué gastos fijos tengo pendientes?",
@@ -35,6 +47,72 @@ const suggestions = [
 
 type AiConversationScreenProps = NativeStackScreenProps<AppStackParamList, "AiConversation">
 
+function ThinkingLabel() {
+  const reduceMotion = useReduceMotion()
+  const opacity = useSharedValue(1)
+
+  useEffect(() => {
+    if (reduceMotion) {
+      cancelAnimation(opacity)
+      opacity.value = 1
+      return
+    }
+
+    opacity.value = withRepeat(
+      withTiming(0.4, { duration: 700, easing: Easing.inOut(Easing.ease) }),
+      -1,
+      true
+    )
+
+    return () => cancelAnimation(opacity)
+  }, [opacity, reduceMotion])
+
+  const animatedStyle = useAnimatedStyle(() => ({ opacity: opacity.value }))
+
+  return (
+    <Animated.Text style={[styles.messageContent, animatedStyle]}>
+      {THINKING_PLACEHOLDER}
+    </Animated.Text>
+  )
+}
+
+function ThinkingBackdrop({ active }: { active: boolean }) {
+  const opacity = useSharedValue(0)
+  const [mounted, setMounted] = useState(false)
+  const activeRef = useRef(active)
+  activeRef.current = active
+  const hide = useCallback(() => {
+    if (!activeRef.current) setMounted(false)
+  }, [])
+
+  useEffect(() => {
+    if (active) setMounted(true)
+  }, [active])
+
+  useLayoutEffect(() => {
+    if (!mounted) return
+
+    if (active) {
+      opacity.value = withTiming(1, { duration: FIELD_FADE_MS })
+      return
+    }
+
+    opacity.value = withTiming(0, { duration: FIELD_FADE_MS }, (finished) => {
+      if (finished) scheduleOnRN(hide)
+    })
+  }, [active, hide, mounted, opacity])
+
+  const animatedStyle = useAnimatedStyle(() => ({ opacity: opacity.value }))
+
+  if (!mounted) return null
+
+  return (
+    <Animated.View pointerEvents="none" style={[StyleSheet.absoluteFill, animatedStyle]}>
+      <GradientBackground dotMotion dotSpacing={15} token="topSection" />
+    </Animated.View>
+  )
+}
+
 function MessageBubble({
   message,
   reveal,
@@ -44,13 +122,17 @@ function MessageBubble({
   reveal: boolean
   onRevealComplete: () => void
 }) {
-  const content = useTypewriter(message.content, reveal, onRevealComplete)
+  const content = useTypewriter(message.content, reveal && !message.pending, onRevealComplete)
   const isUser = message.role === "user"
 
   return (
     <View style={[styles.message, isUser ? styles.userMessage : styles.assistantMessage]}>
       <Text style={styles.messageRole}>{isUser ? "Tú" : "IA"}</Text>
-      <Text style={isUser ? styles.userMessageContent : styles.messageContent}>{content}</Text>
+      {message.pending ? (
+        <ThinkingLabel />
+      ) : (
+        <Text style={isUser ? styles.userMessageContent : styles.messageContent}>{content}</Text>
+      )}
     </View>
   )
 }
@@ -82,106 +164,104 @@ export function AiConversationScreen({ route, navigation }: AiConversationScreen
   }
 
   return (
-    <KeyboardAvoidingView
-      style={styles.container}
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
-    >
-      <View style={[styles.header, { paddingTop: insets.top + 16 }]}>
-        <BackLink onPress={() => navigation.goBack()} />
-      </View>
-      <ScrollView
-        ref={messagesRef}
-        style={styles.messages}
-        contentContainerStyle={styles.messagesContent}
-        keyboardShouldPersistTaps="handled"
-        onContentSizeChange={() => messagesRef.current?.scrollToEnd({ animated: false })}
+    <View style={styles.screen}>
+      <ThinkingBackdrop active={isPending} />
+      <KeyboardAvoidingView
+        style={styles.container}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
       >
-        {!conversationId && !messages.length ? (
-          <View style={styles.emptyState}>
-            <Text style={styles.subtitle}>
-              Pregunta sobre los movimientos y presupuestos del espacio seleccionado.
-            </Text>
-            <View style={styles.suggestions}>
-              {suggestions.map((suggestion) => (
-                <Pressable
-                  key={suggestion}
-                  style={styles.suggestion}
-                  onPress={() => handleSend(suggestion)}
-                  disabled={isPending || !householdId}
-                >
-                  <Text style={styles.suggestionText}>{suggestion}</Text>
-                </Pressable>
-              ))}
+        <View style={[styles.header, { paddingTop: insets.top + 16 }]}>
+          <BackLink onPress={() => navigation.goBack()} />
+        </View>
+        <ScrollView
+          ref={messagesRef}
+          style={styles.messages}
+          contentContainerStyle={styles.messagesContent}
+          keyboardShouldPersistTaps="handled"
+          onContentSizeChange={() => messagesRef.current?.scrollToEnd({ animated: false })}
+        >
+          {!conversationId && !messages.length ? (
+            <View style={styles.emptyState}>
+              <Text style={styles.subtitle}>
+                Pregunta sobre los movimientos y presupuestos del espacio seleccionado.
+              </Text>
+              <View style={styles.suggestions}>
+                {suggestions.map((suggestion) => (
+                  <Pressable
+                    key={suggestion}
+                    style={styles.suggestion}
+                    onPress={() => handleSend(suggestion)}
+                    disabled={isPending || !householdId}
+                  >
+                    <Text style={styles.suggestionText}>{suggestion}</Text>
+                  </Pressable>
+                ))}
+              </View>
             </View>
-          </View>
-        ) : null}
+          ) : null}
 
-        {isLoadingMessages && conversationId ? <ActivityIndicator color={colors.brand} /> : null}
+          {isLoadingMessages && conversationId ? <ActivityIndicator color={colors.brand} /> : null}
 
-        {messages.map((message) => (
-          <MessageBubble
-            key={message.id}
-            message={message}
-            reveal={message.id === revealMessageId}
-            onRevealComplete={completeReveal}
-          />
-        ))}
+          {messages.map((message) => (
+            <MessageBubble
+              key={message.id}
+              message={message}
+              reveal={message.id === revealMessageId}
+              onRevealComplete={completeReveal}
+            />
+          ))}
 
-        {isPending ? (
-          <View style={styles.thinking}>
-            <ActivityIndicator color={colors.brand} size="small" />
-            <Text style={styles.messageRole}>Pensando...</Text>
-          </View>
-        ) : null}
-        {error ? (
-          <View style={styles.errorRow}>
-            <Text style={styles.error}>{errorMessage}</Text>
+          {!isPending && error ? (
+            <View style={styles.errorRow}>
+              <Text style={styles.error}>{errorMessage}</Text>
+              <Pressable
+                accessibilityLabel="Reintentar"
+                accessibilityRole="button"
+                disabled={isPending}
+                onPress={retry}
+                style={styles.retry}
+              >
+                <Text style={styles.retryText}>Reintentar</Text>
+              </Pressable>
+            </View>
+          ) : null}
+        </ScrollView>
+
+        <View style={[styles.composerWrapper, { paddingBottom: Math.max(insets.bottom, 8) }]}>
+          <View style={styles.composer}>
+            <TextInput
+              style={styles.input}
+              value={input}
+              onChangeText={setInput}
+              placeholder="Pregunta algo sobre tus finanzas"
+              placeholderTextColor={colors.mutedForeground}
+              multiline
+              maxLength={500}
+              editable={Boolean(householdId)}
+              onSubmitEditing={() => handleSend()}
+            />
             <Pressable
-              accessibilityLabel="Reintentar"
-              accessibilityRole="button"
-              disabled={isPending}
-              onPress={retry}
-              style={styles.retry}
+              style={[styles.sendButton, (!input.trim() || isPending || !householdId) && styles.disabled]}
+              onPress={() => handleSend()}
+              disabled={!input.trim() || isPending || !householdId}
             >
-              <Text style={styles.retryText}>Reintentar</Text>
+              <Svg width={15} height={15} viewBox="0 0 15 15" fill="none">
+                <Path
+                  d="M8.36399 14.9999L6.36399 14.9999L6.36399 3.41394L1.70677 8.07117C1.31622 8.46139 0.683131 8.46159 0.292705 8.07117C-0.0977202 7.68074 -0.0975223 7.04765 0.292705 6.6571L6.65696 0.292846C7.04749 -0.0976787 7.6805 -0.0976787 8.07103 0.292846L14.4353 6.6571C14.8255 7.04765 14.8257 7.68074 14.4353 8.07117C14.0449 8.46159 13.4118 8.46139 13.0212 8.07117L8.36399 3.41394L8.36399 14.9999Z"
+                  fill={colors.brandForeground}
+                />
+              </Svg>
             </Pressable>
           </View>
-        ) : null}
-      </ScrollView>
-
-      <View style={[styles.composerWrapper, { paddingBottom: Math.max(insets.bottom, 8) }]}>
-        <View style={styles.composer}>
-          <TextInput
-            style={styles.input}
-            value={input}
-            onChangeText={setInput}
-            placeholder="Pregunta algo sobre tus finanzas"
-            placeholderTextColor={colors.mutedForeground}
-            multiline
-            maxLength={500}
-            editable={Boolean(householdId)}
-            onSubmitEditing={() => handleSend()}
-          />
-          <Pressable
-            style={[styles.sendButton, (!input.trim() || isPending || !householdId) && styles.disabled]}
-            onPress={() => handleSend()}
-            disabled={!input.trim() || isPending || !householdId}
-          >
-            <Svg width={15} height={15} viewBox="0 0 15 15" fill="none">
-              <Path
-                d="M8.36399 14.9999L6.36399 14.9999L6.36399 3.41394L1.70677 8.07117C1.31622 8.46139 0.683131 8.46159 0.292705 8.07117C-0.0977202 7.68074 -0.0975223 7.04765 0.292705 6.6571L6.65696 0.292846C7.04749 -0.0976787 7.6805 -0.0976787 8.07103 0.292846L14.4353 6.6571C14.8255 7.04765 14.8257 7.68074 14.4353 8.07117C14.0449 8.46159 13.4118 8.46139 13.0212 8.07117L8.36399 3.41394L8.36399 14.9999Z"
-                fill={colors.brandForeground}
-              />
-            </Svg>
-          </Pressable>
         </View>
-      </View>
-    </KeyboardAvoidingView>
+      </KeyboardAvoidingView>
+    </View>
   )
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.background },
+  screen: { flex: 1, backgroundColor: colors.background },
+  container: { flex: 1 },
   messages: { flex: 1 },
   header: { paddingHorizontal: 20, paddingBottom: 8 },
   messagesContent: { gap: 12, padding: 20, paddingTop: 12 },
@@ -213,7 +293,6 @@ const styles = StyleSheet.create({
   messageRole: { color: colors.mutedForeground, fontFamily: fonts.sansMedium, fontSize: 12, fontWeight: "600" },
   messageContent: { color: colors.foreground, fontFamily: fonts.sans, lineHeight: 21 },
   userMessageContent: { color: colors.foreground, fontFamily: fonts.sans, lineHeight: 21 },
-  thinking: { alignItems: "center", flexDirection: "row", gap: 8 },
   errorRow: { alignItems: "flex-start", gap: 8 },
   error: { color: colors.destructive, fontFamily: fonts.sans },
   retry: {
