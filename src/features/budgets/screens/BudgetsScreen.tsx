@@ -13,7 +13,6 @@ import {
 } from "react-native"
 import { colors, fonts, radii, refreshControlColors } from "../../../theme"
 import { formatMoney } from "../../../utils/formatMoney"
-import { CircleAddButton } from "../../../components/buttons/CircleAddButton"
 import { EmptyState } from "../../../components/feedback/EmptyState"
 import { showUndo } from "../../../components/feedback/undo"
 import { SegmentedToggle } from "../../../components/inputs/SegmentedToggle"
@@ -33,6 +32,7 @@ import { getCurrentMonth } from "../hooks/useBudgets"
 import type { BudgetWithProgress } from "../types"
 import { ScreenContainer } from "../../../components/layout/ScreenContainer"
 import { TopSection } from "../../../components/layout/TopSection"
+import { SectionHeader } from "../../../components/layout/SectionHeader"
 import { TopSectionHeader } from "../../../components/layout/TopSectionHeader"
 import { HomeBalance } from "../../home/components/HomeBalance"
 import { HomeGreeting } from "../../home/components/HomeGreeting"
@@ -194,169 +194,116 @@ function BudgetsScreenContent() {
                 },
               ]}
             >
-        <SegmentedToggle
-          onChange={setSegment}
-          options={BUDGET_SEGMENTS}
-          value={segment}
-          width="100%"
-        />
+              <SegmentedToggle
+                onChange={setSegment}
+                options={BUDGET_SEGMENTS}
+                value={segment}
+                width="100%"
+              />
 
-        {segment === "month" ? (
-          <>
-        <View style={styles.sectionHeader}>
-          <Text style={styles.title}>Presupuesto del mes</Text>
-          <CircleAddButton
-            accessibilityLabel="Crear presupuesto"
-            onPress={openCreateBudget}
-          />
-        </View>
-
-        <View style={styles.list}>
-          {budgets?.length ? (
-            budgets.map((budget) => (
-              <View
-                key={budget.id}
-                style={styles.card}
-              >
-                <View
-                  style={
-                    styles.cardHeader
-                  }
-                >
-                  <Text
-                    style={
-                      styles.cardTitle
-                    }
-                  >
-                    {budget.name}
-                  </Text>
-
-                  <Text
-                    style={
-                      styles.cardPercentage
-                    }
-                  >
-                    {formatPercentage(
-                      budget.percentage
-                    )}
-                  </Text>
-                </View>
-
-                <View
-                  style={
-                    styles.progressBackground
-                  }
-                >
-                  <View
-                    style={[
-                      styles.progress,
-                      {
-                        width:
-                          `${budget.progressPercentage}%`,
-                      },
-                    ]}
+              {segment === "month" ? (
+                <>
+                  <SectionHeader
+                    actionLabel="Crear presupuesto"
+                    onAction={openCreateBudget}
+                    title="Presupuesto del mes"
                   />
-                </View>
 
-                <View style={styles.cardSeparator} />
+                  <View style={styles.list}>
+                    {budgets?.length ? (
+                      budgets.map((budget) => (
+                        <View key={budget.id} style={styles.card}>
+                          <View style={styles.cardHeader}>
+                            <Text style={styles.cardTitle}>{budget.name}</Text>
+                            <Text style={styles.cardPercentage}>
+                              {formatPercentage(budget.percentage)}
+                            </Text>
+                          </View>
 
-                <View style={styles.statsRow}>
-                  <View style={styles.statsLeft}>
-                    <View style={styles.statItem}>
-                      <Text style={styles.statsText}>Gastado</Text>
-                      <Text style={styles.statsText}>
-                        {formatMoney(budget.spent)}
-                      </Text>
-                    </View>
+                          <View style={styles.progressBackground}>
+                            <View
+                              style={[
+                                styles.progress,
+                                { width: `${budget.progressPercentage}%` },
+                              ]}
+                            />
+                          </View>
 
-                    <View style={styles.statItem}>
-                      <Text style={styles.statsText}>
-                        Restante
-                      </Text>
-                      <Text style={styles.statsText}>
-                        {formatMoney(Math.abs(budget.remaining))}
-                      </Text>
-                    </View>
+                          <View style={styles.cardSeparator} />
+
+                          <View style={styles.statsRow}>
+                            <View style={styles.statsLeft}>
+                              <View style={styles.statItem}>
+                                <Text style={styles.statsText}>Gastado</Text>
+                                <Text style={styles.statsText}>
+                                  {formatMoney(budget.spent)}
+                                </Text>
+                              </View>
+
+                              <View style={styles.statItem}>
+                                <Text style={styles.statsText}>Restante</Text>
+                                <Text style={styles.statsText}>
+                                  {formatMoney(Math.abs(budget.remaining))}
+                                </Text>
+                              </View>
+                            </View>
+
+                            <View style={styles.statItem}>
+                              <Text style={styles.statsText}>De</Text>
+                              <Text style={styles.statsText}>
+                                {formatMoney(budget.amount)}
+                              </Text>
+                            </View>
+                          </View>
+
+                          <View style={styles.cardSeparator} />
+
+                          <View style={styles.actions}>
+                            <Pressable
+                              accessibilityRole="button"
+                              style={styles.actionsButtons}
+                              onPress={() => openEditBudget(budget)}
+                            >
+                              <Text style={styles.editText}>Editar</Text>
+                            </Pressable>
+
+                            <Pressable
+                              accessibilityRole="button"
+                              style={styles.actionsButtons}
+                              onPress={() => handleDeleteBudget(budget.id)}
+                            >
+                              <Text style={styles.deleteText}>Eliminar</Text>
+                            </Pressable>
+                          </View>
+                        </View>
+                      ))
+                    ) : (
+                      <EmptyState
+                        title="Este mes no armaste presupuestos"
+                        body="Definí un tope por categoría para seguir el gasto."
+                        actionLabel="Crear presupuesto"
+                        onAction={openCreateBudget}
+                      />
+                    )}
                   </View>
-                  
-                  <View style={styles.statItem}>
-                    <Text style={styles.statsText}>De</Text>
-                    <Text style={styles.statsText}>
-                      {formatMoney(budget.amount)}
-                    </Text>
-                  </View>
-                </View>
-
-                <View style={styles.cardSeparator} />
-
-                <View
-                  style={styles.actions}
-                >
-                    <Pressable
-                      accessibilityRole="button"
-                      style={styles.actionsButtons}
-                      onPress={() =>
-                        openEditBudget(budget)
-                      }
-                    >
-                      <Text
-                        style={
-                          styles.editText
-                        }
-                      >
-                        Editar
-                      </Text>
-                    </Pressable>
-
-                    <Pressable
-                      accessibilityRole="button"
-                      style={styles.actionsButtons}
-                      onPress={() =>
-                        handleDeleteBudget(
-                          budget.id
-                        )
-                      }
-                    >
-                      <Text
-                        style={
-                          styles.deleteText
-                        }
-                      >
-                        Eliminar
-                      </Text>
-                    </Pressable>
-                </View>
-              </View>
-            ))
-          ) : (
-            <EmptyState
-              title="Este mes no armaste presupuestos"
-              body="Definí un tope por categoría para seguir el gasto."
-              actionLabel="Crear presupuesto"
-              onAction={openCreateBudget}
-            />
-          )}
-        </View>
-          </>
-        ) : (
-          <>
-        <View style={styles.sectionHeader}>
-          <Text style={styles.title}>Gastos fijos</Text>
-          <CircleAddButton
-            accessibilityLabel="Agregar gasto fijo"
-            onPress={() => {
-              void openCreateTransaction("fixed")
-            }}
-          />
-        </View>
-        <FixedExpenseList
-          onCreate={() => {
-            void openCreateTransaction("fixed")
-          }}
-          onEdit={openEditFixedExpense}
-        />
-          </>
-        )}
+                </>
+              ) : (
+                <>
+                  <SectionHeader
+                    actionLabel="Agregar gasto fijo"
+                    onAction={() => {
+                      void openCreateTransaction("fixed")
+                    }}
+                    title="Gastos fijos"
+                  />
+                  <FixedExpenseList
+                    onCreate={() => {
+                      void openCreateTransaction("fixed")
+                    }}
+                    onEdit={openEditFixedExpense}
+                  />
+                </>
+              )}
             </View>
           </View>
         </ScrollView>
@@ -444,22 +391,6 @@ const styles =
       backgroundColor: colors.background,
       justifyContent: "center",
       alignItems: "center",
-    },
-
-    sectionHeader: {
-      alignItems: "center",
-      flexDirection: "row",
-      gap: 12,
-    },
-
-    title: {
-      color: colors.foreground,
-      flex: 1,
-      fontFamily: fonts.sansSemibold,
-      fontSize: 22,
-      letterSpacing: -0.4,
-      lineHeight: 26,
-      fontWeight: "600",
     },
 
     list: {
