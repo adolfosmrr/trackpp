@@ -6,8 +6,8 @@ import {
     Modal,
   } from "react-native"
   import { useNavigation } from "@react-navigation/native"
-  import { GlassView, isGlassEffectAPIAvailable, isLiquidGlassAvailable } from "expo-glass-effect"
   import { colors, fonts, radii } from "../../../theme"
+  import { GlassButton } from "../../../components/buttons/GlassButton"
   import { useState } from "react"
   
   import { useHouseholds } from "../hooks/useHouseholds"
@@ -15,8 +15,6 @@ import {
 
   import { ChevronDownIcon } from "../../../components/icons/ChevronDownIcon"
 
-  const liquidGlassEnabled = isLiquidGlassAvailable() && isGlassEffectAPIAvailable()
-  
   export function HouseholdSwitcher({ compact = false }: { compact?: boolean }) {
     const [open, setOpen] = useState(false)
     const navigation = useNavigation<any>()
@@ -181,19 +179,18 @@ import {
       </>
     )
 
-    if (compact && liquidGlassEnabled) {
+    if (compact) {
       return (
-        <GlassView glassEffectStyle="clear" style={styles.glassTrigger}>
-          <Pressable
-            accessibilityLabel="Cambiar cuenta"
-            accessibilityRole="button"
-            hitSlop={10}
-            onPress={onPress}
-            style={styles.glassPressable}
-          >
-            {content}
-          </Pressable>
-        </GlassView>
+        <GlassButton
+          accessibilityLabel="Cambiar cuenta"
+          fallbackStyle={styles.compactTrigger}
+          glassStyle={styles.glassTrigger}
+          hitSlop={10}
+          onPress={onPress}
+          style={styles.glassPressable}
+        >
+          {content}
+        </GlassButton>
       )
     }
 
@@ -201,9 +198,8 @@ import {
       <Pressable
         accessibilityLabel="Cambiar cuenta"
         accessibilityRole="button"
-        hitSlop={compact ? 10 : 0}
         onPress={onPress}
-        style={[styles.trigger, compact && styles.compactTrigger]}
+        style={styles.trigger}
       >
         {content}
       </Pressable>
