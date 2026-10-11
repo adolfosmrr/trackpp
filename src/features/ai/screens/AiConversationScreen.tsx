@@ -18,8 +18,6 @@ import type { NativeStackScreenProps } from "@react-navigation/native-stack"
 import { ApiError } from "../../../services/api"
 import type { AppStackParamList } from "../../../navigation/types"
 import { useHouseholdStore } from "../../../store/householdStore"
-import { SiriProvider } from "../../../components/organisms/apple-intelligence"
-import { useSiri } from "../../../components/organisms/apple-intelligence/context"
 import { useFinancialChat } from "../hooks/useFinancialChat"
 import { useTypewriter } from "../hooks/useTypewriter"
 import type { AiMessage } from "../types"
@@ -36,14 +34,6 @@ const suggestions = [
 ]
 
 type AiConversationScreenProps = NativeStackScreenProps<AppStackParamList, "AiConversation">
-
-export function AiConversationScreen({ route, navigation }: AiConversationScreenProps) {
-  return (
-    <SiriProvider>
-      <AiConversationContent route={route} navigation={navigation} />
-    </SiriProvider>
-  )
-}
 
 function MessageBubble({
   message,
@@ -65,7 +55,7 @@ function MessageBubble({
   )
 }
 
-function AiConversationContent({ route, navigation }: AiConversationScreenProps) {
+export function AiConversationScreen({ route, navigation }: AiConversationScreenProps) {
   const insets = useSafeAreaInsets()
   const householdId = useHouseholdStore((state) => state.selectedHouseholdId)
   const [conversationId, setConversationId] = useState<string | null>(
@@ -75,7 +65,6 @@ function AiConversationContent({ route, navigation }: AiConversationScreenProps)
   const messagesRef = useRef<ScrollView>(null)
   const { messages, sendMessage, retry, revealMessageId, completeReveal, isPending, error, isLoadingMessages } =
     useFinancialChat(conversationId, setConversationId)
-  const { toggle, isActive } = useSiri()
   const errorMessage =
     error instanceof ApiError && error.code === "AI_DAILY_LIMIT_REACHED"
       ? "Estás haciendo demasiadas preguntas. Intenta nuevamente en un momento."
@@ -84,14 +73,6 @@ function AiConversationContent({ route, navigation }: AiConversationScreenProps)
   useEffect(() => {
     setConversationId(route.params?.conversationId ?? null)
   }, [route.params?.conversationId])
-
-  useEffect(() => {
-    if (isPending && !isActive) {
-      void toggle()
-    } else if (!isPending && isActive) {
-      void toggle()
-    }
-  }, [isActive, isPending, toggle])
 
   function handleSend(text?: string) {
     const message = text ?? input
