@@ -22,19 +22,7 @@ import { CorrectFixedExpensePaymentScreen } from "../features/fixedExpenses/scre
 import { PendingChargeScreen } from "../features/pendingCharges/screens/PendingChargeScreen"
 import { PendingChargesScreen } from "../features/pendingCharges/screens/PendingChargesScreen"
 import { colors } from "../theme"
-
-export type AppStackParamList = {
-  Main: undefined
-  CreateHousehold: undefined
-  InviteMember: undefined
-  Invitations: undefined
-  AiConversation: { conversationId?: string }
-  FixedExpenses: undefined
-  PayFixedExpensePeriod: { periodId: string }
-  CorrectFixedExpensePayment: { paymentId: string }
-  PendingCharges: undefined
-  PendingCharge: { chargeId: string }
-}
+import type { AppStackParamList } from "./types"
 
 const Stack =
   createNativeStackNavigator<AppStackParamList>()

@@ -11,16 +11,14 @@ import { useFixedExpenseNotificationSync } from "../features/fixedExpenses/hooks
 import { usePendingCharges } from "../features/pendingCharges/hooks/usePendingCharges"
 import {
     withMainTabsSwipe,
-    type MainTabsParamList,
 } from "./MainTabsSwipeContainer"
 import { colors } from "../theme"
+import type { MainTabsParamList } from "./types"
 
 const SwipeHomeScreen = withMainTabsSwipe(HomeScreen)
 const SwipeTransactionsScreen = withMainTabsSwipe(TransactionsScreen)
 const SwipeAiChatScreen = withMainTabsSwipe(AiChatScreen)
 const SwipeBudgetsScreen = withMainTabsSwipe(BudgetsScreen)
-
-export type { MainTabsParamList } from "./MainTabsSwipeContainer"
 
 const Tab = createNativeBottomTabNavigator<MainTabsParamList>()
 

@@ -1,5 +1,8 @@
 import { useState } from "react"
 import { useQueryClient } from "@tanstack/react-query"
+import { CompositeScreenProps } from "@react-navigation/native"
+import { NativeStackScreenProps } from "@react-navigation/native-stack"
+import { NativeBottomTabScreenProps } from "@react-navigation/bottom-tabs/unstable"
 import { FlatList, Pressable, RefreshControl, StyleSheet, Text, View } from "react-native"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 
@@ -15,15 +18,12 @@ import { useAiConversations } from "../hooks/useAiConversations"
 import { useDeleteAiConversation } from "../hooks/useDeleteAiConversation"
 import type { AiConversation } from "../types"
 import { colors, fonts, radii, refreshControlColors } from "../../../theme"
+import type { AppStackParamList, MainTabsParamList } from "../../../navigation/types"
 
-type AiChatScreenProps = {
-  navigation: {
-    navigate(
-      screen: "AiConversation",
-      params?: { conversationId?: string },
-    ): void
-  }
-}
+type AiChatScreenProps = CompositeScreenProps<
+  NativeBottomTabScreenProps<MainTabsParamList, "AiChat">,
+  NativeStackScreenProps<AppStackParamList>
+>
 
 export function AiChatScreen({ navigation }: AiChatScreenProps) {
   const insets = useSafeAreaInsets()
@@ -49,7 +49,7 @@ export function AiChatScreen({ navigation }: AiChatScreenProps) {
   }
 
   function handleNewConversation() {
-    navigation.navigate("AiConversation")
+    navigation.navigate("AiConversation", {})
   }
 
   async function confirmDelete(conversationId: string) {

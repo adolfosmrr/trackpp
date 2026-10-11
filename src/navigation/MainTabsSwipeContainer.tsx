@@ -10,13 +10,6 @@ import { StyleSheet, View } from "react-native"
 import { createElement } from "react"
 import type { ComponentType, ReactNode } from "react"
 
-export type MainTabsParamList = {
-  Home: undefined
-  Transactions: undefined
-  AiChat: undefined
-  Budgets: undefined
-}
-
 export const TAB_ORDER = [
   "Home",
   "Transactions",
