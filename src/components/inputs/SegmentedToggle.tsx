@@ -1,14 +1,16 @@
 import { useEffect, useRef, useState } from "react"
 import { LayoutChangeEvent, Pressable, StyleSheet, Text, View } from "react-native"
-import { colors, fonts, radii } from "../../theme"
+import { GlassContainer, GlassView, isGlassEffectAPIAvailable, isLiquidGlassAvailable } from "expo-glass-effect"
 import Animated, {
-  Easing,
   useAnimatedStyle,
   useSharedValue,
-  withSequence,
   withSpring,
-  withTiming,
 } from "react-native-reanimated"
+
+import { colors, fonts, radii } from "../../theme"
+
+const INSET = 4
+const liquidGlassEnabled = isLiquidGlassAvailable() && isGlassEffectAPIAvailable()
 
 export type SegmentedToggleOption<T extends string> = {
   value: T
@@ -32,7 +34,7 @@ export function SegmentedToggle<T extends string>({
   const translateX = useSharedValue(0)
   const previousIndex = useRef(0)
   const hasInitialized = useRef(false)
-  const innerWidth = Math.max(0, containerWidth - 8)
+  const innerWidth = Math.max(0, containerWidth - INSET * 2)
   const optionWidth = options.length > 0 ? innerWidth / options.length : 0
   const selectedIndex = options.findIndex((option) => option.value === value)
   const safeSelectedIndex = selectedIndex >= 0 ? selectedIndex : 0
@@ -44,26 +46,23 @@ export function SegmentedToggle<T extends string>({
 
     const finalPosition = optionWidth * safeSelectedIndex
 
-    if (!hasInitialized.current || previousIndex.current === safeSelectedIndex) {
+    if (!hasInitialized.current) {
       translateX.value = finalPosition
+      previousIndex.current = safeSelectedIndex
       hasInitialized.current = true
       return
     }
 
-    const direction = safeSelectedIndex > previousIndex.current ? 1 : -1
-    const overshootPosition = finalPosition + direction * optionWidth * 0.03
+    if (previousIndex.current === safeSelectedIndex) {
+      translateX.value = finalPosition
+      return
+    }
 
-    translateX.value = withSequence(
-      withTiming(overshootPosition, {
-        duration: 320,
-        easing: Easing.inOut(Easing.cubic),
-      }),
-      withSpring(finalPosition, {
-        damping: 18,
-        stiffness: 500,
-        mass: 1.6,
-      }),
-    )
+    translateX.value = withSpring(finalPosition, {
+      damping: 20,
+      stiffness: 380,
+      mass: 0.7,
+    })
     previousIndex.current = safeSelectedIndex
   }, [containerWidth, optionWidth, options.length, safeSelectedIndex, translateX])
 
@@ -71,74 +70,133 @@ export function SegmentedToggle<T extends string>({
     setContainerWidth(event.nativeEvent.layout.width)
   }
 
-  const animatedIndicatorStyle = useAnimatedStyle(() => ({
+  const animatedCapsuleStyle = useAnimatedStyle(() => ({
     width: optionWidth,
     transform: [{ translateX: translateX.value }],
   }))
 
-  return (
-    <View
-      onLayout={handleLayout}
-      style={[styles.container, width !== undefined && { width }]}
-    >
-      <Animated.View
-        pointerEvents="none"
-        style={[styles.indicator, animatedIndicatorStyle]}
-      />
-      {options.map((option) => (
-        <Pressable
-          key={option.value}
-          accessibilityLabel={option.label}
-          accessibilityRole="button"
-          accessibilityState={{ selected: option.value === value }}
-          onPress={() => onChange(option.value)}
-          style={styles.option}
+  const widthStyle = width !== undefined ? { width } : null
+  const capsule = (
+    <Animated.View pointerEvents="none" style={[styles.capsule, animatedCapsuleStyle]}>
+      {liquidGlassEnabled ? (
+        <GlassView
+          colorScheme="dark"
+          glassEffectStyle="clear"
+          isInteractive
+          style={styles.capsuleFill}
+        />
+      ) : (
+        <View style={styles.fallbackCapsule} />
+      )}
+    </Animated.View>
+  )
+  const segments = options.map((option) => {
+    const selected = option.value === value
+    return (
+      <Pressable
+        key={option.value}
+        accessibilityLabel={option.label}
+        accessibilityRole="button"
+        accessibilityState={{ selected }}
+        onPress={() => onChange(option.value)}
+        style={styles.option}
+      >
+        <Text
+          numberOfLines={1}
+          style={[styles.text, selected ? styles.selectedText : styles.unselectedText]}
         >
-          <Text
-            style={[
-              styles.text,
-              option.value === value ? styles.selectedText : styles.unselectedText,
-            ]}
-          >
-            {option.label}
-          </Text>
-        </Pressable>
-      ))}
+          {option.label}
+        </Text>
+      </Pressable>
+    )
+  })
+
+  if (liquidGlassEnabled) {
+    return (
+      <GlassContainer
+        onLayout={handleLayout}
+        spacing={8}
+        style={[styles.container, widthStyle]}
+      >
+        <GlassView
+          colorScheme="dark"
+          glassEffectStyle="regular"
+          pointerEvents="none"
+          style={styles.glassBar}
+        />
+        {capsule}
+        {segments}
+      </GlassContainer>
+    )
+  }
+
+  return (
+    <View onLayout={handleLayout} style={[styles.container, styles.fallbackContainer, widthStyle]}>
+      {capsule}
+      {segments}
     </View>
   )
 }
 
 const styles = StyleSheet.create({
   container: {
+    borderRadius: radii.pill,
     flexDirection: "row",
-    padding: 4,
-    borderRadius: radii.sm,
-    backgroundColor: colors.control,
-    borderColor: colors.border,
-    borderWidth: 1,
+    padding: INSET,
   },
-  indicator: {
+  fallbackContainer: {
+    backgroundColor: colors.control,
+  },
+  glassBar: {
+    borderRadius: radii.pill,
+    bottom: 0,
+    left: 0,
     position: "absolute",
-    left: 4,
-    top: 4,
-    bottom: 4,
-    borderRadius: radii.xs,
-    backgroundColor: colors.brand,
+    right: 0,
+    top: 0,
+  },
+  capsule: {
+    borderRadius: radii.pill,
+    bottom: INSET,
+    left: INSET,
+    position: "absolute",
+    top: INSET,
+  },
+  capsuleFill: {
+    borderRadius: radii.pill,
+    bottom: 0,
+    left: 0,
+    position: "absolute",
+    right: 0,
+    top: 0,
+  },
+  fallbackCapsule: {
+    backgroundColor: "rgba(237, 239, 238, 0.14)",
+    borderRadius: radii.pill,
+    bottom: 0,
+    left: 0,
+    position: "absolute",
+    right: 0,
+    top: 0,
   },
   option: {
-    flex: 1,
     alignItems: "center",
+    flex: 1,
     justifyContent: "center",
-    paddingVertical: 10,
+    minHeight: 36,
+    paddingHorizontal: 8,
+    paddingVertical: 8,
     zIndex: 1,
   },
   text: {
     fontFamily: fonts.sansMedium,
+    fontSize: 15,
+    lineHeight: 20,
   },
   selectedText: {
-    color: colors.brandForeground,
+    color: colors.brand,
   },
   unselectedText: {
-    color: colors.mutedForeground,
+    color: colors.foreground,
   },
 })
