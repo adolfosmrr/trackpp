@@ -6,7 +6,7 @@ import { NativeBottomTabScreenProps } from "@react-navigation/bottom-tabs/unstab
 import { FlatList, Pressable, RefreshControl, StyleSheet, Text, View } from "react-native"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 
-import { GlassButton, liquidGlassEnabled } from "../../../components/buttons/GlassButton"
+import { GlassButton } from "../../../components/buttons/GlassButton"
 import { EmptyState } from "../../../components/feedback/EmptyState"
 import { showUndo } from "../../../components/feedback/undo"
 import { useHouseholdStore } from "../../../store/householdStore"
@@ -98,21 +98,13 @@ export function AiChatScreen({ navigation }: AiChatScreenProps) {
               accessibilityLabel="Nueva conversación"
               fallbackStyle={styles.newConversationButton}
               glassStyle={styles.newConversationGlass}
+              icon={(color) => <FieldChevronIcon color={color} />}
+              label="Nueva conversación"
+              labelStyle={styles.newConversationText}
               onPress={handleNewConversation}
               style={styles.newConversationContent}
-            >
-              <Text
-                style={[
-                  styles.newConversationText,
-                  liquidGlassEnabled && styles.newConversationTextOnGlass,
-                ]}
-              >
-                Nueva conversación
-              </Text>
-              <FieldChevronIcon
-                color={liquidGlassEnabled ? colors.foreground : colors.brandForeground}
-              />
-            </GlassButton>
+              tone="brand"
+            />
             <Text style={styles.recentConversationsTitle}>
               Conversaciones{"\n"}recientes
             </Text>
@@ -253,13 +245,9 @@ const styles = StyleSheet.create({
     width: "100%",
   },
   newConversationText: {
-    color: colors.brandForeground,
     fontFamily: fonts.sansSemibold,
     fontSize: 18,
     lineHeight: 18,
-  },
-  newConversationTextOnGlass: {
-    color: colors.foreground,
   },
   recentConversationsTitle: {
     color: colors.mutedForeground,

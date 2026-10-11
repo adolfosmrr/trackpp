@@ -2,17 +2,32 @@ import type { ReactNode } from "react"
 import {
   Pressable,
   StyleSheet,
+  Text,
   type PressableProps,
   type StyleProp,
+  type TextStyle,
   type ViewStyle,
 } from "react-native"
 import { GlassView, isGlassEffectAPIAvailable, isLiquidGlassAvailable } from "expo-glass-effect"
 
-export const liquidGlassEnabled = isLiquidGlassAvailable() && isGlassEffectAPIAvailable()
+import { colors } from "../../theme"
+
+const liquidGlassEnabled = isLiquidGlassAvailable() && isGlassEffectAPIAvailable()
+
+type GlassButtonTone = "neutral" | "brand"
 
 type GlassButtonProps = {
   accessibilityLabel: string
-  children: ReactNode
+  children?: ReactNode
+  /** When set, the button renders this label and picks its color from `tone`. */
+  label?: string
+  labelStyle?: StyleProp<TextStyle>
+  icon?: (color: string) => ReactNode
+  /**
+   * `brand` uses brand foreground on the solid fallback and foreground on clear glass.
+   * `neutral` leaves child colors alone.
+   */
+  tone?: GlassButtonTone
   onPress: () => void
   /** Frame around the clear glass. Used only when liquid glass is available. */
   glassStyle?: StyleProp<ViewStyle>
@@ -26,12 +41,27 @@ type GlassButtonProps = {
 export function GlassButton({
   accessibilityLabel,
   children,
+  label,
+  labelStyle,
+  icon,
+  tone = "neutral",
   onPress,
   glassStyle,
   style,
   fallbackStyle,
   hitSlop,
 }: GlassButtonProps) {
+  const color = tone === "brand" && liquidGlassEnabled ? colors.foreground : colors.brandForeground
+  const content = (
+    <>
+      {label ? (
+        <Text style={[labelStyle, tone === "brand" ? { color } : null]}>{label}</Text>
+      ) : null}
+      {icon ? icon(tone === "brand" ? color : colors.foreground) : null}
+      {children}
+    </>
+  )
+
   if (!liquidGlassEnabled) {
     return (
       <Pressable
@@ -41,7 +71,7 @@ export function GlassButton({
         onPress={onPress}
         style={fallbackStyle}
       >
-        {children}
+        {content}
       </Pressable>
     )
   }
@@ -55,7 +85,7 @@ export function GlassButton({
         onPress={onPress}
         style={[styles.pressable, style]}
       >
-        {children}
+        {content}
       </Pressable>
     </GlassView>
   )
