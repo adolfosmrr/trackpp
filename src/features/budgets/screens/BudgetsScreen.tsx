@@ -59,6 +59,7 @@ function BudgetsScreenContent() {
   const selectedHouseholdId = useHouseholdStore((state) => state.selectedHouseholdId)
   const [segment, setSegment] = useState<BudgetSegment>("month")
   const [topSectionHeight, setTopSectionHeight] = useState(0)
+  const [segmentBarHeight, setSegmentBarHeight] = useState(0)
   const [refreshing, setRefreshing] = useState(false)
   const profileQuery = useProfile()
   const { data: profile, isLoading: profileLoading, error: profileError } = profileQuery
@@ -78,6 +79,11 @@ function BudgetsScreenContent() {
   function handleTopSectionLayout(event: LayoutChangeEvent) {
     const height = event.nativeEvent.layout.height
     setTopSectionHeight((current) => current || height)
+  }
+
+  function handleSegmentBarLayout(event: LayoutChangeEvent) {
+    const height = event.nativeEvent.layout.height
+    setSegmentBarHeight((current) => (current === height ? current : height))
   }
 
   async function handleRefresh() {
@@ -173,18 +179,23 @@ function BudgetsScreenContent() {
     <View style={styles.screenWrapper}>
       <ScreenContainer paddingHorizontal={0}>
         <ScrollView
-          style={[styles.container, !topSectionHeight && styles.hiddenList]}
-          contentContainerStyle={styles.content}
+          style={[
+            styles.container,
+            (!topSectionHeight || !segmentBarHeight) && styles.hiddenList,
+          ]}
+          contentContainerStyle={[
+            styles.content,
+            { paddingTop: topSectionHeight + segmentBarHeight },
+          ]}
           refreshControl={
             <RefreshControl
               refreshing={refreshing}
               onRefresh={handleRefresh}
-              progressViewOffset={topSectionHeight}
+              progressViewOffset={topSectionHeight + segmentBarHeight}
               {...refreshControlColors}
             />
           }
         >
-          <View style={{ height: topSectionHeight }} />
           <View style={styles.budgetSection}>
             <View
               style={[
@@ -194,13 +205,6 @@ function BudgetsScreenContent() {
                 },
               ]}
             >
-              <SegmentedToggle
-                onChange={setSegment}
-                options={BUDGET_SEGMENTS}
-                value={segment}
-                width="100%"
-              />
-
               {segment === "month" ? (
                 <>
                   <SectionHeader
@@ -309,6 +313,21 @@ function BudgetsScreenContent() {
         </ScrollView>
       </ScreenContainer>
 
+      {topSectionHeight > 0 ? (
+        <View
+          onLayout={handleSegmentBarLayout}
+          pointerEvents="box-none"
+          style={[styles.segmentBar, { top: topSectionHeight }]}
+        >
+          <SegmentedToggle
+            onChange={setSegment}
+            options={BUDGET_SEGMENTS}
+            value={segment}
+            width="100%"
+          />
+        </View>
+      ) : null}
+
       <TopSection
         mode="collapsed"
         overlay
@@ -368,7 +387,16 @@ const styles =
 
     container: {
       flex: 1,
-      marginTop: 30
+    },
+
+    segmentBar: {
+      left: 0,
+      paddingBottom: 8,
+      paddingHorizontal: 20,
+      paddingTop: 12,
+      position: "absolute",
+      right: 0,
+      zIndex: 9,
     },
 
     content: {
