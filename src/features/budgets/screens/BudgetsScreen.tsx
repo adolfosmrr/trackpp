@@ -13,8 +13,10 @@ import {
 } from "react-native"
 import { colors, fonts, radii, refreshControlColors } from "../../../theme"
 import { formatMoney } from "../../../utils/formatMoney"
+import { CircleAddButton } from "../../../components/buttons/CircleAddButton"
 import { EmptyState } from "../../../components/feedback/EmptyState"
 import { showUndo } from "../../../components/feedback/undo"
+import { SegmentedToggle } from "../../../components/inputs/SegmentedToggle"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 
 import { useBudgets } from "../hooks/useBudgets"
@@ -25,7 +27,7 @@ import { useHouseholdStore } from "../../../store/householdStore"
 import { useDashboard } from "../../dashboard/hooks/useDashboard"
 import { useBudgetSheet } from "../components/BudgetSheetProvider"
 import { BudgetSheetProvider } from "../components/BudgetSheetProvider"
-import { FixedExpensesPreview } from "../components/FixedExpensesPreview"
+import { FixedExpenseList } from "../../fixedExpenses/components/FixedExpenseList"
 import { useCreateTransactionSheet } from "../../transactions/components/CreateTransactionSheetProvider"
 import { getCurrentMonth } from "../hooks/useBudgets"
 import type { BudgetWithProgress } from "../types"
@@ -36,18 +38,26 @@ import { HomeBalance } from "../../home/components/HomeBalance"
 import { HomeGreeting } from "../../home/components/HomeGreeting"
 import { HomeIncomeExpenseSummary } from "../../home/components/HomeIncomeExpenseSummary"
 
-export function BudgetsScreen({ navigation }: { navigation: { navigate: (screen: string) => void } }) {
+type BudgetSegment = "month" | "fixed"
+
+const BUDGET_SEGMENTS = [
+  { value: "month", label: "Presupuesto del mes" },
+  { value: "fixed", label: "Gastos fijos" },
+] as const
+
+export function BudgetsScreen() {
   return (
     <BudgetSheetProvider>
-      <BudgetsScreenContent navigation={navigation} />
+      <BudgetsScreenContent />
     </BudgetSheetProvider>
   )
 }
 
-function BudgetsScreenContent({ navigation }: { navigation: { navigate: (screen: string) => void } }) {
+function BudgetsScreenContent() {
   const insets = useSafeAreaInsets()
   const queryClient = useQueryClient()
   const selectedHouseholdId = useHouseholdStore((state) => state.selectedHouseholdId)
+  const [segment, setSegment] = useState<BudgetSegment>("month")
   const [topSectionHeight, setTopSectionHeight] = useState(0)
   const [refreshing, setRefreshing] = useState(false)
   const profileQuery = useProfile()
@@ -77,6 +87,8 @@ function BudgetsScreenContent({ navigation }: { navigation: { navigate: (screen:
         profileQuery.refetch(),
         dashboardQuery.refetch(),
         budgetsQuery.refetch(),
+        queryClient.invalidateQueries({ queryKey: ["fixed-expenses", selectedHouseholdId] }),
+        queryClient.invalidateQueries({ queryKey: ["fixed-expense-periods", selectedHouseholdId] }),
       ])
     } finally {
       setRefreshing(false)
@@ -182,21 +194,22 @@ function BudgetsScreenContent({ navigation }: { navigation: { navigate: (screen:
                 },
               ]}
             >
-        <Text style={styles.title}>
-          Presupuesto{'\n'}del mes
-        </Text>
+        <SegmentedToggle
+          onChange={setSegment}
+          options={BUDGET_SEGMENTS}
+          value={segment}
+          width="100%"
+        />
 
-        {budgets?.length ? (
-          <Pressable
-            accessibilityRole="button"
-            style={styles.createBudgetButton}
+        {segment === "month" ? (
+          <>
+        <View style={styles.sectionHeader}>
+          <Text style={styles.title}>Presupuesto del mes</Text>
+          <CircleAddButton
+            accessibilityLabel="Crear presupuesto"
             onPress={openCreateBudget}
-          >
-            <Text style={styles.createBudgetButtonText}>
-              Crear presupuesto
-            </Text>
-          </Pressable>
-        ) : null}
+          />
+        </View>
 
         <View style={styles.list}>
           {budgets?.length ? (
@@ -324,13 +337,26 @@ function BudgetsScreenContent({ navigation }: { navigation: { navigate: (screen:
             />
           )}
         </View>
-        <FixedExpensesPreview
-          onViewAll={() => navigation.navigate("FixedExpenses")}
+          </>
+        ) : (
+          <>
+        <View style={styles.sectionHeader}>
+          <Text style={styles.title}>Gastos fijos</Text>
+          <CircleAddButton
+            accessibilityLabel="Agregar gasto fijo"
+            onPress={() => {
+              void openCreateTransaction("fixed")
+            }}
+          />
+        </View>
+        <FixedExpenseList
           onCreate={() => {
             void openCreateTransaction("fixed")
           }}
           onEdit={openEditFixedExpense}
         />
+          </>
+        )}
             </View>
           </View>
         </ScrollView>
@@ -420,30 +446,20 @@ const styles =
       alignItems: "center",
     },
 
+    sectionHeader: {
+      alignItems: "center",
+      flexDirection: "row",
+      gap: 12,
+    },
+
     title: {
       color: colors.foreground,
+      flex: 1,
       fontFamily: fonts.sansSemibold,
       fontSize: 22,
       letterSpacing: -0.4,
       lineHeight: 26,
       fontWeight: "600",
-    },
-
-    createBudgetButton: {
-      width: "100%",
-      backgroundColor: colors.brand,
-      borderRadius: radii.sm,
-      paddingHorizontal: 20,
-      paddingVertical: 15,
-      alignItems: "center",
-      justifyContent: "center",
-    },
-
-    createBudgetButtonText: {
-      color: colors.brandForeground,
-      fontFamily: fonts.sansSemibold,
-      fontSize: 16,
-      lineHeight: 16,
     },
 
     list: {
