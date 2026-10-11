@@ -1,14 +1,7 @@
 // @ts-check
 import React, { memo, useCallback, useRef, useState } from "react";
 import { StyleSheet, View, ViewStyle } from "react-native";
-import {
-  Canvas,
-  Fill,
-  Shader,
-  ImageShader,
-  makeImageFromView,
-  type SkImage,
-} from "@shopify/react-native-skia";
+import { Canvas, Fill, Shader } from "@shopify/react-native-skia";
 import {
   useSharedValue,
   withTiming,
@@ -38,8 +31,6 @@ export const SiriProvider: React.FC<IAppleIntelligenceProvider> &
   }: IAppleIntelligenceProvider & React.ComponentProps<typeof SiriProvider>):
     | (React.ReactNode & React.JSX.Element & React.ReactElement)
     | null => {
-    const viewRef = useRef<View>(null);
-    const [snapshot, setSnapshot] = useState<SkImage | null>(null);
     const [active, setActive] = useState<boolean>(false);
     const [layout, setLayout] = useState<{ width: number; height: number }>({
       width: 0,
@@ -70,12 +61,11 @@ export const SiriProvider: React.FC<IAppleIntelligenceProvider> &
       frameCallback.setActive(false);
       busyRef.current = false;
       setActive(false);
-      setSnapshot(null);
       setOverlayContent(null);
     }, [frameCallback]);
 
     const toggle = useCallback(
-      async (options?: ISiriToggleOptions) => {
+      (options?: ISiriToggleOptions) => {
         if (active) {
           busyRef.current = true;
           intensity.value = withTiming<number>(
@@ -96,40 +86,21 @@ export const SiriProvider: React.FC<IAppleIntelligenceProvider> &
           return;
         }
 
-        if (
-          busyRef.current ||
-          !viewRef.current ||
-          layout.width === 0 ||
-          layout.height === 0
-        )
-          return;
+        if (busyRef.current || layout.width === 0 || layout.height === 0) return;
+
         busyRef.current = true;
+        applyConfig(options);
+        intensity.value = 0;
+        iTime.value = 0;
+        overlayOpacity.value = 1;
+        setActive(true);
+        frameCallback.setActive(true);
+        busyRef.current = false;
 
-        try {
-          const image = await makeImageFromView(viewRef);
-          if (!image) {
-            busyRef.current = false;
-            return;
-          }
-
-          applyConfig(options);
-          intensity.value = 0;
-          iTime.value = 0;
-          overlayOpacity.value = 1;
-
-          setSnapshot(image);
-          setActive(true);
-          frameCallback.setActive(true);
-          busyRef.current = false;
-
-          intensity.value = withTiming(0.5, {
-            duration: introDuration,
-            easing: Easing.bezier(0.25, 0.1, 0.25, 1),
-          });
-        } catch (err) {
-          busyRef.current = false;
-          console.warn("[SiriProvider]", err);
-        }
+        intensity.value = withTiming(0.5, {
+          duration: introDuration,
+          easing: Easing.bezier(0.25, 0.1, 0.25, 1),
+        });
       },
       [
         active,
@@ -152,35 +123,31 @@ export const SiriProvider: React.FC<IAppleIntelligenceProvider> &
     return (
       <SiriContext.Provider value={{ toggle, isActive: active, setOverlay }}>
         <View
-          ref={viewRef}
           style={styles.container}
-          collapsable={false}
           onLayout={(e) => {
             const { width, height } = e.nativeEvent.layout;
-            setLayout({ width, height });
+            setLayout((current) =>
+              current.width === width && current.height === height
+                ? current
+                : { width, height },
+            );
           }}
         >
           {children}
+          {active && layout.width > 0 && (
+            <Animated.View pointerEvents="none" style={[styles.overlay, overlayStyle]}>
+              <Canvas
+                opaque={false}
+                pointerEvents="none"
+                style={{ width: layout.width, height: layout.height }}
+              >
+                <Fill>
+                  <Shader source={SHADER_SOURCE} uniforms={uniforms} />
+                </Fill>
+              </Canvas>
+            </Animated.View>
+          )}
         </View>
-        {active && snapshot && layout.width > 0 && (
-          <Animated.View
-            style={[styles.overlay, overlayStyle]}
-            pointerEvents="none"
-          >
-            <Canvas style={{ width: layout.width, height: layout.height }}>
-              <Fill>
-                <Shader source={SHADER_SOURCE} uniforms={uniforms}>
-                  <ImageShader
-                    image={snapshot}
-                    fit="cover"
-                    width={layout.width}
-                    height={layout.height}
-                  />
-                </Shader>
-              </Fill>
-            </Canvas>
-          </Animated.View>
-        )}
         {overlayContent}
       </SiriContext.Provider>
     );

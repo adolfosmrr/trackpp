@@ -93,10 +93,11 @@ function AiConversationContent({ route, navigation }: AiConversationScreenProps)
     }
   }, [isActive, isPending, toggle])
 
-  function handleSend() {
-    if (sendMessage(input)) {
-      setInput("")
-    }
+  function handleSend(text?: string) {
+    const message = text ?? input
+    if (isPending || !householdId || !message.trim()) return
+    setInput("")
+    sendMessage(message)
   }
 
   return (
@@ -124,9 +125,7 @@ function AiConversationContent({ route, navigation }: AiConversationScreenProps)
                 <Pressable
                   key={suggestion}
                   style={styles.suggestion}
-                  onPress={() => {
-                    if (sendMessage(suggestion)) setInput("")
-                  }}
+                  onPress={() => handleSend(suggestion)}
                   disabled={isPending || !householdId}
                 >
                   <Text style={styles.suggestionText}>{suggestion}</Text>
@@ -180,11 +179,11 @@ function AiConversationContent({ route, navigation }: AiConversationScreenProps)
             multiline
             maxLength={500}
             editable={Boolean(householdId)}
-            onSubmitEditing={handleSend}
+            onSubmitEditing={() => handleSend()}
           />
           <Pressable
             style={[styles.sendButton, (!input.trim() || isPending || !householdId) && styles.disabled]}
-            onPress={handleSend}
+            onPress={() => handleSend()}
             disabled={!input.trim() || isPending || !householdId}
           >
             <Svg width={15} height={15} viewBox="0 0 15 15" fill="none">

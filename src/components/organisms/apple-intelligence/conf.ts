@@ -4,7 +4,6 @@ const SHADER_SOURCE = Skia.RuntimeEffect.Make(`
   uniform float  iTime;
   uniform float  intensity;
   uniform float2 iResolution;
-  uniform shader contents;
 
   uniform float  uMargin;
   uniform float  uExcess;
@@ -55,12 +54,6 @@ const SHADER_SOURCE = Skia.RuntimeEffect.Make(`
     return dot(float4(31.316), n);
   }
 
-  float circle(float2 st, float2 center, float radius) {
-    float2 dist = st - center;
-    float dd = dot(dist, dist) * 4.0;
-    return smoothstep(radius - radius * 0.5, radius, dd);
-  }
-
   float3 hsl2rgb(float h, float s, float l) {
     float3 rgb = clamp(abs(mod(h * 6.0 + float3(0.0, 4.0, 2.0), 6.0) - 3.0) - 1.0, 0.0, 1.0);
     return l + s * (rgb - 0.5) * (1.0 - abs(2.0 * l - 1.0));
@@ -99,19 +92,12 @@ const SHADER_SOURCE = Skia.RuntimeEffect.Make(`
     float2 offset = max(point - corner, 0.0);
     float dist    = length(offset / radius) - 1.0;
 
-    float2 st   = uv;
-    float  r    = uWaveSpeed * range;
-    float  c1   = circle(st, uWaveOrigin, r);
-    float  wpct = 1.0 - (c1 * (1.0 - c1));
-    float3 cc   = pow(mix(float3(1.069, 1.077, 1.100), float3(1.0), wpct), float3(8.0));
-    float  wS   = st.y * uWaveStrength * range * (wpct - st.y);
-    st.y += wS * (1.0 - range);
-
-    half4 foreground = contents.eval(st * iResolution);
-
+    float wave = 0.85 + 0.15 * sin(
+      iTime * uWaveSpeed + uv.y * uWaveStrength + uWaveOrigin.x + uWaveOrigin.y
+    );
     float vol   = 0.35 + 0.15 * sin(iTime * 2.0);
     float noise = max(0.0, snoise3(float3(uv * uNoiseScale, iTime / uNoiseSpeed)) * (vol * uNoiseStrength));
-    float alpha = smoothstep(uMargin / uRadius, (uMargin + uExcess) / uRadius, dist + noise);
+    float edge = smoothstep(uMargin / uRadius, (uMargin + uExcess) / uRadius, dist + noise);
 
     float angle = atan(uv.y - 0.5, uv.x - 0.5);
     float t     = fract((angle / 6.2832) + iTime * uGlowSpeed);
@@ -126,15 +112,7 @@ const SHADER_SOURCE = Skia.RuntimeEffect.Make(`
     float shimmer = 0.5 + 0.5 * sin(angle * 3.0 + iTime * uShimmerSpeed);
     glow = mix(glow, glow * 1.4, shimmer * uShimmerAmount);
 
-    half4 background = half4(half3(glow), 1.0);
-
-    float edge   = alpha * (1.0 - c1);
-    float bgMask = 1.0 - (1.0 - edge) * (1.0 - (1.0 - c1) * (1.0 - range) * 0.5);
-
-    half4 color = mix(foreground, background, half4(bgMask * intensity));
-    color *= half4(half3(cc), 1.0);
-
-    return color;
+    return half4(half3(glow), half(edge * range * wave));
   }
 `)!;
 
