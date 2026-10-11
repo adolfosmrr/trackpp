@@ -8,7 +8,12 @@ import {
   type ViewStyle,
 } from "react-native"
 import { Canvas, Fill, Group, Shader, Skia, vec } from "@shopify/react-native-skia"
-import { useDerivedValue, useFrameCallback, useSharedValue } from "react-native-reanimated"
+import {
+  useDerivedValue,
+  useFrameCallback,
+  useSharedValue,
+  useTimestamp,
+} from "react-native-reanimated"
 
 import { gradients, type GradientName, type GradientPalette } from "../../theme"
 
@@ -18,6 +23,11 @@ type GradientBackgroundProps = {
   grain?: number
   /** Draw a dot at each former grid intersection. Spacing is in layout points. */
   dotSpacing?: number
+  /**
+   * Grow and shrink each dot from low-frequency noise and drifting ripples.
+   * The clock runs only while this is on and motion is allowed.
+   */
+  dotMotion?: boolean
   /** Bottom-only corner radius. The field is clipped to it; content above stays unclipped. */
   bottomRadius?: number
   style?: StyleProp<ViewStyle>
@@ -60,11 +70,42 @@ uniform float2 point3;
 uniform float dotSpacing;
 uniform float dotRadius;
 uniform float4 dotColor;
+uniform float dotTime;
+uniform float dotMotion;
 
 float hash(float2 p) {
   float3 p3 = fract(float3(p.xyx) * 0.1031);
   p3 += dot(p3, p3.yzx + 33.33);
   return fract((p3.x + p3.y) * p3.z);
+}
+
+float valueNoise(float2 p) {
+  float2 i = floor(p);
+  float2 f = fract(p);
+  float2 u = f * f * (3.0 - 2.0 * f);
+  float a = hash(i);
+  float b = hash(i + float2(1.0, 0.0));
+  float c = hash(i + float2(0.0, 1.0));
+  float d = hash(i + float2(1.0, 1.0));
+  return mix(mix(a, b, u.x), mix(c, d, u.x), u.y);
+}
+
+float ripple(float2 cell, float2 center, float frequency, float speed) {
+  float dist = length(cell - center);
+  return 0.5 + 0.5 * sin(dist * frequency - dotTime * speed);
+}
+
+float organicDotScale(float2 cell) {
+  float noise = valueNoise(cell * 0.22 + float2(dotTime * 0.15, dotTime * 0.09));
+  float2 c0 = float2(8.0 + sin(dotTime * 0.23) * 12.0, 14.0 + cos(dotTime * 0.19) * 18.0);
+  float2 c1 = float2(22.0 + cos(dotTime * 0.17) * 10.0, 30.0 + sin(dotTime * 0.21) * 16.0);
+  float2 c2 = float2(14.0 + sin(dotTime * 0.13 + 2.2) * 11.0, 46.0 + cos(dotTime * 0.16) * 14.0);
+  float ripples = (
+    ripple(cell, c0, 0.55, 1.4) +
+    ripple(cell, c1, 0.42, 1.9) +
+    ripple(cell, c2, 0.33, 1.1)
+  ) / 3.0;
+  return 0.6 + 0.6 * mix(noise, ripples, 0.65);
 }
 
 float weightAt(float2 uv, float2 center, float aspect) {
@@ -100,7 +141,11 @@ half4 main(float2 fragCoord) {
   float2 gridLocal = mod(fragCoord, float2(spacing));
   float2 gridDelta = min(gridLocal, float2(spacing) - gridLocal);
   float gridDist = length(gridDelta);
-  float dotMask = (1.0 - smoothstep(max(dotRadius - 0.5, 0.0), dotRadius + 0.45, gridDist)) * step(0.5, dotSpacing);
+  float radius = dotRadius;
+  if (dotMotion > 0.5) {
+    radius *= organicDotScale(floor(fragCoord / float2(spacing)));
+  }
+  float dotMask = (1.0 - smoothstep(max(radius - 0.5, 0.0), radius + 0.45, gridDist)) * step(0.5, dotSpacing);
   col = mix(col, dotColor.rgb, dotMask * dotColor.a);
   return half4(col, 1.0);
 }
@@ -120,6 +165,30 @@ function hexToRgba(value: string): [number, number, number, number] {
     (parsed & 255) / 255,
     1,
   ]
+}
+
+function usePrefersReducedMotion() {
+  const [reduceMotion, setReduceMotion] = useState(false)
+
+  useEffect(() => {
+    let mounted = true
+
+    void AccessibilityInfo.isReduceMotionEnabled().then((enabled) => {
+      if (mounted) setReduceMotion(enabled)
+    })
+
+    const subscription = AccessibilityInfo.addEventListener(
+      "reduceMotionChanged",
+      setReduceMotion
+    )
+
+    return () => {
+      mounted = false
+      subscription.remove()
+    }
+  }, [])
+
+  return reduceMotion
 }
 
 function useFieldSize() {
@@ -152,7 +221,9 @@ function buildUniforms(
   height: number,
   grainAmount: number,
   dots: DotField,
-  time: number
+  time: number,
+  dotTime: number,
+  dotMotion: number
 ) {
   "worklet"
   return {
@@ -171,6 +242,8 @@ function buildUniforms(
     dotSpacing: dots.spacing,
     dotRadius: dots.radius,
     dotColor: dots.color,
+    dotTime,
+    dotMotion,
   }
 }
 
@@ -247,7 +320,7 @@ const StaticGradient = memo(function StaticGradient({
   const { width, height, onLayout } = useFieldSize()
   const colors = usePaletteColors(palette)
   const uniforms = useMemo(
-    () => buildUniforms(palette, colors, width, height, grainAmount, dots, 0),
+    () => buildUniforms(palette, colors, width, height, grainAmount, dots, 0, 0, 0),
     [colors, dots, grainAmount, height, palette, width]
   )
 
@@ -273,27 +346,9 @@ const AnimatedGradient = memo(function AnimatedGradient({
 }: FieldProps) {
   const { width, height, onLayout } = useFieldSize()
   const colors = usePaletteColors(palette)
-  const [reduceMotionEnabled, setReduceMotionEnabled] = useState(false)
+  const reduceMotion = usePrefersReducedMotion()
   const time = useSharedValue(0)
-  const motionEnabled = !reduceMotionEnabled
-
-  useEffect(() => {
-    let mounted = true
-
-    void AccessibilityInfo.isReduceMotionEnabled().then((enabled) => {
-      if (mounted) setReduceMotionEnabled(enabled)
-    })
-
-    const subscription = AccessibilityInfo.addEventListener(
-      "reduceMotionChanged",
-      setReduceMotionEnabled
-    )
-
-    return () => {
-      mounted = false
-      subscription.remove()
-    }
-  }, [])
+  const motionEnabled = !reduceMotion
 
   useFrameCallback((frameInfo) => {
     if (motionEnabled && frameInfo.timeSincePreviousFrame !== null) {
@@ -302,11 +357,11 @@ const AnimatedGradient = memo(function AnimatedGradient({
   }, motionEnabled)
 
   const stillUniforms = useMemo(
-    () => buildUniforms(palette, colors, width, height, grainAmount, dots, 0),
+    () => buildUniforms(palette, colors, width, height, grainAmount, dots, 0, 0, 0),
     [colors, dots, grainAmount, height, palette, width]
   )
   const driftingUniforms = useDerivedValue(
-    () => buildUniforms(palette, colors, width, height, grainAmount, dots, time.value),
+    () => buildUniforms(palette, colors, width, height, grainAmount, dots, time.value, 0, 0),
     [colors, dots, grainAmount, height, palette, time, width]
   )
 
@@ -323,11 +378,58 @@ const AnimatedGradient = memo(function AnimatedGradient({
   )
 })
 
+const PulsingGradient = memo(function PulsingGradient({
+  palette,
+  grainAmount,
+  dots,
+  bottomRadius,
+  style,
+}: FieldProps) {
+  const { width, height, onLayout } = useFieldSize()
+  const colors = usePaletteColors(palette)
+  // Reanimated 4 replaced useClock with useTimestamp. Mounted only while dots pulse.
+  const timestamp = useTimestamp(true)
+  const uniforms = useDerivedValue(
+    () =>
+      buildUniforms(
+        palette,
+        colors,
+        width,
+        height,
+        grainAmount,
+        dots,
+        0,
+        timestamp.value / 1000,
+        1
+      ),
+    [colors, dots, grainAmount, height, palette, timestamp, width]
+  )
+
+  return (
+    <GradientCanvas
+      bottomRadius={bottomRadius}
+      fallbackColor={palette.colors[0]}
+      height={height}
+      onLayout={onLayout}
+      style={style}
+      uniforms={uniforms}
+      width={width}
+    />
+  )
+})
+
+function MotionDots(props: FieldProps) {
+  const reduceMotion = usePrefersReducedMotion()
+  if (reduceMotion) return <StaticGradient {...props} />
+  return <PulsingGradient {...props} />
+}
+
 export const GradientBackground = memo(function GradientBackground({
   token = "topSection",
   animated = false,
   grain,
   dotSpacing = 0,
+  dotMotion = false,
   bottomRadius = 0,
   style,
 }: GradientBackgroundProps) {
@@ -340,7 +442,7 @@ export const GradientBackground = memo(function GradientBackground({
         : NO_DOTS,
     [dotSpacing]
   )
-  const Field = animated ? AnimatedGradient : StaticGradient
+  const Field = animated ? AnimatedGradient : dotMotion ? MotionDots : StaticGradient
 
   return (
     <Field
