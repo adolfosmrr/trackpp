@@ -7,12 +7,21 @@ import {
   type StyleProp,
   type ViewStyle,
 } from "react-native"
-import { Canvas, Fill, Group, Shader, Skia, vec } from "@shopify/react-native-skia"
 import {
+  Canvas,
+  Fill,
+  Group,
+  notifyChange,
+  Shader,
+  Skia,
+  useClock,
+  vec,
+} from "@shopify/react-native-skia"
+import {
+  useAnimatedReaction,
   useDerivedValue,
   useFrameCallback,
   useSharedValue,
-  useTimestamp,
 } from "react-native-reanimated"
 
 import { gradients, type GradientName, type GradientPalette } from "../../theme"
@@ -24,7 +33,7 @@ type GradientBackgroundProps = {
   /** Draw a dot at each former grid intersection. Spacing is in layout points. */
   dotSpacing?: number
   /**
-   * Grow and shrink each dot from low-frequency noise and drifting ripples.
+   * Soft moving patches where dots grow and brighten together.
    * The clock runs only while this is on and motion is allowed.
    */
   dotMotion?: boolean
@@ -79,33 +88,31 @@ float hash(float2 p) {
   return fract((p3.x + p3.y) * p3.z);
 }
 
-float valueNoise(float2 p) {
-  float2 i = floor(p);
-  float2 f = fract(p);
-  float2 u = f * f * (3.0 - 2.0 * f);
-  float a = hash(i);
-  float b = hash(i + float2(1.0, 0.0));
-  float c = hash(i + float2(0.0, 1.0));
-  float d = hash(i + float2(1.0, 1.0));
-  return mix(mix(a, b, u.x), mix(c, d, u.x), u.y);
+float blob(float2 uv, float2 center, float radius, float aspect) {
+  float2 delta = (uv - center) * float2(aspect, 1.0);
+  float falloff = length(delta) / max(radius, 0.001);
+  return exp(-falloff * falloff * 2.2);
 }
 
-float ripple(float2 cell, float2 center, float frequency, float speed) {
-  float dist = length(cell - center);
-  return 0.5 + 0.5 * sin(dist * frequency - dotTime * speed);
-}
-
-float organicDotScale(float2 cell) {
-  float noise = valueNoise(cell * 0.22 + float2(dotTime * 0.15, dotTime * 0.09));
-  float2 c0 = float2(8.0 + sin(dotTime * 0.23) * 12.0, 14.0 + cos(dotTime * 0.19) * 18.0);
-  float2 c1 = float2(22.0 + cos(dotTime * 0.17) * 10.0, 30.0 + sin(dotTime * 0.21) * 16.0);
-  float2 c2 = float2(14.0 + sin(dotTime * 0.13 + 2.2) * 11.0, 46.0 + cos(dotTime * 0.16) * 14.0);
-  float ripples = (
-    ripple(cell, c0, 0.55, 1.4) +
-    ripple(cell, c1, 0.42, 1.9) +
-    ripple(cell, c2, 0.33, 1.1)
-  ) / 3.0;
-  return 0.6 + 0.6 * mix(noise, ripples, 0.65);
+float dotEnergy(float2 uv, float aspect) {
+  float t = dotTime;
+  float2 c0 = float2(
+    0.50 + 0.38 * sin(t * 0.62) + 0.08 * sin(t * 0.27 + 1.1),
+    0.48 + 0.30 * cos(t * 0.51) + 0.07 * cos(t * 0.22 + 0.6)
+  );
+  float2 c1 = float2(
+    0.46 + 0.36 * cos(t * 0.74 + 2.0) + 0.07 * sin(t * 0.31 + 0.4),
+    0.54 + 0.32 * sin(t * 0.58 + 1.3)
+  );
+  float2 c2 = float2(
+    0.55 + 0.34 * sin(t * 0.49 + 3.7),
+    0.40 + 0.34 * cos(t * 0.66 + 2.2) + 0.06 * sin(t * 0.24 + 1.8)
+  );
+  return clamp(
+    blob(uv, c0, 0.20, aspect) + blob(uv, c1, 0.17, aspect) + blob(uv, c2, 0.18, aspect),
+    0.0,
+    1.0
+  );
 }
 
 float weightAt(float2 uv, float2 center, float aspect) {
@@ -141,12 +148,21 @@ half4 main(float2 fragCoord) {
   float2 gridLocal = mod(fragCoord, float2(spacing));
   float2 gridDelta = min(gridLocal, float2(spacing) - gridLocal);
   float gridDist = length(gridDelta);
-  float radius = dotRadius;
+  float inner = max(dotRadius - 0.5, 0.0);
+  float outer = dotRadius + 0.45;
+  float3 ink = dotColor.rgb;
+  float inkAlpha = dotColor.a;
   if (dotMotion > 0.5) {
-    radius *= organicDotScale(floor(fragCoord / float2(spacing)));
+    float energy = dotEnergy(uv, aspect);
+    float radius = dotRadius * mix(0.3, 1.8, energy);
+    float edge = mix(0.6, 1.4, energy);
+    inner = max(radius - edge, 0.0);
+    outer = radius + edge;
+    ink = mix(float3(0.078431, 0.239216, 0.172549), float3(0.243137, 0.811765, 0.556863), energy);
+    inkAlpha = mix(0.28, 1.0, energy);
   }
-  float dotMask = (1.0 - smoothstep(max(radius - 0.5, 0.0), radius + 0.45, gridDist)) * step(0.5, dotSpacing);
-  col = mix(col, dotColor.rgb, dotMask * dotColor.a);
+  float dotMask = (1.0 - smoothstep(inner, outer, gridDist)) * step(0.5, dotSpacing);
+  col = mix(col, ink, dotMask * inkAlpha);
   return half4(col, 1.0);
 }
 `)
@@ -174,12 +190,12 @@ function usePrefersReducedMotion() {
     let mounted = true
 
     void AccessibilityInfo.isReduceMotionEnabled().then((enabled) => {
-      if (mounted) setReduceMotion(enabled)
+      if (mounted) setReduceMotion(enabled === true)
     })
 
     const subscription = AccessibilityInfo.addEventListener(
       "reduceMotionChanged",
-      setReduceMotion
+      (enabled) => setReduceMotion(enabled === true)
     )
 
     return () => {
@@ -387,11 +403,15 @@ const PulsingGradient = memo(function PulsingGradient({
 }: FieldProps) {
   const { width, height, onLayout } = useFieldSize()
   const colors = usePaletteColors(palette)
-  // Reanimated 4 replaced useClock with useTimestamp. Mounted only while dots pulse.
-  const timestamp = useTimestamp(true)
-  const uniforms = useDerivedValue(
-    () =>
-      buildUniforms(
+  const clock = useClock()
+  const uniforms = useSharedValue(
+    buildUniforms(palette, colors, width, height, grainAmount, dots, 0, 0, 1)
+  )
+
+  useAnimatedReaction(
+    () => clock.value,
+    (timeMs) => {
+      uniforms.value = buildUniforms(
         palette,
         colors,
         width,
@@ -399,10 +419,12 @@ const PulsingGradient = memo(function PulsingGradient({
         grainAmount,
         dots,
         0,
-        timestamp.value / 1000,
+        timeMs / 1000,
         1
-      ),
-    [colors, dots, grainAmount, height, palette, timestamp, width]
+      )
+      notifyChange(uniforms)
+    },
+    [clock, colors, dots, grainAmount, height, palette, uniforms, width]
   )
 
   return (
