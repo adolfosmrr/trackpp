@@ -4,9 +4,10 @@ import {
   ScrollView,
   StyleSheet,
   Text,
-  TextInput,
   View,
 } from "react-native"
+import { sheetChrome } from "../../../components/layout/AppSheet"
+import { TextField } from "../../../components/inputs/TextField"
 import { colors, fonts, radii } from "../../../theme"
 import { useEffect, useState, type ReactNode } from "react"
 
@@ -75,7 +76,7 @@ export function TransactionFiltersModal({
       onRequestClose={onCancel}
     >
       <Pressable style={styles.backdrop} onPress={onCancel}>
-        <Pressable style={styles.sheet} onPress={() => {}}>
+        <Pressable style={[styles.sheet, sheetChrome.topCorners]} onPress={() => {}}>
           <View style={[styles.sheetHeader, hasScrolled && styles.sheetHeaderShadow]}>
             <Text style={styles.title}>Filtrar movimientos</Text>
             <Pressable onPress={onCancel} accessibilityLabel="Cerrar filtros">
@@ -247,14 +248,12 @@ function Option({ label, selected, onPress, grid = false }: { label: string; sel
 
 function DateInput({ value, placeholder, onChangeText }: { value: string; placeholder: string; onChangeText: (value: string) => void }) {
   return (
-    <TextInput
+    <TextField
       value={value}
       placeholder={placeholder}
-      placeholderTextColor={colors.mutedForeground}
       onChangeText={onChangeText}
       autoCapitalize="none"
       keyboardType="numbers-and-punctuation"
-      style={styles.dateInput}
     />
   )
 }
@@ -268,6 +267,7 @@ const styles = StyleSheet.create({
   sheet: {
     backgroundColor: colors.background,
     maxHeight: "88%",
+    overflow: "hidden",
   },
   sheetHeader: {
     alignItems: "center",
@@ -342,16 +342,6 @@ const styles = StyleSheet.create({
   },
   selectedOptionText: {
     color: colors.brandForeground,
-  },
-  dateInput: {
-    backgroundColor: colors.field,
-    borderColor: colors.borderStrong,
-    borderRadius: radii.sm,
-    borderWidth: 1,
-    color: colors.foreground,
-    fontFamily: fonts.sans,
-    paddingHorizontal: 12,
-    paddingVertical: 9,
   },
   rangeInputs: {
     gap: 8,

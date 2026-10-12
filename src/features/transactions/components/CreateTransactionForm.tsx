@@ -1,14 +1,14 @@
 import { useEffect, useRef, useState } from "react"
 import {
   Alert,
-  Pressable,
   StyleSheet,
   Switch,
   Text,
   View,
 } from "react-native"
 import { Button } from "../../../components/buttons/Button"
-import { colors, fonts, radii } from "../../../theme"
+import { FieldRow, fieldStyles } from "../../../components/inputs/TextField"
+import { colors, fonts } from "../../../theme"
 import {
   BottomSheetModal,
   BottomSheetTextInput,
@@ -488,11 +488,9 @@ export function CreateTransactionForm({
     const category = selectedCategoriesByHousehold[target.householdId]
 
     return (
-      <Pressable
+      <FieldRow
         key={target.householdId}
-        accessibilityRole="button"
         onPress={() => openCategorySelector(target.householdId)}
-        style={[styles.field, styles.darkField]}
       >
         <Text style={styles.fieldLabel}>
           Categoría {household?.name ?? target.householdId}
@@ -509,16 +507,14 @@ export function CreateTransactionForm({
           ) : null}
           <FieldChevronIcon />
         </View>
-      </Pressable>
+      </FieldRow>
     )
   }
 
   function renderFixedCategoryField() {
     return (
-      <Pressable
-        accessibilityRole="button"
+      <FieldRow
         onPress={openFixedCategorySelector}
-        style={[styles.field, styles.darkField]}
       >
         <Text style={styles.fieldLabel}>Categoría</Text>
         <View style={styles.fieldValueGroup}>
@@ -531,7 +527,7 @@ export function CreateTransactionForm({
           </Text>
           <FieldChevronIcon />
         </View>
-      </Pressable>
+      </FieldRow>
     )
   }
 
@@ -555,7 +551,7 @@ export function CreateTransactionForm({
       <BottomSheetTextInput
         accessibilityLabel="Monto"
         autoFocus={!isEditingFixedExpense}
-        style={[styles.field, styles.input]}
+        style={[fieldStyles.surface, fieldStyles.text, fieldStyles.pill]}
         placeholder="Monto"
         placeholderTextColor={colors.mutedForeground}
         keyboardType="decimal-pad"
@@ -564,7 +560,7 @@ export function CreateTransactionForm({
       />
       <BottomSheetTextInput
         accessibilityLabel="Título"
-        style={[styles.field, styles.input]}
+        style={[fieldStyles.surface, fieldStyles.text, fieldStyles.pill]}
         placeholder="Título"
         placeholderTextColor={colors.mutedForeground}
         value={title}
@@ -574,7 +570,7 @@ export function CreateTransactionForm({
       {isFixedMode ? (
         <>
           {renderFixedCategoryField()}
-          <View style={[styles.field, styles.dayField]}>
+          <View style={[fieldStyles.surface, fieldStyles.row, fieldStyles.pill]}>
             <Text style={styles.dayFieldLabel}>Día de cobro</Text>
             <BottomSheetTextInput
               style={styles.dayInput}
@@ -584,7 +580,7 @@ export function CreateTransactionForm({
               onChangeText={setChargeDay}
             />
           </View>
-          <View style={[styles.field, styles.dayField]}>
+          <View style={[fieldStyles.surface, fieldStyles.row, fieldStyles.pill]}>
             <Text style={styles.dayFieldLabel}>Día de vencimiento</Text>
             <BottomSheetTextInput
               style={styles.dayInput}
@@ -603,7 +599,7 @@ export function CreateTransactionForm({
               value={frequency}
             />
           </View>
-          <View style={[styles.field, styles.dayField]}>
+          <View style={[fieldStyles.surface, fieldStyles.row, fieldStyles.pill]}>
             <Text style={styles.dayFieldLabel}>Débito automático</Text>
             <Switch
               accessibilityLabel="Débito automático"
@@ -637,10 +633,8 @@ export function CreateTransactionForm({
         <>
           {primaryTarget ? renderCategoryField(primaryTarget) : null}
 
-          <Pressable
-            accessibilityRole="button"
+          <FieldRow
             onPress={() => householdSelectorRef.current?.present()}
-            style={[styles.field, styles.darkField]}
           >
             <Text style={styles.fieldLabel}>Añadir a Espacio</Text>
             <View style={styles.fieldValueGroup}>
@@ -660,7 +654,7 @@ export function CreateTransactionForm({
               </Text>
               <FieldChevronIcon />
             </View>
-          </Pressable>
+          </FieldRow>
 
           <View style={styles.targetsSection}>
             {additionalTargets.map(renderCategoryField)}
@@ -728,29 +722,6 @@ const styles = StyleSheet.create({
   container: { padding: 24 },
   fieldsStack: { gap: 11, marginTop: 40 },
   targetsSection: { gap: 11 },
-  field: {
-    width: "100%",
-    borderRadius: radii.sm,
-    paddingHorizontal: 20,
-    paddingVertical: 15,
-  },
-  input: {
-    backgroundColor: colors.field,
-    borderColor: colors.borderStrong,
-    borderWidth: 1,
-    color: colors.foreground,
-    fontFamily: fonts.sans,
-    fontSize: 16,
-    lineHeight: 16,
-  },
-  dayField: {
-    alignItems: "center",
-    backgroundColor: colors.field,
-    borderColor: colors.borderStrong,
-    borderWidth: 1,
-    flexDirection: "row",
-    justifyContent: "space-between",
-  },
   dayFieldLabel: {
     color: colors.mutedForeground,
     fontFamily: fonts.sansMedium,
@@ -765,14 +736,6 @@ const styles = StyleSheet.create({
     minWidth: 32,
     padding: 0,
     textAlign: "right",
-  },
-  darkField: {
-    alignItems: "center",
-    backgroundColor: colors.field,
-    borderColor: colors.borderStrong,
-    borderWidth: 1,
-    flexDirection: "row",
-    justifyContent: "space-between",
   },
   fieldLabel: {
     color: colors.foreground,

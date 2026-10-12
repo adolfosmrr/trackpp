@@ -1,13 +1,12 @@
-import { forwardRef, useCallback, useState } from "react"
+import { forwardRef, useState } from "react"
 import { Pressable, StyleSheet, Text, useWindowDimensions, View } from "react-native"
 import { Button } from "../../../components/buttons/Button"
+import { AppSheet } from "../../../components/layout/AppSheet"
 import { colors, fonts, radii } from "../../../theme"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import {
-  BottomSheetFooter,
   BottomSheetModal,
   BottomSheetScrollView,
-  type BottomSheetFooterProps,
 } from "@gorhom/bottom-sheet"
 
 import type { HouseholdMembership } from "../../households/types"
@@ -58,23 +57,9 @@ export const HouseholdSelectorSheet = forwardRef<
     )
   }
 
-  const renderFooter = useCallback(
-    (props: BottomSheetFooterProps) => (
-      <BottomSheetFooter
-        {...props}
-        bottomInset={insets.bottom}
-        style={styles.footer}
-      >
-        <Button label="Listo" onPress={onDone} tone="brand" />
-      </BottomSheetFooter>
-    ),
-    [insets.bottom, onDone],
-  )
-
   return (
-    <BottomSheetModal
+    <AppSheet
       ref={ref}
-      style={styles.sheetContainer}
       onChange={(index) => {
         if (index === -1) {
           setHasScrolled(false)
@@ -84,13 +69,10 @@ export const HouseholdSelectorSheet = forwardRef<
       maxDynamicContentSize={height * 0.6}
       enablePanDownToClose
       stackBehavior="push"
-      backgroundStyle={styles.background}
       backdropComponent={(props) => <TransactionBlurBackdrop {...props} />}
-      footerComponent={renderFooter}
     >
       <BottomSheetScrollView
         stickyHeaderIndices={[0]}
-        enableFooterMarginAdjustment
         onScroll={(event) => {
           const next = event.nativeEvent.contentOffset.y > 2
 
@@ -151,22 +133,15 @@ export const HouseholdSelectorSheet = forwardRef<
             )
           })}
         </View>
+        <View style={styles.done}>
+          <Button label="Listo" onPress={onDone} tone="brand" />
+        </View>
       </BottomSheetScrollView>
-    </BottomSheetModal>
+    </AppSheet>
   )
 })
 
 const styles = StyleSheet.create({
-  sheetContainer: {
-    borderTopLeftRadius: radii.lg,
-    borderTopRightRadius: radii.lg,
-    overflow: "hidden",
-  },
-  background: {
-    backgroundColor: colors.popover,
-    borderTopLeftRadius: radii.lg,
-    borderTopRightRadius: radii.lg,
-  },
   content: {
     gap: 12,
     paddingHorizontal: 0,
@@ -189,11 +164,9 @@ const styles = StyleSheet.create({
     borderBottomColor: colors.border,
     borderBottomWidth: 1,
   },
-  footer: {
-    backgroundColor: colors.popover,
-    paddingHorizontal: 24,
-    paddingTop: 20,
-    paddingBottom: 16,
+  done: {
+    paddingHorizontal: 20,
+    paddingTop: 16,
   },
   title: {
     color: colors.foreground,

@@ -27,6 +27,7 @@ import type { NativeStackScreenProps } from "@react-navigation/native-stack"
 import { ApiError } from "../../../services/api"
 import type { AppStackParamList } from "../../../navigation/types"
 import { useHouseholdStore } from "../../../store/householdStore"
+import { fieldStyles } from "../../../components/inputs/TextField"
 import { GradientBackground } from "../../../components/visual/GradientBackground"
 import { THINKING_PLACEHOLDER, useFinancialChat } from "../hooks/useFinancialChat"
 import { useReduceMotion, useTypewriter } from "../hooks/useTypewriter"
@@ -228,7 +229,7 @@ export function AiConversationScreen({ route, navigation }: AiConversationScreen
         </ScrollView>
 
         <View style={[styles.composerWrapper, { paddingBottom: Math.max(insets.bottom, 8) }]}>
-          <View style={styles.composer}>
+          <View style={[styles.composer, fieldStyles.multilineRadius]}>
             <TextInput
               style={styles.input}
               value={input}
@@ -315,7 +316,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     backgroundColor: colors.field,
     borderColor: colors.borderStrong,
-    borderRadius: radii.lg,
     borderWidth: 1,
     flexDirection: "row",
     gap: 12,

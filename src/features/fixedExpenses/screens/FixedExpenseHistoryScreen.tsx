@@ -5,13 +5,13 @@ import {
   ScrollView,
   StyleSheet,
   Text,
-  TextInput,
   View,
 } from "react-native"
 import type { NativeStackScreenProps } from "@react-navigation/native-stack"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 
 import { Button } from "../../../components/buttons/Button"
+import { TextField } from "../../../components/inputs/TextField"
 import { BackLink } from "../../../components/navigation/BackLink"
 import { colors, fonts, layout, radii } from "../../../theme"
 import { formatMoney } from "../../../utils/formatMoney"
@@ -114,13 +114,11 @@ export function FixedExpenseHistoryScreen({
             <Text style={styles.message}>
               El monto nuevo rige desde el período que elijas. Los anteriores conservan el esperado que tenían.
             </Text>
-            <TextInput
+            <TextField
               accessibilityLabel="Nuevo monto"
               keyboardType="decimal-pad"
               onChangeText={setAmount}
               placeholder="Nuevo monto"
-              placeholderTextColor={colors.mutedForeground}
-              style={styles.input}
               value={amount}
             />
             {periodOptions.length > 0 ? (
@@ -227,17 +225,6 @@ const styles = StyleSheet.create({
     fontFamily: fonts.sans,
     fontSize: 14,
     lineHeight: 20,
-  },
-  input: {
-    backgroundColor: colors.field,
-    borderColor: colors.borderStrong,
-    borderRadius: radii.sm,
-    borderWidth: 1,
-    color: colors.foreground,
-    fontFamily: fonts.sans,
-    fontSize: 16,
-    minHeight: 52,
-    paddingHorizontal: 16,
   },
   row: {
     alignItems: "center",

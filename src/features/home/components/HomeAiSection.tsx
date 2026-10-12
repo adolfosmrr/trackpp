@@ -27,7 +27,7 @@ export function HomeAiSection() {
   )
   const cards = insightsQuery.isError
     ? []
-    : (insightsQuery.data ?? []).filter((insight) => insight.message.trim().length > 0)
+    : (insightsQuery.data ?? []).filter((insight) => isActionableInsightCopy(insight.message))
   const narrative = insightQuery.isError ? undefined : insightQuery.data
   const hasNarrative = hasInsightCopy(narrative)
 
@@ -74,10 +74,18 @@ export function HomeAiSection() {
   )
 }
 
+const EMPTY_INSIGHT_COPY = "Tus finanzas no muestran alertas importantes por ahora."
+
 function hasInsightCopy(insight: HomeAiInsight | undefined) {
   if (!insight) return false
-  if (insight.intro.trim().length > 0) return true
-  return insight.groups.some((group) => group.text.trim().length > 0)
+  if (isActionableInsightCopy(insight.intro)) return true
+  return insight.groups.some((group) => isActionableInsightCopy(group.text))
+}
+
+function isActionableInsightCopy(text: string) {
+  const normalized = text.trim().replace(/\s+/g, " ").replace(/[.。]$/, "")
+  const empty = EMPTY_INSIGHT_COPY.replace(/[.。]$/, "")
+  return normalized.length > 0 && normalized !== empty
 }
 
 const styles = StyleSheet.create({

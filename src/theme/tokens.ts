@@ -55,6 +55,12 @@ export const spacing = {
 export const layout = {
   /** Horizontal inset for list sections. Home's recent movements is the reference. */
   sectionInset: spacing.xl,
+  /**
+   * Height of the native tab bar's glass pill.
+   * Native tabs render `UITabBar` and do not publish `BottomTabBarHeightContext`.
+   * A captured `_UITabBarPlatterView` frame is 62pt tall.
+   */
+  tabBarPill: 62,
 } as const
 
 const RADIUS_XL = 16

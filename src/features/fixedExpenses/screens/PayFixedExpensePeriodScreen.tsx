@@ -4,14 +4,14 @@ import {
   Alert,
   StyleSheet,
   Text,
-  TextInput,
   View,
 } from "react-native"
 import type { NativeStackScreenProps } from "@react-navigation/native-stack"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
-import { colors, fonts, radii } from "../../../theme"
+import { colors, fonts } from "../../../theme"
 
 import { Button } from "../../../components/buttons/Button"
+import { TextField } from "../../../components/inputs/TextField"
 import { BackLink } from "../../../components/navigation/BackLink"
 import { formatMoney } from "../../../utils/formatMoney"
 
@@ -93,10 +93,8 @@ export function PayFixedExpensePeriodScreen({
       <Text style={styles.meta}>Pagado: {formatMoney(period.totalPaid)}</Text>
       <Text style={styles.meta}>Pendiente: {formatMoney(period.remaining)}</Text>
 
-      <TextInput
-        style={styles.input}
+      <TextField
         placeholder="Monto a pagar"
-        placeholderTextColor={colors.mutedForeground}
         keyboardType="decimal-pad"
         value={amount}
         onChangeText={setAmount}
@@ -122,5 +120,4 @@ const styles = StyleSheet.create({
   center: { flex: 1, backgroundColor: colors.background, alignItems: "center", justifyContent: "center", padding: 24 },
   title: { color: colors.foreground, fontFamily: fonts.sansSemibold, fontSize: 22, fontWeight: "600" },
   meta: { color: colors.mutedForeground, fontFamily: fonts.mono, fontSize: 14 },
-  input: { borderWidth: 1, borderColor: colors.borderStrong, borderRadius: radii.sm, backgroundColor: colors.field, color: colors.foreground, fontFamily: fonts.sans, padding: 12 },
 })

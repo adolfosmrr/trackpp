@@ -2,10 +2,10 @@ import { forwardRef, useEffect, useImperativeHandle, useState } from "react"
 import {
   Alert,
   StyleSheet,
-  TextInput,
   View,
 } from "react-native"
-import { colors, fonts, radii } from "../../../theme"
+
+import { TextField } from "../../../components/inputs/TextField"
 
 import { supabase } from "../../../services/supabase"
 
@@ -50,20 +50,16 @@ export const LoginForm = forwardRef<LoginFormHandle, LoginFormProps>(
     return (
       <View style={styles.container}>
       <View style={styles.inputsContainer}>
-        <TextInput
-          style={styles.input}
+        <TextField
           placeholder="Tú correo va acá"
-          placeholderTextColor={colors.mutedForeground}
           autoCapitalize="none"
           keyboardType="email-address"
           value={email}
           onChangeText={setEmail}
         />
 
-        <TextInput
-          style={styles.input}
+        <TextField
           placeholder="Y tú contraseña acá"
-          placeholderTextColor={colors.mutedForeground}
           secureTextEntry
           value={password}
           onChangeText={setPassword}
@@ -82,16 +78,5 @@ const styles = StyleSheet.create({
   inputsContainer: {
     gap: 10,
     marginBottom: 20
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: colors.borderStrong,
-    borderRadius: radii.sm,
-    backgroundColor: colors.field,
-    color: colors.foreground,
-    fontFamily: fonts.sans,
-    fontSize: 16,
-    paddingVertical: 14,
-    paddingHorizontal: 20
   },
 })

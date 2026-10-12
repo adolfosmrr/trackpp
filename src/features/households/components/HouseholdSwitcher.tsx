@@ -6,7 +6,8 @@ import {
     Modal,
   } from "react-native"
   import { useNavigation, type NavigationProp, type ParamListBase } from "@react-navigation/native"
-  import { colors, fonts, radii } from "../../../theme"
+  import { sheetChrome } from "../../../components/layout/AppSheet"
+import { colors, fonts, radii } from "../../../theme"
   import { Button } from "../../../components/buttons/Button"
   import { GlassButton } from "../../../components/buttons/GlassButton"
   import { useState } from "react"
@@ -80,7 +81,7 @@ import {
             onPress={() => setOpen(false)}
           >
             <Pressable
-              style={styles.modal}
+              style={[styles.modal, sheetChrome.dialog]}
               onPress={() => {}}
             >
               <Text style={styles.title}>
@@ -282,7 +283,6 @@ import {
     modal: {
       backgroundColor: colors.popover,
       borderColor: colors.border,
-      borderRadius: radii.lg,
       borderWidth: 1,
       padding: 20,
       gap: 12,

@@ -1,5 +1,6 @@
 import { forwardRef, useState } from "react"
 import { Pressable, StyleSheet, Text, useWindowDimensions, View } from "react-native"
+import { AppSheet } from "../../../components/layout/AppSheet"
 import { colors, fonts, radii } from "../../../theme"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import {
@@ -38,9 +39,8 @@ export const CategorySelectorSheet = forwardRef<
   const [hasScrolled, setHasScrolled] = useState(false)
 
   return (
-    <BottomSheetModal
+    <AppSheet
       ref={ref}
-      style={styles.sheetContainer}
       onChange={(index) => {
         if (index === -1) {
           setHasScrolled(false)
@@ -50,7 +50,6 @@ export const CategorySelectorSheet = forwardRef<
       maxDynamicContentSize={height * 0.6}
       enablePanDownToClose
       stackBehavior="push"
-      backgroundStyle={styles.background}
       backdropComponent={(props) => <TransactionBlurBackdrop {...props} />}
     >
       <BottomSheetScrollView
@@ -110,21 +109,11 @@ export const CategorySelectorSheet = forwardRef<
           )}
         </View>
       </BottomSheetScrollView>
-    </BottomSheetModal>
+    </AppSheet>
   )
 })
 
 const styles = StyleSheet.create({
-  sheetContainer: {
-    borderTopLeftRadius: radii.lg,
-    borderTopRightRadius: radii.lg,
-    overflow: "hidden",
-  },
-  background: {
-    backgroundColor: colors.popover,
-    borderTopLeftRadius: radii.lg,
-    borderTopRightRadius: radii.lg,
-  },
   content: {
     gap: 12,
     paddingBottom: 24,

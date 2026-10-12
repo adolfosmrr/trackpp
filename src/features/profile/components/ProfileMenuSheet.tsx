@@ -2,7 +2,8 @@ import { useEffect, useRef } from "react"
 import { StyleSheet, useWindowDimensions } from "react-native"
 import { BottomSheetModal } from "@gorhom/bottom-sheet"
 
-import { colors, radii } from "../../../theme"
+import { AppSheet } from "../../../components/layout/AppSheet"
+import { colors } from "../../../theme"
 import { registerProfileMenu } from "../profileMenu"
 import { ProfileScreen } from "../screens/ProfileScreen"
 
@@ -18,25 +19,20 @@ export function ProfileMenuSheet() {
   }, [])
 
   return (
-    <BottomSheetModal
+    <AppSheet
       ref={ref}
+      canvas="background"
       enableDynamicSizing={false}
       snapPoints={[Math.round(height * 0.88)]}
       enablePanDownToClose
-      backgroundStyle={styles.background}
       handleIndicatorStyle={styles.handle}
     >
       <ProfileScreen />
-    </BottomSheetModal>
+    </AppSheet>
   )
 }
 
 const styles = StyleSheet.create({
-  background: {
-    backgroundColor: colors.background,
-    borderTopLeftRadius: radii.lg,
-    borderTopRightRadius: radii.lg,
-  },
   handle: {
     backgroundColor: colors.borderStrong,
   },

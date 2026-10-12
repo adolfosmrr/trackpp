@@ -1,14 +1,15 @@
 import { forwardRef, useRef, useState } from "react"
 import {
   Alert,
-  Pressable,
   StyleSheet,
   Text,
   View,
   useWindowDimensions,
 } from "react-native"
 import { Button } from "../../../components/buttons/Button"
-import { colors, fonts, radii } from "../../../theme"
+import { FieldRow, fieldStyles } from "../../../components/inputs/TextField"
+import { AppSheet } from "../../../components/layout/AppSheet"
+import { colors, fonts } from "../../../theme"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import {
   BottomSheetModal,
@@ -41,7 +42,7 @@ export const BudgetBottomSheet = forwardRef<
   const { height } = useWindowDimensions()
 
   return (
-    <BottomSheetModal
+    <AppSheet
       ref={ref}
       enableDynamicSizing
       maxDynamicContentSize={height * 0.6}
@@ -49,7 +50,6 @@ export const BudgetBottomSheet = forwardRef<
       keyboardBehavior="interactive"
       keyboardBlurBehavior="restore"
       android_keyboardInputMode="adjustResize"
-      backgroundStyle={styles.background}
       handleIndicatorStyle={styles.handleIndicator}
       onDismiss={onDismiss}
       backdropComponent={(props) => <TransactionBlurBackdrop {...props} />}
@@ -59,7 +59,7 @@ export const BudgetBottomSheet = forwardRef<
       >
         <BudgetForm request={request} onSuccess={onSuccess} />
       </BottomSheetScrollView>
-    </BottomSheetModal>
+    </AppSheet>
   )
 })
 
@@ -164,19 +164,17 @@ function BudgetForm({
 
       <View style={styles.fieldsStack}>
         <BottomSheetTextInput
-          style={[styles.field, styles.input]}
+          style={[fieldStyles.surface, fieldStyles.text, fieldStyles.pill]}
           placeholder="Nombre del presupuesto"
           placeholderTextColor={colors.mutedForeground}
           value={name}
           onChangeText={setName}
         />
 
-        <Pressable
-          accessibilityRole="button"
+        <FieldRow
           accessibilityState={{ disabled: !isCreate }}
           disabled={!isCreate}
           onPress={openCategorySelector}
-          style={[styles.field, styles.darkField]}
         >
           <Text style={styles.fieldLabel}>Categoría</Text>
           <View style={styles.fieldValueGroup}>
@@ -191,10 +189,10 @@ function BudgetForm({
             </Text>
             <FieldChevronIcon />
           </View>
-        </Pressable>
+        </FieldRow>
 
         <BottomSheetTextInput
-          style={[styles.field, styles.input]}
+          style={[fieldStyles.surface, fieldStyles.text, fieldStyles.pill]}
           placeholder={isCreate ? "Monto mensual" : "Nuevo monto"}
           placeholderTextColor={colors.mutedForeground}
           keyboardType="decimal-pad"
@@ -228,11 +226,6 @@ function BudgetForm({
 }
 
 const styles = StyleSheet.create({
-  background: {
-    backgroundColor: colors.popover,
-    borderTopLeftRadius: radii.lg,
-    borderTopRightRadius: radii.lg,
-  },
   handleIndicator: {
     backgroundColor: colors.borderStrong,
   },
@@ -248,29 +241,6 @@ const styles = StyleSheet.create({
     fontFamily: fonts.sansSemibold,
     fontSize: 20,
     fontWeight: "600",
-  },
-  field: {
-    width: "100%",
-    borderRadius: radii.sm,
-    paddingHorizontal: 20,
-    paddingVertical: 15,
-  },
-  input: {
-    backgroundColor: colors.field,
-    borderColor: colors.borderStrong,
-    borderWidth: 1,
-    color: colors.foreground,
-    fontFamily: fonts.sans,
-    fontSize: 16,
-    lineHeight: 16,
-  },
-  darkField: {
-    alignItems: "center",
-    backgroundColor: colors.field,
-    borderColor: colors.borderStrong,
-    borderWidth: 1,
-    flexDirection: "row",
-    justifyContent: "space-between",
   },
   fieldLabel: {
     color: colors.foreground,

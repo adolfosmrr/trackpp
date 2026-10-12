@@ -4,7 +4,7 @@ import SegmentedControl, {
   type NativeSegmentedControlIOSChangeEvent,
 } from "@react-native-segmented-control/segmented-control"
 
-import { colors, fonts } from "../../theme"
+import { colors, fonts, layout } from "../../theme"
 
 type SegmentedToggleOption<T extends string> = {
   value: T
@@ -57,7 +57,7 @@ export function SegmentedToggle<T extends string>({
       fontStyle={segmentFont}
       onChange={handleChange}
       selectedIndex={selectedIndex}
-      style={width !== undefined ? { width } : undefined}
+      style={{ height: layout.tabBarPill, width }}
       tintColor={colors.brand}
       values={options.map((option) => option.label)}
     />

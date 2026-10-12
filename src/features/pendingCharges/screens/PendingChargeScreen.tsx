@@ -3,7 +3,6 @@ import { useQueryClient } from "@tanstack/react-query"
 import {
   ActivityIndicator,
   Alert,
-  Pressable,
   ScrollView,
   StyleSheet,
   Text,
@@ -19,6 +18,7 @@ import { BottomSheetModal } from "@gorhom/bottom-sheet"
 import { FieldChevronIcon } from "../../../components/icons/FieldChevronIcon"
 import { useHouseholdCategories } from "../../categories/hooks/useHouseholdCategories"
 import { useHouseholds } from "../../households/hooks/useHouseholds"
+import { FieldRow } from "../../../components/inputs/TextField"
 import { CategorySelectorSheet } from "../../transactions/components/CategorySelectorSheet"
 import { HouseholdSelectorSheet } from "../../transactions/components/HouseholdSelectorSheet"
 import { useHouseholdStore } from "../../../store/householdStore"
@@ -215,10 +215,8 @@ export function PendingChargeScreen({ navigation, route }: PendingChargeScreenPr
                   </View>
                 ) : null}
 
-                <Pressable
-                  accessibilityRole="button"
+                <FieldRow
                   onPress={() => householdSheetRef.current?.present()}
-                  style={styles.field}
                 >
                   <Text style={styles.fieldLabel}>Espacio</Text>
                   <View style={styles.fieldValueGroup}>
@@ -227,13 +225,12 @@ export function PendingChargeScreen({ navigation, route }: PendingChargeScreenPr
                     </Text>
                     <FieldChevronIcon />
                   </View>
-                </Pressable>
+                </FieldRow>
 
-                <Pressable
-                  accessibilityRole="button"
+                <FieldRow
                   disabled={!householdId}
                   onPress={() => categorySheetRef.current?.present()}
-                  style={[styles.field, !householdId && styles.fieldDisabled]}
+                  style={!householdId ? styles.fieldDisabled : undefined}
                 >
                   <Text style={styles.fieldLabel}>Categoría</Text>
                   <View style={styles.fieldValueGroup}>
@@ -242,7 +239,7 @@ export function PendingChargeScreen({ navigation, route }: PendingChargeScreenPr
                     </Text>
                     <FieldChevronIcon />
                   </View>
-                </Pressable>
+                </FieldRow>
 
                 {memberships && memberships.length === 0 ? (
                   <Text style={styles.error}>No tenés espacios para cargar este gasto.</Text>
@@ -381,17 +378,6 @@ const styles = StyleSheet.create({
     fontFamily: fonts.sansSemibold,
     fontSize: 16,
     lineHeight: 22,
-  },
-  field: {
-    alignItems: "center",
-    backgroundColor: colors.field,
-    borderColor: colors.borderStrong,
-    borderRadius: radii.sm,
-    borderWidth: 1,
-    flexDirection: "row",
-    justifyContent: "space-between",
-    paddingHorizontal: 20,
-    paddingVertical: 15,
   },
   fieldDisabled: {
     opacity: 0.45,
