@@ -11,7 +11,8 @@ export const TOP_BALANCE_LABEL_HEIGHT = [22, 0] as const
 export const TOP_BALANCE_AMOUNT_HEIGHT = [66, 46] as const
 export const TOP_BALANCE_FONT_SIZE = [60, 40] as const
 export const TOP_SUMMARY_MARGIN_TOP = [50, 10] as const
-export const TOP_SUMMARY_MARGIN_BOTTOM = [10, 30] as const
+/** Space under Ingresos/Gastos, expanded then collapsed. The extra 10px is on both ends so the collapse delta stays the same. */
+export const TOP_SUMMARY_MARGIN_BOTTOM = [20, 40] as const
 export const TOP_SUMMARY_LABEL_FONT_SIZE = [18, 16] as const
 
 const span = ([expanded, collapsed]: readonly [number, number]) => expanded - collapsed

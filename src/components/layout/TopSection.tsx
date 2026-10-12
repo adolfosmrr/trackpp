@@ -49,7 +49,7 @@ export function TopSection({
         >
             <View pointerEvents="none" style={styles.backgroundLayer}>
                 <GradientBackground
-                    bottomRadius={radii.xl}
+                    bottomRadius={radii.topSection}
                     dotSpacing={15}
                     token="topSection"
                     style={StyleSheet.absoluteFill}
@@ -63,8 +63,8 @@ export function TopSection({
 const styles = StyleSheet.create({
     backgroundLayer: {
         backgroundColor: colors.background,
-        borderBottomLeftRadius: radii.xl,
-        borderBottomRightRadius: radii.xl,
+        borderBottomLeftRadius: radii.topSection,
+        borderBottomRightRadius: radii.topSection,
         bottom: 0,
         left: 0,
         overflow: "hidden",

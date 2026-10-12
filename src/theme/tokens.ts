@@ -57,12 +57,16 @@ export const layout = {
   sectionInset: spacing.xl,
 } as const
 
+const RADIUS_XL = 16
+
 export const radii = {
   xs: 4,
   sm: 6,
   md: 8,
   lg: 12,
-  xl: 16,
+  xl: RADIUS_XL,
+  /** Bottom corners of the top section. Twice `xl`. */
+  topSection: RADIUS_XL * 2,
   pill: 999,
 } as const
 
