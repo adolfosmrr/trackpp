@@ -2,7 +2,7 @@ import { memo } from "react"
 import { StyleSheet, View } from "react-native"
 import Animated, { interpolate, useAnimatedStyle, type SharedValue } from "react-native-reanimated"
 import { AnimatedAmount } from "../../../components/animated/AnimatedAmount"
-import { formatMoney } from "../../../utils/formatMoney"
+import { useFormatMoney } from "../../households/hooks/useFormatMoney"
 import { colors, fonts } from "../../../theme"
 import {
   TOP_SUMMARY_LABEL_FONT_SIZE,
@@ -21,14 +21,15 @@ export const HomeIncomeExpenseSummary = memo(function HomeIncomeExpenseSummary({
   expenses,
   collapseProgress,
 }: HomeIncomeExpenseSummaryProps) {
+  const format = useFormatMoney()
   const containerStyle = useAnimatedStyle(() => ({
     marginBottom: interpolate(collapseProgress.value, [0, 1], TOP_SUMMARY_MARGIN_BOTTOM),
     marginTop: interpolate(collapseProgress.value, [0, 1], TOP_SUMMARY_MARGIN_TOP),
   }))
   return (
     <Animated.View style={[styles.container, containerStyle]}>
-      <SummaryItem collapseProgress={collapseProgress} label="Ingresos" amount={income} tone="income" />
-      <SummaryItem collapseProgress={collapseProgress} label="Gastos" amount={expenses} tone="expense" />
+      <SummaryItem collapseProgress={collapseProgress} format={format} label="Ingresos" amount={income} tone="income" />
+      <SummaryItem collapseProgress={collapseProgress} format={format} label="Gastos" amount={expenses} tone="expense" />
     </Animated.View>
   )
 })
@@ -37,11 +38,13 @@ function SummaryItem({
   label,
   amount,
   collapseProgress,
+  format,
   tone,
 }: {
   label: string
   amount: number
   collapseProgress: SharedValue<number>
+  format: (amount: number) => string
   tone: "income" | "expense"
 }) {
   const labelStyle = useAnimatedStyle(() => ({
@@ -54,7 +57,7 @@ function SummaryItem({
       <Animated.Text style={[styles.label, labelStyle]}>{label}</Animated.Text>
       <AnimatedAmount
         value={amount}
-        formatter={(value) => formatMoney(value)}
+        formatter={format}
         textProps={{
           adjustsFontSizeToFit: true,
           minimumFontScale: 0.8,

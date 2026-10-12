@@ -13,7 +13,7 @@ import { colors, fonts } from "../../../theme"
 import { Button } from "../../../components/buttons/Button"
 import { TextField } from "../../../components/inputs/TextField"
 import { BackLink } from "../../../components/navigation/BackLink"
-import { formatMoney } from "../../../utils/formatMoney"
+import { useFormatMoney } from "../../households/hooks/useFormatMoney"
 
 import { useFixedExpensePeriods } from "../hooks/useFixedExpensePeriods"
 import { usePayFixedExpensePeriod } from "../hooks/usePayFixedExpensePeriod"
@@ -29,6 +29,7 @@ export function PayFixedExpensePeriodScreen({
   navigation,
 }: PayFixedExpensePeriodScreenProps) {
   const insets = useSafeAreaInsets()
+  const format = useFormatMoney()
   const periodsQuery = useFixedExpensePeriods()
   const { data: periods, isLoading } = periodsQuery
   const mutation = usePayFixedExpensePeriod()
@@ -66,7 +67,7 @@ export function PayFixedExpensePeriodScreen({
     if (parsedAmount > currentPeriod.remaining) {
       Alert.alert(
         "Error",
-        `El monto supera el saldo pendiente de ${formatMoney(currentPeriod.remaining)}.`
+        `El monto supera el saldo pendiente de ${format(currentPeriod.remaining)}.`
       )
       return
     }
@@ -89,9 +90,9 @@ export function PayFixedExpensePeriodScreen({
     <View style={[styles.container, { paddingTop: insets.top + 16 }]}>
       <BackLink onPress={() => navigation.goBack()} />
       <Text style={styles.title}>{period.name}</Text>
-      <Text style={styles.meta}>Total: {formatMoney(period.expectedAmount)}</Text>
-      <Text style={styles.meta}>Pagado: {formatMoney(period.totalPaid)}</Text>
-      <Text style={styles.meta}>Pendiente: {formatMoney(period.remaining)}</Text>
+      <Text style={styles.meta}>Total: {format(period.expectedAmount)}</Text>
+      <Text style={styles.meta}>Pagado: {format(period.totalPaid)}</Text>
+      <Text style={styles.meta}>Pendiente: {format(period.remaining)}</Text>
 
       <TextField
         placeholder="Monto a pagar"

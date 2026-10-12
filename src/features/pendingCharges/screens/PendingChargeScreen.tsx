@@ -226,8 +226,8 @@ export function PendingChargeScreen({ navigation, route }: PendingChargeScreenPr
                     <Text style={styles.suggestionTitle}>Posible débito automático</Text>
                     <Text style={styles.message}>
                       {suggestion.name} · {formatPeriodLabel(suggestion.period)}. Esperado{" "}
-                      {formatMoney(suggestion.expectedAmount)}, pendiente{" "}
-                      {formatMoney(suggestion.remaining)}. Confirmá para registrarlo como pago de ese gasto fijo.
+                      {formatMoney(suggestion.expectedAmount, suggestionCurrency(memberships, suggestion.householdId))}, pendiente{" "}
+                      {formatMoney(suggestion.remaining, suggestionCurrency(memberships, suggestion.householdId))}. Confirmá para registrarlo como pago de ese gasto fijo.
                     </Text>
                     <Button
                       accessibilityLabel={`Vincular con ${suggestion.name}`}
@@ -321,6 +321,14 @@ export function PendingChargeScreen({ navigation, route }: PendingChargeScreenPr
       </ScrollView>
     </View>
   )
+}
+
+function suggestionCurrency(
+  memberships: { household: { id: string; currency: string } }[] | undefined,
+  householdId: string,
+) {
+  return memberships?.find((membership) => membership.household.id === householdId)
+    ?.household.currency ?? "ARS"
 }
 
 function errorText(error: unknown, fallback: string) {

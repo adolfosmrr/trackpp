@@ -14,7 +14,7 @@ import { Button } from "../../../components/buttons/Button"
 import { TextField } from "../../../components/inputs/TextField"
 import { BackLink } from "../../../components/navigation/BackLink"
 import { colors, fonts, layout, radii } from "../../../theme"
-import { formatMoney } from "../../../utils/formatMoney"
+import { useFormatMoney } from "../../households/hooks/useFormatMoney"
 import type { AppStackParamList } from "../../../navigation/types"
 import { OptionChips } from "../components/OptionChips"
 import { useFixedExpenseHistory } from "../hooks/useFixedExpenseHistory"
@@ -37,6 +37,7 @@ export function FixedExpenseHistoryScreen({
   route,
 }: FixedExpenseHistoryScreenProps) {
   const insets = useSafeAreaInsets()
+  const format = useFormatMoney()
   const historyQuery = useFixedExpenseHistory(route.params.fixedExpenseId)
   const recordAmount = useRecordFixedExpenseAmount()
   const history = historyQuery.data
@@ -148,7 +149,7 @@ export function FixedExpenseHistoryScreen({
               history.amountChanges.map((change) => (
                 <View key={change.id} style={styles.row}>
                   <Text style={styles.rowTitle}>{formatPeriodLabel(change.effectivePeriod)}</Text>
-                  <Text style={styles.rowAmount}>{formatMoney(change.amount)}</Text>
+                  <Text style={styles.rowAmount}>{format(change.amount)}</Text>
                 </View>
               ))
             )}
@@ -166,9 +167,9 @@ export function FixedExpenseHistoryScreen({
                     <Text style={styles.status}>{fixedExpenseStatusLabel(periodItem.status)}</Text>
                   </View>
                   <Text style={styles.meta}>
-                    Esperado {formatMoney(periodItem.expectedAmount)}
+                    Esperado {format(periodItem.expectedAmount)}
                     {" · pagado "}
-                    {formatMoney(periodItem.totalPaid)}
+                    {format(periodItem.totalPaid)}
                   </Text>
                 </View>
               ))

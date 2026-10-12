@@ -18,7 +18,7 @@ import { colors, fonts, refreshControlColors } from "../../../theme"
 import { Button } from "../../../components/buttons/Button"
 import { CircleAddButton } from "../../../components/buttons/CircleAddButton"
 import { ListSection } from "../../../components/layout/ListSection"
-import { formatMoney } from "../../../utils/formatMoney"
+import { useFormatMoney } from "../../households/hooks/useFormatMoney"
 import { showUndo } from "../../../components/feedback/undo"
 import { useDeleteFixedExpense } from "../hooks/useDeleteFixedExpense"
 import { createFixedExpense } from "../services/fixedExpenseService"
@@ -75,6 +75,7 @@ export function FixedExpensesScreen({ navigation }: FixedExpensesScreenProps) {
   const deleteMutation = useDeleteFixedExpense()
   const payMutation = usePayFixedExpensePeriod()
   const householdsQuery = useHouseholds()
+  const format = useFormatMoney()
   const selectedHouseholdId = useHouseholdStore((state) => state.selectedHouseholdId)
 
   async function handleRefresh() {
@@ -151,7 +152,7 @@ export function FixedExpensesScreen({ navigation }: FixedExpensesScreenProps) {
 
     Alert.alert(
       "Completar pago",
-      `Se registrará un pago de ${formatMoney(period.remaining)} para ${period.name}.`,
+      `Se registrará un pago de ${format(period.remaining)} para ${period.name}.`,
       [
         { text: "Cancelar", style: "cancel" },
         { text: "Confirmar", onPress: () => void handleComplete(period) },

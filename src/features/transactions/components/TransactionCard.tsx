@@ -1,6 +1,6 @@
 import { Pressable, StyleSheet, Text, View } from "react-native"
 
-import { formatMoney } from "../../../utils/formatMoney"
+import { useFormatMoney } from "../../households/hooks/useFormatMoney"
 import { colors, fonts, radii } from "../../../theme"
 import type { Transaction, TransactionCategory } from "../types"
 
@@ -31,6 +31,7 @@ export function TransactionCard({
   onDelete,
   deleting = false,
 }: TransactionCardProps) {
+  const format = useFormatMoney()
   const fixedExpense = transaction.fixedExpensePayment != null
   const typeLabel = getTypeLabel(transaction, fixedExpense)
   const time = formatTransactionTime(transaction.created_at)
@@ -68,7 +69,7 @@ export function TransactionCard({
             ]}
           >
             {transaction.type === "expense" ? "-" : "+"}
-            {formatMoney(Math.abs(transaction.amount))}
+            {format(Math.abs(transaction.amount))}
           </Text>
         </View>
 

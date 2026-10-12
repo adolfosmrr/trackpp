@@ -13,7 +13,7 @@ import Animated, {
 import { BalanceHiddenIcon } from "../../../components/icons/BalanceHiddenIcon"
 import { BalanceVisibleIcon } from "../../../components/icons/BalanceVisibleIcon"
 import { AnimatedAmount } from "../../../components/animated/AnimatedAmount"
-import { formatMoney } from "../../../utils/formatMoney"
+import { useFormatMoney } from "../../households/hooks/useFormatMoney"
 import { colors, fonts } from "../../../theme"
 import {
   TOP_BALANCE_AMOUNT_HEIGHT,
@@ -33,6 +33,7 @@ export const HomeBalance = memo(function HomeBalance({
   collapseProgress,
   isCollapsed,
 }: HomeBalanceProps) {
+  const format = useFormatMoney()
   const [isBalanceVisible, setIsBalanceVisible] = useState(true)
   const reduceMotionEnabled = useReducedMotion()
   const visibilityProgress = useSharedValue(1)
@@ -87,7 +88,7 @@ export const HomeBalance = memo(function HomeBalance({
         <Animated.View style={[styles.amountHolder, amountHolderStyle]}>
           <AnimatedAmount
             value={balance}
-            formatter={(value) => formatMoney(value)}
+            formatter={format}
             animatedStyle={[amountStyle, amountVisibilityStyle]}
             style={styles.amount}
             textProps={{

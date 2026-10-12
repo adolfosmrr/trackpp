@@ -1,7 +1,7 @@
 import { Pressable, StyleSheet, Text } from "react-native"
 
 import { ListSection } from "../../../components/layout/ListSection"
-import { formatMoney } from "../../../utils/formatMoney"
+import { useFormatMoney } from "../../households/hooks/useFormatMoney"
 import { colors, fonts, radii } from "../../../theme"
 import {
   getCurrentFixedExpensePeriod,
@@ -16,6 +16,7 @@ type DueSoonCardProps = {
 }
 
 export function DueSoonCard({ onPress }: DueSoonCardProps) {
+  const format = useFormatMoney()
   const periodsQuery = useFixedExpensePeriods(true, getCurrentFixedExpensePeriod())
   const due = (periodsQuery.data ?? []).filter(isDueSoon).sort(byDueDate)
 
@@ -33,7 +34,7 @@ export function DueSoonCard({ onPress }: DueSoonCardProps) {
       <Text style={styles.title}>{countLabel}</Text>
       <Text style={styles.detail}>
         {next.category?.icon ? `${next.category.icon} ` : ""}
-        {next.name} · {formatMoney(next.remaining)} · vence {formatDueDate(next.dueDate)}
+        {next.name} · {format(next.remaining)} · vence {formatDueDate(next.dueDate)}
       </Text>
       <Text style={styles.link}>Ver todos</Text>
     </Pressable>

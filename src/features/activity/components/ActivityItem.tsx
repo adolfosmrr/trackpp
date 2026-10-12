@@ -3,7 +3,7 @@ import {
   Text,
   StyleSheet,
 } from "react-native"
-import { formatMoney } from "../../../utils/formatMoney"
+import { useFormatMoney } from "../../households/hooks/useFormatMoney"
 import { colors, fonts, radii } from "../../../theme"
 
 import { formatRelativeTime } from "../../../utils/formatRelativeTime"
@@ -20,6 +20,8 @@ export function ActivityItem({
   item,
   currentUserId,
 }: ActivityItemProps) {
+  const format = useFormatMoney()
+
   if (item.type === "transaction_created" || item.type === "transaction_deleted") {
     const transaction = getActivityTransaction(item)
 
@@ -28,7 +30,7 @@ export function ActivityItem({
         <TransactionCard
           context="home"
           householdType="couple"
-          actorText={getActivityMessage(item, currentUserId)}
+          actorText={getActivityMessage(item, currentUserId, format)}
           transaction={transaction}
         />
       )
@@ -41,7 +43,7 @@ export function ActivityItem({
     <View style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.action}>
-          {getActivityMessage(item, currentUserId)}
+          {getActivityMessage(item, currentUserId, format)}
         </Text>
 
         <Text style={styles.time}>
@@ -62,7 +64,7 @@ export function ActivityItem({
 
         {getAmount(item) !== null && (
           <Text style={styles.amount}>
-            {formatMoney(getAmount(item)!)}
+            {format(getAmount(item)!)}
           </Text>
         )}
       </View>
@@ -93,7 +95,8 @@ function getActivityTransaction(item: ActivityItemData) {
 
 export function getActivityMessage(
   item: ActivityItemData,
-  currentUserId: string | undefined
+  currentUserId: string | undefined,
+  format: (amount: number) => string,
 ) {
   const isCurrentUser = item.actor?.id === currentUserId
   const actor = isCurrentUser
@@ -118,14 +121,15 @@ export function getActivityMessage(
     return `${actor} se unió a ${householdName}`
   }
 
-  const action = getActivityAction(item, isCurrentUser)
+  const action = getActivityAction(item, isCurrentUser, format)
 
   return `${actor} ${action}`
 }
 
 function getActivityAction(
   item: ActivityItemData,
-  isCurrentUser: boolean
+  isCurrentUser: boolean,
+  format: (amount: number) => string,
 ) {
   switch (item.type) {
     case "transaction_created":
@@ -182,8 +186,8 @@ function getActivityAction(
       }
 
       return isCurrentUser
-        ? `corregiste un pago de ${name} de ${formatMoney(oldAmount)} a ${formatMoney(newAmount)}`
-        : `corrigió un pago de ${name} de ${formatMoney(oldAmount)} a ${formatMoney(newAmount)}`
+        ? `corregiste un pago de ${name} de ${format(oldAmount)} a ${format(newAmount)}`
+        : `corrigió un pago de ${name} de ${format(oldAmount)} a ${format(newAmount)}`
     }
   }
 }

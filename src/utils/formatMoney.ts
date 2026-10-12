@@ -3,8 +3,15 @@ const amountFormatter = new Intl.NumberFormat("es-AR", {
   maximumFractionDigits: 2,
 })
 
-/** `$0` with no space. Grouping follows es-AR; cents show only when the amount has them. */
-export function formatMoney(amount: number) {
+/**
+ * Grouping follows es-AR. Cents show only when the amount has them.
+ * ARS keeps `$1.234`. Any other ISO code is prefixed: `USD 1.234`.
+ */
+export function formatMoney(amount: number, currency = "ARS") {
+  const code = currency.trim().toUpperCase() || "ARS"
   const formatted = amountFormatter.format(Math.abs(amount))
-  return amount < 0 ? `-$${formatted}` : `$${formatted}`
+  if (code === "ARS") {
+    return amount < 0 ? `-$${formatted}` : `$${formatted}`
+  }
+  return amount < 0 ? `-${code} ${formatted}` : `${code} ${formatted}`
 }

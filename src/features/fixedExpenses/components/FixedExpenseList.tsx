@@ -2,7 +2,7 @@ import type { ReactNode } from "react"
 import { Pressable, StyleSheet, Text, View } from "react-native"
 
 import { EmptyState } from "../../../components/feedback/EmptyState"
-import { formatMoney } from "../../../utils/formatMoney"
+import { useFormatMoney } from "../../households/hooks/useFormatMoney"
 import { colors, fonts, radii } from "../../../theme"
 import {
   getCurrentFixedExpensePeriod,
@@ -31,6 +31,7 @@ export function FixedExpenseList({
   emptyBody = EMPTY_BODY,
   renderActions,
 }: FixedExpenseListProps) {
+  const format = useFormatMoney()
   const expensesQuery = useFixedExpenses()
   const period = getCurrentFixedExpensePeriod()
   const expenses = expensesQuery.data ?? []
@@ -77,7 +78,7 @@ export function FixedExpenseList({
                   {expensePeriod?.name ?? expense.name}
                 </Text>
                 <Text numberOfLines={1} style={styles.detailAmount}>
-                  {formatMoney(expensePeriod?.expectedAmount ?? expense.amount)}
+                  {format(expensePeriod?.expectedAmount ?? expense.amount)}
                 </Text>
               </View>
 
@@ -104,10 +105,10 @@ export function FixedExpenseList({
                   {expensePeriod ? (
                     <>
                       <Text style={styles.infoText}>
-                        Pagado: {formatMoney(expensePeriod.totalPaid)}
+                        Pagado: {format(expensePeriod.totalPaid)}
                       </Text>
                       <Text style={styles.infoText}>
-                        Pendiente: {formatMoney(expensePeriod.remaining)}
+                        Pendiente: {format(expensePeriod.remaining)}
                       </Text>
                     </>
                   ) : (

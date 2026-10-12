@@ -13,7 +13,7 @@ import { colors, fonts } from "../../../theme"
 import { Button } from "../../../components/buttons/Button"
 import { TextField } from "../../../components/inputs/TextField"
 import { BackLink } from "../../../components/navigation/BackLink"
-import { formatMoney } from "../../../utils/formatMoney"
+import { useFormatMoney } from "../../households/hooks/useFormatMoney"
 
 import { useFixedExpensePeriods } from "../hooks/useFixedExpensePeriods"
 import { useUpdateFixedExpensePayment } from "../hooks/useUpdateFixedExpensePayment"
@@ -29,6 +29,7 @@ export function CorrectFixedExpensePaymentScreen({
   navigation,
 }: CorrectFixedExpensePaymentScreenProps) {
   const insets = useSafeAreaInsets()
+  const format = useFormatMoney()
   const periodsQuery = useFixedExpensePeriods()
   const { data: periods, isLoading } = periodsQuery
   const mutation = useUpdateFixedExpensePayment()
@@ -77,7 +78,7 @@ export function CorrectFixedExpensePaymentScreen({
     if (parsedAmount > maximumAmount) {
       Alert.alert(
         "Error",
-        `El monto no puede superar ${formatMoney(maximumAmount)}.`
+        `El monto no puede superar ${format(maximumAmount)}.`
       )
       return
     }
@@ -104,7 +105,7 @@ export function CorrectFixedExpensePaymentScreen({
       <BackLink onPress={() => navigation.goBack()} />
       <Text style={styles.title}>Corregir pago</Text>
       <Text style={styles.name}>{currentPeriod.name}</Text>
-      <Text style={styles.meta}>Último pago: {formatMoney(lastPayment.amount)}</Text>
+      <Text style={styles.meta}>Último pago: {format(lastPayment.amount)}</Text>
 
       <TextField
         placeholder="Nuevo monto"

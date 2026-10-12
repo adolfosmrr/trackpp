@@ -55,10 +55,7 @@ export function AppNavigator() {
         component={
           CreateHouseholdScreen
         }
-        options={{
-          title:
-            "Nuevo espacio",
-        }}
+        options={formSheetOptions("fitToContents")}
       />
 
       <Stack.Screen

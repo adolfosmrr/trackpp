@@ -24,8 +24,8 @@ export function chargeTitle(charge: Pick<PendingBankCharge, "merchant">) {
   return charge.merchant?.trim() || "Gasto con tarjeta"
 }
 
-export function formatChargeAmount(amount: number, _currency?: string) {
-  return formatMoney(amount)
+export function formatChargeAmount(amount: number, currency = "ARS") {
+  return formatMoney(amount, currency)
 }
 
 export function formatChargeDate(value: string | null) {

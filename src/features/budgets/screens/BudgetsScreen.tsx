@@ -16,7 +16,7 @@ import {
 import { colors, fonts, radii, refreshControlColors } from "../../../theme"
 import { Button } from "../../../components/buttons/Button"
 import { CircleAddButton } from "../../../components/buttons/CircleAddButton"
-import { formatMoney } from "../../../utils/formatMoney"
+import { useFormatMoney } from "../../households/hooks/useFormatMoney"
 import { EmptyState } from "../../../components/feedback/EmptyState"
 import { showUndo } from "../../../components/feedback/undo"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
@@ -47,6 +47,7 @@ type BudgetsScreenProps = CompositeScreenProps<
 export function BudgetsScreen({ navigation }: BudgetsScreenProps) {
   const insets = useSafeAreaInsets()
   const queryClient = useQueryClient()
+  const format = useFormatMoney()
   const selectedHouseholdId = useHouseholdStore((state) => state.selectedHouseholdId)
   const [topSectionHeight, setTopSectionHeight] = useState(0)
   const [refreshing, setRefreshing] = useState(false)
@@ -230,14 +231,14 @@ export function BudgetsScreen({ navigation }: BudgetsScreenProps) {
                               <View style={styles.statItem}>
                                 <Text style={styles.statsText}>Gastado</Text>
                                 <Text style={styles.statsText}>
-                                  {formatMoney(budget.spent)}
+                                  {format(budget.spent)}
                                 </Text>
                               </View>
 
                               <View style={styles.statItem}>
                                 <Text style={styles.statsText}>Restante</Text>
                                 <Text style={styles.statsText}>
-                                  {formatMoney(Math.abs(budget.remaining))}
+                                  {format(Math.abs(budget.remaining))}
                                 </Text>
                               </View>
                             </View>
@@ -245,7 +246,7 @@ export function BudgetsScreen({ navigation }: BudgetsScreenProps) {
                             <View style={styles.statItem}>
                               <Text style={styles.statsText}>De</Text>
                               <Text style={styles.statsText}>
-                                {formatMoney(budget.amount)}
+                                {format(budget.amount)}
                               </Text>
                             </View>
                           </View>
