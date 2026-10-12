@@ -12,6 +12,7 @@ export function invalidateFixedExpenseQueries(
   const keys = [
     ["fixed-expense-periods", householdId, period],
     ["fixed-expenses", householdId],
+    ["fixed-expense-history", householdId],
     ["fixed-expense-reminders", householdId],
     ["transactions", householdId],
     ["dashboard", householdId],

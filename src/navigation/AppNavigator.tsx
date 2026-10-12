@@ -16,7 +16,7 @@ import {
 
 import { InviteMemberScreen } from "../features/households/screens/InviteMemberScreen"
 import { AiConversationScreen } from "../features/ai/screens/AiConversationScreen"
-import { FixedExpensesScreen } from "../features/fixedExpenses/screens/FixedExpensesScreen"
+import { FixedExpenseHistoryScreen } from "../features/fixedExpenses/screens/FixedExpenseHistoryScreen"
 import { PayFixedExpensePeriodScreen } from "../features/fixedExpenses/screens/PayFixedExpensePeriodScreen"
 import { CorrectFixedExpensePaymentScreen } from "../features/fixedExpenses/screens/CorrectFixedExpensePaymentScreen"
 import { PendingChargeScreen } from "../features/pendingCharges/screens/PendingChargeScreen"
@@ -76,9 +76,9 @@ export function AppNavigator() {
       />
 
       <Stack.Screen
-        name="FixedExpenses"
-        component={FixedExpensesScreen}
-        options={{ title: "Gastos fijos" }}
+        name="FixedExpenseHistory"
+        component={FixedExpenseHistoryScreen}
+        options={{ title: "Historial" }}
       />
       <Stack.Screen
         name="PayFixedExpensePeriod"

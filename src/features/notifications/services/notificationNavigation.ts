@@ -54,13 +54,7 @@ export function flushPendingNotificationNavigation() {
     useHouseholdStore.getState().setSelectedHouseholdId(data.householdId)
   }
 
-  if (data.fixedExpensePeriodId) {
-    navigationRef.navigate("PayFixedExpensePeriod", {
-      periodId: data.fixedExpensePeriodId,
-    })
-  } else {
-    navigationRef.navigate("FixedExpenses")
-  }
+  navigationRef.navigate("Main", { screen: "FixedExpenses" })
 }
 
 function isFixedExpenseNotificationData(

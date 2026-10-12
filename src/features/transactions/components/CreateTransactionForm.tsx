@@ -3,6 +3,7 @@ import {
   Alert,
   Pressable,
   StyleSheet,
+  Switch,
   Text,
   View,
 } from "react-native"
@@ -20,8 +21,15 @@ import { useHouseholdCategories } from "../../categories/hooks/useHouseholdCateg
 import { SegmentedToggle } from "../../../components/inputs/SegmentedToggle"
 import { FieldChevronIcon } from "../../../components/icons/FieldChevronIcon"
 import { useCreateLinkedTransactions } from "../hooks/useCreateLinkedTransactions"
+import { OptionChips } from "../../fixedExpenses/components/OptionChips"
 import { useCreateFixedExpense } from "../../fixedExpenses/hooks/useCreateFixedExpense"
 import { useUpdateFixedExpense } from "../../fixedExpenses/hooks/useUpdateFixedExpense"
+import {
+  AUTO_DEBIT_SOURCES,
+  FIXED_EXPENSE_FREQUENCIES,
+  type AutoDebitSource,
+  type FixedExpenseFrequency,
+} from "../../fixedExpenses/utils/frequency"
 import {
   getLastCategoryId,
   setLastCategoryId,
@@ -76,6 +84,13 @@ export function CreateTransactionForm({
   )
   const [dueDay, setDueDay] = useState(
     editingFixedExpense ? String(editingFixedExpense.due_day) : "10"
+  )
+  const [frequency, setFrequency] = useState<FixedExpenseFrequency>(
+    editingFixedExpense?.frequency ?? "monthly"
+  )
+  const [autoDebit, setAutoDebit] = useState(editingFixedExpense?.auto_debit ?? false)
+  const [autoDebitSource, setAutoDebitSource] = useState<AutoDebitSource | null>(
+    editingFixedExpense?.auto_debit_source ?? null
   )
   const selectedHouseholdId = useHouseholdStore(
     (state) => state.selectedHouseholdId
@@ -311,6 +326,17 @@ export function CreateTransactionForm({
         return
       }
 
+      if (autoDebit && !autoDebitSource) {
+        Alert.alert("Error", "Elegí la tarjeta del débito automático.")
+        return
+      }
+
+      const fixedSchedule = {
+        frequency,
+        autoDebit,
+        autoDebitSource: autoDebit ? autoDebitSource : null,
+      }
+
       try {
         if (isEditingFixedExpense && editingFixedExpense) {
           if (request.kind !== "edit-fixed") {
@@ -326,6 +352,7 @@ export function CreateTransactionForm({
             chargeDay: parsedChargeDay,
             dueDay: parsedDueDay,
             isActive: editingFixedExpense.is_active,
+            ...fixedSchedule,
           })
         } else {
           await createFixedExpenseMutation.mutateAsync({
@@ -335,6 +362,7 @@ export function CreateTransactionForm({
             chargeDay: parsedChargeDay,
             dueDay: parsedDueDay,
             isActive: true,
+            ...fixedSchedule,
           })
         }
         if (fixedCategoryHouseholdId) {
@@ -565,6 +593,44 @@ export function CreateTransactionForm({
               onChangeText={setDueDay}
             />
           </View>
+          <View style={styles.optionBlock}>
+            <Text style={styles.fieldLabel}>Frecuencia</Text>
+            <OptionChips
+              accessibilityLabel="Frecuencia del gasto fijo"
+              onChange={setFrequency}
+              options={FIXED_EXPENSE_FREQUENCIES}
+              value={frequency}
+            />
+          </View>
+          <View style={[styles.field, styles.dayField]}>
+            <Text style={styles.dayFieldLabel}>Débito automático</Text>
+            <Switch
+              accessibilityLabel="Débito automático"
+              onValueChange={(enabled) => {
+                setAutoDebit(enabled)
+                if (!enabled) setAutoDebitSource(null)
+              }}
+              thumbColor={colors.foreground}
+              trackColor={{ false: colors.control, true: colors.brand }}
+              value={autoDebit}
+            />
+          </View>
+          {autoDebit ? (
+            <View style={styles.optionBlock}>
+              <Text style={styles.fieldLabel}>Tarjeta</Text>
+              <OptionChips
+                accessibilityLabel="Tarjeta del débito automático"
+                onChange={setAutoDebitSource}
+                options={AUTO_DEBIT_SOURCES}
+                value={autoDebitSource}
+              />
+            </View>
+          ) : null}
+          {isEditingFixedExpense ? (
+            <Text style={styles.helperText}>
+              Si cambiás el monto, el nuevo rige desde este período. Los anteriores quedan igual.
+            </Text>
+          ) : null}
         </>
       ) : (
         <>
@@ -739,6 +805,7 @@ const styles = StyleSheet.create({
     lineHeight: 18,
     textAlign: "right",
   },
+  optionBlock: { gap: 8 },
   categorySection: { gap: 10 },
   helperText: { color: colors.mutedForeground, fontFamily: fonts.sans },
   errorText: { color: colors.destructive, fontFamily: fonts.sans },

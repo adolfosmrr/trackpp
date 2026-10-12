@@ -15,7 +15,6 @@ import { colors, fonts, radii, refreshControlColors } from "../../../theme"
 import { formatMoney } from "../../../utils/formatMoney"
 import { EmptyState } from "../../../components/feedback/EmptyState"
 import { showUndo } from "../../../components/feedback/undo"
-import { SegmentedToggle } from "../../../components/inputs/SegmentedToggle"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 
 import { useBudgets } from "../hooks/useBudgets"
@@ -26,8 +25,6 @@ import { useHouseholdStore } from "../../../store/householdStore"
 import { useDashboard } from "../../dashboard/hooks/useDashboard"
 import { useBudgetSheet } from "../components/BudgetSheetProvider"
 import { BudgetSheetProvider } from "../components/BudgetSheetProvider"
-import { FixedExpenseList } from "../../fixedExpenses/components/FixedExpenseList"
-import { useCreateTransactionSheet } from "../../transactions/components/CreateTransactionSheetProvider"
 import { getCurrentMonth } from "../hooks/useBudgets"
 import type { BudgetWithProgress } from "../types"
 import { ScreenContainer } from "../../../components/layout/ScreenContainer"
@@ -37,13 +34,6 @@ import { TopSectionHeader } from "../../../components/layout/TopSectionHeader"
 import { HomeBalance } from "../../home/components/HomeBalance"
 import { HomeGreeting } from "../../home/components/HomeGreeting"
 import { HomeIncomeExpenseSummary } from "../../home/components/HomeIncomeExpenseSummary"
-
-type BudgetSegment = "month" | "fixed"
-
-const BUDGET_SEGMENTS = [
-  { value: "month", label: "Presupuesto del mes" },
-  { value: "fixed", label: "Gastos fijos" },
-] as const
 
 export function BudgetsScreen() {
   return (
@@ -57,9 +47,7 @@ function BudgetsScreenContent() {
   const insets = useSafeAreaInsets()
   const queryClient = useQueryClient()
   const selectedHouseholdId = useHouseholdStore((state) => state.selectedHouseholdId)
-  const [segment, setSegment] = useState<BudgetSegment>("month")
   const [topSectionHeight, setTopSectionHeight] = useState(0)
-  const [segmentBarHeight, setSegmentBarHeight] = useState(0)
   const [refreshing, setRefreshing] = useState(false)
   const profileQuery = useProfile()
   const { data: profile, isLoading: profileLoading, error: profileError } = profileQuery
@@ -74,16 +62,10 @@ function BudgetsScreenContent() {
 
   const deleteBudgetMutation = useDeleteBudget()
   const { openCreateBudget, openEditBudget } = useBudgetSheet()
-  const { openCreateTransaction, openEditFixedExpense } = useCreateTransactionSheet()
 
   function handleTopSectionLayout(event: LayoutChangeEvent) {
     const height = event.nativeEvent.layout.height
     setTopSectionHeight((current) => current || height)
-  }
-
-  function handleSegmentBarLayout(event: LayoutChangeEvent) {
-    const height = event.nativeEvent.layout.height
-    setSegmentBarHeight((current) => (current === height ? current : height))
   }
 
   async function handleRefresh() {
@@ -93,8 +75,6 @@ function BudgetsScreenContent() {
         profileQuery.refetch(),
         dashboardQuery.refetch(),
         budgetsQuery.refetch(),
-        queryClient.invalidateQueries({ queryKey: ["fixed-expenses", selectedHouseholdId] }),
-        queryClient.invalidateQueries({ queryKey: ["fixed-expense-periods", selectedHouseholdId] }),
       ])
     } finally {
       setRefreshing(false)
@@ -181,17 +161,17 @@ function BudgetsScreenContent() {
         <ScrollView
           style={[
             styles.container,
-            (!topSectionHeight || !segmentBarHeight) && styles.hiddenList,
+            !topSectionHeight && styles.hiddenList,
           ]}
           contentContainerStyle={[
             styles.content,
-            { paddingTop: topSectionHeight + segmentBarHeight },
+            { paddingTop: topSectionHeight },
           ]}
           refreshControl={
             <RefreshControl
               refreshing={refreshing}
               onRefresh={handleRefresh}
-              progressViewOffset={topSectionHeight + segmentBarHeight}
+              progressViewOffset={topSectionHeight}
               {...refreshControlColors}
             />
           }
@@ -205,9 +185,7 @@ function BudgetsScreenContent() {
                 },
               ]}
             >
-              {segment === "month" ? (
-                <>
-                  <SectionHeader
+              <SectionHeader
                     actionLabel="Crear presupuesto"
                     onAction={openCreateBudget}
                     title="Presupuesto del mes"
@@ -290,43 +268,10 @@ function BudgetsScreenContent() {
                       />
                     )}
                   </View>
-                </>
-              ) : (
-                <>
-                  <SectionHeader
-                    actionLabel="Agregar gasto fijo"
-                    onAction={() => {
-                      void openCreateTransaction("fixed")
-                    }}
-                    title="Gastos fijos"
-                  />
-                  <FixedExpenseList
-                    onCreate={() => {
-                      void openCreateTransaction("fixed")
-                    }}
-                    onEdit={openEditFixedExpense}
-                  />
-                </>
-              )}
             </View>
           </View>
         </ScrollView>
       </ScreenContainer>
-
-      {topSectionHeight > 0 ? (
-        <View
-          onLayout={handleSegmentBarLayout}
-          pointerEvents="box-none"
-          style={[styles.segmentBar, { top: topSectionHeight }]}
-        >
-          <SegmentedToggle
-            onChange={setSegment}
-            options={BUDGET_SEGMENTS}
-            value={segment}
-            width="100%"
-          />
-        </View>
-      ) : null}
 
       <TopSection
         mode="collapsed"
@@ -387,16 +332,6 @@ const styles =
 
     container: {
       flex: 1,
-    },
-
-    segmentBar: {
-      left: 0,
-      paddingBottom: 8,
-      paddingHorizontal: 20,
-      paddingTop: 12,
-      position: "absolute",
-      right: 0,
-      zIndex: 9,
     },
 
     content: {

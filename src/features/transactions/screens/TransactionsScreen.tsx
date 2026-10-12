@@ -136,7 +136,7 @@ import { useDeleteTransaction } from "../hooks/useDeleteTransaction"
         queryClient.setQueryData(queryKey, previous)
         showUndo({
           message: isFixedExpenseDeleteError(error)
-            ? "Ese movimiento es de un gasto fijo. Gestionarlo desde Gastos fijos."
+            ? "Ese movimiento es de un gasto fijo. Gestionarlo desde Fijos."
             : "No se pudo eliminar el movimiento.",
         })
         return

@@ -9,26 +9,26 @@ import {
   useFixedExpensePeriods,
 } from "../hooks/useFixedExpensePeriods"
 import { useFixedExpenses } from "../hooks/useFixedExpenses"
-import type { FixedExpense, FixedExpensePeriod, FixedExpensePeriodStatus } from "../types"
+import type { FixedExpense, FixedExpensePeriod } from "../types"
+import { autoDebitSourceLabel, frequencyLabel } from "../utils/frequency"
+import { fixedExpenseStatusLabel } from "../utils/periodStatus"
 
 type FixedExpenseListProps = {
   onCreate: () => void
-  onEdit: (expense: FixedExpense, period: string) => void
+  onOpenHistory: (expense: FixedExpense) => void
   emptyBody?: string
-  variant?: "summary" | "detail"
   renderActions?: (
     expense: FixedExpense,
     period: FixedExpensePeriod | undefined,
   ) => ReactNode
 }
 
-const SUMMARY_EMPTY_BODY = "Sumá alquiler, servicios o suscripciones para seguirlos cada mes."
+const EMPTY_BODY = "Sumá alquiler, servicios o suscripciones para seguirlos cada mes."
 
 export function FixedExpenseList({
   onCreate,
-  onEdit,
-  emptyBody = SUMMARY_EMPTY_BODY,
-  variant = "summary",
+  onOpenHistory,
+  emptyBody = EMPTY_BODY,
   renderActions,
 }: FixedExpenseListProps) {
   const expensesQuery = useFixedExpenses()
@@ -56,87 +56,79 @@ export function FixedExpenseList({
   }
 
   return (
-    <View style={variant === "detail" ? styles.detailList : styles.list}>
+    <View style={styles.list}>
       {expenses.map((expense) => {
         const expensePeriod = periodsQuery.data?.find(
           (entry) => entry.fixedExpenseId === expense.id,
         )
 
-        if (variant === "detail") {
-          return (
-            <View key={expense.id} style={styles.card}>
-              <Pressable
-                accessibilityLabel={`Editar ${expense.name}`}
-                accessibilityRole="button"
-                onPress={() => onEdit(expense, period)}
-              >
-                <View style={styles.cardHeader}>
-                  <Text numberOfLines={1} style={styles.detailName}>
-                    {expensePeriod?.category?.icon ?? expense.category?.icon
-                      ? `${expensePeriod?.category?.icon ?? expense.category?.icon} `
-                      : ""}
-                    {expensePeriod?.name ?? expense.name}
-                  </Text>
-                  <Text numberOfLines={1} style={styles.detailAmount}>
-                    {formatMoney(expensePeriod?.expectedAmount ?? expense.amount)}
-                  </Text>
-                </View>
-
-                <View style={styles.separator} />
-
-                <View style={styles.infoGrid}>
-                  <View style={styles.infoColumn}>
-                    <Text style={styles.infoText}>
-                      Inicia: {String(expense.charge_day).padStart(2, "0")} cada mes
-                    </Text>
-                    <Text style={styles.infoText}>
-                      Vence: {String(expense.due_day).padStart(2, "0")} cada mes
-                    </Text>
-                  </View>
-                  <View style={styles.infoColumn}>
-                    {expensePeriod ? (
-                      <>
-                        <Text style={styles.infoText}>
-                          Pagado: {formatMoney(expensePeriod.totalPaid)}
-                        </Text>
-                        <Text style={styles.infoText}>
-                          Pendiente: {formatMoney(expensePeriod.remaining)}
-                        </Text>
-                      </>
-                    ) : null}
-                  </View>
-                </View>
-
-                <View style={styles.separator} />
-
-                {expensePeriod ? (
-                  <View style={styles.statusProgress}>
-                    <Text style={styles.periodStatus}>{getStatusLabel(expensePeriod.status)}</Text>
-                    <PaymentProgress period={expensePeriod} />
-                  </View>
-                ) : null}
-              </Pressable>
-              {renderActions?.(expense, expensePeriod)}
-            </View>
-          )
-        }
-
         return (
-          <Pressable
-            key={expense.id}
-            accessibilityLabel={`Editar ${expense.name}`}
-            accessibilityRole="button"
-            onPress={() => onEdit(expense, period)}
-            style={styles.row}
-          >
-            <Text numberOfLines={1} style={styles.name}>
-              {expense.category?.icon ? `${expense.category.icon} ` : ""}
-              {expense.name}
-            </Text>
-            <Text style={styles.amount}>
-              {formatMoney(expensePeriod?.remaining ?? expense.amount)}
-            </Text>
-          </Pressable>
+          <View key={expense.id} style={styles.card}>
+            <Pressable
+              accessibilityLabel={`Ver historial de ${expense.name}`}
+              accessibilityRole="button"
+              onPress={() => onOpenHistory(expense)}
+            >
+              <View style={styles.cardHeader}>
+                <Text numberOfLines={1} style={styles.detailName}>
+                  {expensePeriod?.category?.icon ?? expense.category?.icon
+                    ? `${expensePeriod?.category?.icon ?? expense.category?.icon} `
+                    : ""}
+                  {expensePeriod?.name ?? expense.name}
+                </Text>
+                <Text numberOfLines={1} style={styles.detailAmount}>
+                  {formatMoney(expensePeriod?.expectedAmount ?? expense.amount)}
+                </Text>
+              </View>
+
+              <View style={styles.separator} />
+
+              <View style={styles.infoGrid}>
+                <View style={styles.infoColumn}>
+                  <Text style={styles.infoText}>
+                    {frequencyLabel(expense.frequency)}
+                  </Text>
+                  <Text style={styles.infoText}>
+                    Cobra: {String(expense.charge_day).padStart(2, "0")}
+                  </Text>
+                  <Text style={styles.infoText}>
+                    Vence: {String(expense.due_day).padStart(2, "0")}
+                  </Text>
+                </View>
+                <View style={styles.infoColumn}>
+                  {expense.auto_debit && expense.auto_debit_source ? (
+                    <Text style={styles.infoText}>
+                      Débito · {autoDebitSourceLabel(expense.auto_debit_source)}
+                    </Text>
+                  ) : null}
+                  {expensePeriod ? (
+                    <>
+                      <Text style={styles.infoText}>
+                        Pagado: {formatMoney(expensePeriod.totalPaid)}
+                      </Text>
+                      <Text style={styles.infoText}>
+                        Pendiente: {formatMoney(expensePeriod.remaining)}
+                      </Text>
+                    </>
+                  ) : (
+                    <Text style={styles.infoText}>Sin período este mes</Text>
+                  )}
+                </View>
+              </View>
+
+              <View style={styles.separator} />
+
+              {expensePeriod ? (
+                <View style={styles.statusProgress}>
+                  <Text style={styles.periodStatus}>
+                    {fixedExpenseStatusLabel(expensePeriod.status)}
+                  </Text>
+                  <PaymentProgress period={expensePeriod} />
+                </View>
+              ) : null}
+            </Pressable>
+            {renderActions?.(expense, expensePeriod)}
+          </View>
         )
       })}
     </View>
@@ -160,16 +152,6 @@ function PaymentProgress({ period }: { period: FixedExpensePeriod }) {
   )
 }
 
-function getStatusLabel(status: FixedExpensePeriodStatus) {
-  switch (status) {
-    case "upcoming": return "Próximo"
-    case "pending": return "Pendiente"
-    case "partial": return "Parcial"
-    case "paid": return "Pagado"
-    case "overdue": return "Vencido"
-  }
-}
-
 const styles = StyleSheet.create({
   status: {
     color: colors.mutedForeground,
@@ -177,34 +159,7 @@ const styles = StyleSheet.create({
     fontSize: 15,
   },
   list: {
-    gap: 10,
-  },
-  detailList: {
     gap: 12,
-  },
-  row: {
-    alignItems: "center",
-    backgroundColor: colors.card,
-    borderColor: colors.border,
-    borderRadius: radii.md,
-    borderWidth: 1,
-    flexDirection: "row",
-    gap: 12,
-    justifyContent: "space-between",
-    minHeight: 52,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-  },
-  name: {
-    color: colors.foreground,
-    flex: 1,
-    fontFamily: fonts.sansMedium,
-    fontSize: 15,
-  },
-  amount: {
-    color: colors.foreground,
-    fontFamily: fonts.monoSemibold,
-    fontSize: 15,
   },
   card: {
     backgroundColor: colors.card,
@@ -253,7 +208,7 @@ const styles = StyleSheet.create({
     color: colors.mutedForeground,
     fontFamily: fonts.sans,
     fontSize: 12,
-    lineHeight: 12,
+    lineHeight: 16,
   },
   statusProgress: {
     gap: 8,

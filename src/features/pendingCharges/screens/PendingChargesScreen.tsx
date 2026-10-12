@@ -193,7 +193,7 @@ function PendingChargeRow({
       friction={2}
       overshootLeft={false}
       overshootRight={false}
-      renderLeftActions={() => (
+      renderLeftActions={charge.suggestedPeriodId ? undefined : () => (
         <View style={[styles.action, styles.assignAction]}>
           <Text style={styles.actionText}>A Personal</Text>
         </View>
@@ -205,19 +205,23 @@ function PendingChargeRow({
       )}
       onSwipeableOpen={(direction) => {
         swipeRef.current?.close()
-        if (direction === "left") onAssign()
-        else onDismiss()
+        if (direction === "left" && !charge.suggestedPeriodId) onAssign()
+        else if (direction === "right") onDismiss()
       }}
     >
       <Pressable
         accessibilityRole="button"
-        accessibilityHint="Deslizá a la derecha para cargarlo en Personal o a la izquierda para descartarlo."
-        accessibilityActions={[
-          { name: "assign", label: "Cargar en Personal" },
-          { name: "dismiss", label: "Descartar" },
-        ]}
+        accessibilityHint={charge.suggestedPeriodId
+          ? "Abrilo para confirmar el débito automático, o deslizá a la izquierda para descartarlo."
+          : "Deslizá a la derecha para cargarlo en Personal o a la izquierda para descartarlo."}
+        accessibilityActions={charge.suggestedPeriodId
+          ? [{ name: "dismiss", label: "Descartar" }]
+          : [
+            { name: "assign", label: "Cargar en Personal" },
+            { name: "dismiss", label: "Descartar" },
+          ]}
         onAccessibilityAction={(event) => {
-          if (event.nativeEvent.actionName === "assign") onAssign()
+          if (event.nativeEvent.actionName === "assign" && !charge.suggestedPeriodId) onAssign()
           else if (event.nativeEvent.actionName === "dismiss") onDismiss()
         }}
         onPress={onOpen}
@@ -232,6 +236,7 @@ function PendingChargeRow({
         <Text style={styles.meta}>
           {chargeOrigin(charge)}
           {date ? ` · ${date}` : ""}
+          {charge.suggestedPeriodId ? " · Posible débito automático" : ""}
         </Text>
       </Pressable>
     </Swipeable>

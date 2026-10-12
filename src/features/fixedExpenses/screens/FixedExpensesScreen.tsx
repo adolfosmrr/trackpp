@@ -10,6 +10,8 @@ import {
   Text,
   View,
 } from "react-native"
+import type { CompositeScreenProps } from "@react-navigation/native"
+import type { NativeBottomTabScreenProps } from "@react-navigation/bottom-tabs/unstable"
 import type { NativeStackScreenProps } from "@react-navigation/native-stack"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import { useQueryClient } from "@tanstack/react-query"
@@ -36,12 +38,15 @@ import { HomeGreeting } from "../../home/components/HomeGreeting"
 import { HomeIncomeExpenseSummary } from "../../home/components/HomeIncomeExpenseSummary"
 import { ScreenContainer } from "../../../components/layout/ScreenContainer"
 import { TopSection } from "../../../components/layout/TopSection"
+import { SectionHeader } from "../../../components/layout/SectionHeader"
 import { TopSectionHeader } from "../../../components/layout/TopSectionHeader"
-import { BackLink } from "../../../components/navigation/BackLink"
 import { useCreateTransactionSheet } from "../../transactions/components/CreateTransactionSheetProvider"
-import type { AppStackParamList } from "../../../navigation/types"
+import type { AppStackParamList, MainTabsParamList } from "../../../navigation/types"
 
-type FixedExpensesScreenProps = NativeStackScreenProps<AppStackParamList, "FixedExpenses">
+type FixedExpensesScreenProps = CompositeScreenProps<
+  NativeBottomTabScreenProps<MainTabsParamList, "FixedExpenses">,
+  NativeStackScreenProps<AppStackParamList>
+>
 
 export function FixedExpensesScreen({ navigation }: FixedExpensesScreenProps) {
   const insets = useSafeAreaInsets()
@@ -125,6 +130,9 @@ export function FixedExpensesScreen({ navigation }: FixedExpensesScreenProps) {
           categoryId: expense.category_id,
           chargeDay: expense.charge_day,
           dueDay: expense.due_day,
+          frequency: expense.frequency,
+          autoDebit: expense.auto_debit,
+          autoDebitSource: expense.auto_debit_source,
           isActive: true,
         }).then(() => {
           void queryClient.invalidateQueries({ queryKey: ["fixed-expenses", expense.household_id] })
@@ -169,11 +177,8 @@ export function FixedExpensesScreen({ navigation }: FixedExpensesScreenProps) {
 
   if (isLoading || periodsLoading || profileLoading || dashboardLoading) {
     return (
-      <View style={[styles.fallback, { paddingTop: insets.top + 16 }]}>
-        <BackLink onPress={() => navigation.goBack()} />
-        <View style={styles.center}>
-          <ActivityIndicator color={colors.brand} size="large" />
-        </View>
+      <View style={styles.center}>
+        <ActivityIndicator color={colors.brand} size="large" />
       </View>
     )
   }
@@ -182,14 +187,11 @@ export function FixedExpensesScreen({ navigation }: FixedExpensesScreenProps) {
     const loadError = error ?? periodsError ?? profileError ?? dashboardError
 
     return (
-      <View style={[styles.fallback, { paddingTop: insets.top + 16 }]}>
-        <BackLink onPress={() => navigation.goBack()} />
-        <View style={styles.center}>
+      <View style={styles.center}>
         <Text style={styles.empty}>No se pudieron cargar los gastos fijos.</Text>
         {__DEV__ && loadError instanceof Error ? (
           <Text style={styles.errorDetail}>{loadError.message}</Text>
         ) : null}
-        </View>
       </View>
     )
   }
@@ -199,7 +201,10 @@ export function FixedExpensesScreen({ navigation }: FixedExpensesScreenProps) {
       <ScreenContainer paddingHorizontal={0}>
         <ScrollView
           style={!topSectionHeight ? styles.hiddenList : undefined}
-          contentContainerStyle={styles.list}
+          contentContainerStyle={[
+            styles.list,
+            { paddingBottom: Math.max(insets.bottom, 0) + 66 },
+          ]}
           refreshControl={
             <RefreshControl
               refreshing={refreshing}
@@ -212,10 +217,14 @@ export function FixedExpensesScreen({ navigation }: FixedExpensesScreenProps) {
           {topSectionHeight > 0 ? (
             <View>
               <View style={{ height: topSectionHeight }} />
-              <View style={styles.backRow}>
-                <BackLink onPress={() => navigation.goBack()} />
-              </View>
               <NotificationPermissionBanner />
+              <SectionHeader
+                actionLabel="Agregar gasto fijo"
+                onAction={() => {
+                  void openCreateTransaction("fixed")
+                }}
+                title="Gastos fijos"
+              />
             </View>
           ) : null}
           <FixedExpenseList
@@ -223,7 +232,9 @@ export function FixedExpensesScreen({ navigation }: FixedExpensesScreenProps) {
             onCreate={() => {
               void openCreateTransaction("fixed")
             }}
-            onEdit={openEditFixedExpense}
+            onOpenHistory={(expense) => {
+              navigation.navigate("FixedExpenseHistory", { fixedExpenseId: expense.id })
+            }}
             renderActions={(expense, period) => {
               const lastPayment = period?.lastPayment
               return (
@@ -285,7 +296,6 @@ export function FixedExpensesScreen({ navigation }: FixedExpensesScreenProps) {
                 </View>
               )
             }}
-            variant="detail"
           />
         </ScrollView>
       </ScreenContainer>
@@ -326,9 +336,7 @@ const styles = StyleSheet.create({
   },
   hiddenList: { opacity: 0 },
   center: { flex: 1, backgroundColor: colors.background, alignItems: "center", justifyContent: "center", padding: 24 },
-  fallback: { flex: 1, backgroundColor: colors.background, paddingHorizontal: 24 },
-  backRow: { marginBottom: 12 },
-  list: { gap: 12, paddingHorizontal: 20, paddingTop: 20, paddingBottom: 24 },
+  list: { gap: 12, paddingHorizontal: 20, paddingTop: 8, paddingBottom: 24 },
   disabled: { opacity: 0.55 },
   actions: {
     flexDirection: "row",

@@ -4,6 +4,7 @@ import { HomeScreen } from "../features/home/screens/HomeScreen"
 import { TransactionsScreen } from "../features/transactions/screens/TransactionsScreen"
 import { AiChatScreen } from "../features/ai/screens/AiChatScreen"
 import { BudgetsScreen } from "../features/budgets/screens/BudgetsScreen"
+import { FixedExpensesScreen } from "../features/fixedExpenses/screens/FixedExpensesScreen"
 import { useHouseholds } from "../features/households/hooks/useHouseholds"
 import { useHouseholdStore } from "../store/householdStore"
 import { useActivityRealtime } from "../features/activity/hooks/useActivityRealtime"
@@ -19,6 +20,7 @@ const SwipeHomeScreen = withMainTabsSwipe(HomeScreen)
 const SwipeTransactionsScreen = withMainTabsSwipe(TransactionsScreen)
 const SwipeAiChatScreen = withMainTabsSwipe(AiChatScreen)
 const SwipeBudgetsScreen = withMainTabsSwipe(BudgetsScreen)
+const SwipeFixedExpensesScreen = withMainTabsSwipe(FixedExpensesScreen)
 
 const Tab = createNativeBottomTabNavigator<MainTabsParamList>()
 
@@ -94,6 +96,18 @@ export function MainTabsNavigator() {
                     tabBarIcon: ({ focused }) => ({
                         type: "sfSymbol",
                         name: focused ? "chart.pie.fill" : "chart.pie",
+                    }),
+                }}
+            />
+
+            <Tab.Screen
+                name="FixedExpenses"
+                component={SwipeFixedExpensesScreen}
+                options={{
+                    title: "Fijos",
+                    tabBarIcon: () => ({
+                        type: "sfSymbol",
+                        name: "arrow.triangle.2.circlepath",
                     }),
                 }}
             />

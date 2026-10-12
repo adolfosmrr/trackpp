@@ -1,3 +1,5 @@
+import type { NavigatorScreenParams } from "@react-navigation/native"
+
 export type AuthStackParamList = {
   Auth: undefined
 }
@@ -7,15 +9,16 @@ export type MainTabsParamList = {
   Transactions: undefined
   AiChat: undefined
   Budgets: undefined
+  FixedExpenses: undefined
 }
 
 export type AppStackParamList = {
-  Main: undefined
+  Main: NavigatorScreenParams<MainTabsParamList> | undefined
   CreateHousehold: undefined
   InviteMember: undefined
   Invitations: undefined
   AiConversation: { conversationId?: string }
-  FixedExpenses: undefined
+  FixedExpenseHistory: { fixedExpenseId: string }
   PayFixedExpensePeriod: { periodId: string }
   CorrectFixedExpensePayment: { paymentId: string }
   PendingCharges: undefined

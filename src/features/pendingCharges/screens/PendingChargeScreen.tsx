@@ -21,9 +21,13 @@ import { useHouseholds } from "../../households/hooks/useHouseholds"
 import { CategorySelectorSheet } from "../../transactions/components/CategorySelectorSheet"
 import { HouseholdSelectorSheet } from "../../transactions/components/HouseholdSelectorSheet"
 import { useHouseholdStore } from "../../../store/householdStore"
+import { formatPeriodLabel } from "../../fixedExpenses/utils/frequency"
+import { formatMoney } from "../../../utils/formatMoney"
 import { useAssignPendingCharge } from "../hooks/useAssignPendingCharge"
 import { useDismissPendingCharge } from "../hooks/useDismissPendingCharge"
+import { useLinkPendingCharge } from "../hooks/useLinkPendingCharge"
 import { usePendingCharge } from "../hooks/usePendingCharge"
+import { usePendingChargeSuggestion } from "../hooks/usePendingChargeSuggestion"
 import {
   chargeOrigin,
   chargeTitle,
@@ -48,6 +52,11 @@ export function PendingChargeScreen({ navigation, route }: PendingChargeScreenPr
   const selectedHouseholdId = useHouseholdStore((state) => state.selectedHouseholdId)
   const assignMutation = useAssignPendingCharge()
   const dismissMutation = useDismissPendingCharge()
+  const linkMutation = useLinkPendingCharge()
+  const suggestionQuery = usePendingChargeSuggestion(
+    chargeId,
+    Boolean(chargeQuery.data?.suggestedPeriodId) && chargeQuery.data?.status === "pending",
+  )
   const householdSheetRef = useRef<BottomSheetModal>(null)
   const categorySheetRef = useRef<BottomSheetModal>(null)
   const [householdId, setHouseholdId] = useState<string | null>(null)
@@ -65,7 +74,8 @@ export function PendingChargeScreen({ navigation, route }: PendingChargeScreenPr
     ? currenciesMatch(selectedMembership?.household.currency, charge.currency)
     : true
   const isPending = charge?.status === "pending"
-  const isSaving = assignMutation.isPending || dismissMutation.isPending
+  const suggestion = suggestionQuery.data
+  const isSaving = assignMutation.isPending || dismissMutation.isPending || linkMutation.isPending
 
   useEffect(() => {
     if (!charge || charge.status !== "pending" || householdId || !memberships?.length) {
@@ -83,6 +93,20 @@ export function PendingChargeScreen({ navigation, route }: PendingChargeScreenPr
       setHouseholdId(preferred.household.id)
     }
   }, [charge, householdId, memberships, selectedHouseholdId])
+
+  async function handleLink() {
+    if (!charge || !suggestion || isSaving) return
+
+    try {
+      await linkMutation.mutateAsync({
+        chargeId: charge.id,
+        periodId: suggestion.periodId,
+      })
+      navigation.goBack()
+    } catch (error) {
+      Alert.alert("No se pudo vincular", errorText(error, "Probá de nuevo en un momento."))
+    }
+  }
 
   async function handleAssign() {
     if (!charge || !householdId || !category || !currencyMatches || isSaving) return
@@ -170,6 +194,36 @@ export function PendingChargeScreen({ navigation, route }: PendingChargeScreenPr
               <Text style={styles.message}>Descartaste este gasto.</Text>
             ) : (
               <>
+                {charge.suggestedPeriodId && suggestionQuery.isLoading ? (
+                  <ActivityIndicator color={colors.brand} />
+                ) : null}
+                {charge.suggestedPeriodId && suggestionQuery.isError ? (
+                  <Text style={styles.error}>
+                    No pudimos revisar si este gasto coincide con un débito automático.
+                  </Text>
+                ) : null}
+                {suggestion ? (
+                  <View style={styles.suggestion}>
+                    <Text style={styles.suggestionTitle}>Posible débito automático</Text>
+                    <Text style={styles.message}>
+                      {suggestion.name} · {formatPeriodLabel(suggestion.period)}. Esperado{" "}
+                      {formatMoney(suggestion.expectedAmount)}, pendiente{" "}
+                      {formatMoney(suggestion.remaining)}. Confirmá para registrarlo como pago de ese gasto fijo.
+                    </Text>
+                    <Pressable
+                      accessibilityRole="button"
+                      accessibilityLabel={`Vincular con ${suggestion.name}`}
+                      disabled={isSaving}
+                      onPress={() => void handleLink()}
+                      style={[styles.primaryButton, isSaving && styles.buttonDisabled]}
+                    >
+                      <Text style={styles.primaryButtonText}>
+                        {linkMutation.isPending ? "Vinculando..." : "Vincular al gasto fijo"}
+                      </Text>
+                    </Pressable>
+                  </View>
+                ) : null}
+
                 <Pressable
                   accessibilityRole="button"
                   onPress={() => householdSheetRef.current?.present()}
@@ -217,12 +271,16 @@ export function PendingChargeScreen({ navigation, route }: PendingChargeScreenPr
                   disabled={!householdId || !category || !currencyMatches || isSaving || !isPending}
                   onPress={() => void handleAssign()}
                   style={[
-                    styles.primaryButton,
+                    suggestion ? styles.secondaryButton : styles.primaryButton,
                     (!householdId || !category || !currencyMatches || isSaving) && styles.buttonDisabled,
                   ]}
                 >
-                  <Text style={styles.primaryButtonText}>
-                    {assignMutation.isPending ? "Cargando..." : "Cargar gasto"}
+                  <Text style={suggestion ? styles.secondaryButtonText : styles.primaryButtonText}>
+                    {assignMutation.isPending
+                      ? "Cargando..."
+                      : suggestion
+                        ? "Cargarlo como gasto común"
+                        : "Cargar gasto"}
                   </Text>
                 </Pressable>
                 <Pressable
@@ -325,6 +383,20 @@ const styles = StyleSheet.create({
   message: {
     color: colors.mutedForeground,
     fontFamily: fonts.sans,
+    fontSize: 16,
+    lineHeight: 22,
+  },
+  suggestion: {
+    backgroundColor: colors.card,
+    borderColor: colors.border,
+    borderRadius: radii.md,
+    borderWidth: 1,
+    gap: 12,
+    padding: 16,
+  },
+  suggestionTitle: {
+    color: colors.foreground,
+    fontFamily: fonts.sansSemibold,
     fontSize: 16,
     lineHeight: 22,
   },

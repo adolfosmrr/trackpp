@@ -12,4 +12,15 @@ export type PendingBankCharge = {
   charged_at: string | null
   status: PendingChargeStatus
   created_at: string
+  suggestedPeriodId: string | null
+}
+
+export type PendingChargeFixedExpenseSuggestion = {
+  periodId: string
+  fixedExpenseId: string
+  householdId: string
+  name: string
+  period: string
+  expectedAmount: number
+  remaining: number
 }

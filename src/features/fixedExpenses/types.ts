@@ -1,3 +1,5 @@
+import type { AutoDebitSource, FixedExpenseFrequency } from "./utils/frequency"
+
 export type FixedExpenseCategory = {
   id: string
   name: string
@@ -13,6 +15,9 @@ export type FixedExpense = {
   amount: number
   charge_day: number
   due_day: number
+  frequency: FixedExpenseFrequency
+  auto_debit: boolean
+  auto_debit_source: AutoDebitSource | null
   is_active: boolean
   created_at: string
   updated_at: string
@@ -25,7 +30,23 @@ export type FixedExpenseInput = {
   categoryId: string
   chargeDay: number
   dueDay: number
+  frequency: FixedExpenseFrequency
+  autoDebit: boolean
+  autoDebitSource: AutoDebitSource | null
   isActive?: boolean
+}
+
+export type FixedExpenseAmountChange = {
+  id: string
+  effectivePeriod: string
+  amount: number
+  createdAt: string
+}
+
+export type FixedExpenseHistory = {
+  expense: FixedExpense
+  amountChanges: FixedExpenseAmountChange[]
+  periods: FixedExpensePeriod[]
 }
 
 export type FixedExpensePeriodStatus =

@@ -110,14 +110,53 @@ Deno.serve(async (request) => {
     return json({ error: "Could not store the charge" }, 500)
   }
 
+  const suggestedPeriodId = await matchAutoDebit(supabase, userId, inserted.id, body)
+
   try {
-    await notifyUser(supabase, userId, inserted.id, body)
+    await notifyUser(supabase, userId, inserted.id, body, suggestedPeriodId !== null)
   } catch (error) {
     console.error("[ingest-bank-charge] push", errorMessage(error, "push failed"))
   }
 
   return json({ status: "created", id: inserted.id }, 201)
-})
+}
+
+async function matchAutoDebit(
+  supabase: SupabaseClient,
+  userId: string,
+  chargeId: string,
+  body: IngestBody,
+) {
+  const { data, error } = await supabase.rpc("match_auto_debit_charge", {
+    p_user_id: userId,
+    p_source: body.source,
+    p_merchant: body.merchant,
+    p_amount: body.amount,
+    p_charged_on: body.chargedAt,
+  })
+
+  if (error) {
+    console.error("[ingest-bank-charge] auto debit match", error.code)
+    return null
+  }
+
+  if (typeof data !== "string" || data.length === 0) {
+    return null
+  }
+
+  const { error: updateError } = await supabase
+    .from("pending_bank_charges")
+    .update({ suggested_period_id: data })
+    .eq("id", chargeId)
+    .eq("status", "pending")
+
+  if (updateError) {
+    console.error("[ingest-bank-charge] auto debit suggestion", updateError.code)
+    return null
+  }
+
+  return data
+}
 
 async function authorize(request: Request, rawBody: string): Promise<true | Response> {
   const secret = Deno.env.get("INGEST_SECRET")
@@ -243,6 +282,7 @@ async function notifyUser(
   userId: string,
   chargeId: string,
   body: IngestBody,
+  matchesFixedExpense: boolean,
 ) {
   const { data, error } = await supabase
     .from("push_tokens")
@@ -273,7 +313,9 @@ async function notifyUser(
     const messages = chunk.map((token) => ({
       to: token,
       title,
-      body: "¿A qué espacio lo cargo?",
+      body: matchesFixedExpense
+        ? "Coincide con un gasto fijo. Confirmalo para registrarlo como pago."
+        : "¿A qué espacio lo cargo?",
       sound: "default",
       priority: "high",
       channelId: BANK_CHARGE_CHANNEL_ID,

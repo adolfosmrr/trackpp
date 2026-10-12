@@ -15,6 +15,7 @@ export const TAB_ORDER = [
   "Transactions",
   "AiChat",
   "Budgets",
+  "FixedExpenses",
 ] as const
 
 const GESTURE_ACTIVATION_DISTANCE = 40

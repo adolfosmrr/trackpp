@@ -1,7 +1,13 @@
 import { supabase } from "../../../services/supabase"
 
+import {
+  isAutoDebitSource,
+  isFixedExpenseFrequency,
+} from "../utils/frequency"
 import type {
   FixedExpense,
+  FixedExpenseAmountChange,
+  FixedExpenseHistory,
   FixedExpenseInput,
   FixedExpensePeriod,
   FixedExpensePeriodStatus,
@@ -57,6 +63,9 @@ export async function createFixedExpense(
       p_amount: input.amount,
       p_charge_day: input.chargeDay,
       p_due_day: input.dueDay,
+      p_frequency: input.frequency,
+      p_auto_debit: input.autoDebit,
+      p_auto_debit_source: input.autoDebitSource,
     }
   )
 
@@ -159,6 +168,9 @@ export async function updateFixedExpense(
       p_charge_day: input.chargeDay,
       p_due_day: input.dueDay,
       p_is_active: input.isActive ?? true,
+      p_frequency: input.frequency,
+      p_auto_debit: input.autoDebit,
+      p_auto_debit_source: input.autoDebitSource,
     }
   )
 
@@ -167,6 +179,36 @@ export async function updateFixedExpense(
   }
 
   return parseFixedExpense(data)
+}
+
+export async function getFixedExpenseHistory(
+  fixedExpenseId: string,
+): Promise<FixedExpenseHistory> {
+  const { data, error } = await supabase.rpc("get_fixed_expense_history", {
+    p_fixed_expense_id: fixedExpenseId,
+  })
+
+  if (error) {
+    throw error
+  }
+
+  return parseFixedExpenseHistory(data)
+}
+
+export async function recordFixedExpenseAmount(input: {
+  fixedExpenseId: string
+  period: string
+  amount: number
+}) {
+  const { error } = await supabase.rpc("record_fixed_expense_amount", {
+    p_fixed_expense_id: input.fixedExpenseId,
+    p_period: input.period,
+    p_amount: input.amount,
+  })
+
+  if (error) {
+    throw error
+  }
 }
 
 export async function deleteFixedExpense(fixedExpenseId: string) {
@@ -194,6 +236,13 @@ function parseFixedExpense(value: unknown): FixedExpense {
     amount: getNumber(value.amount),
     charge_day: getNumber(value.charge_day),
     due_day: getNumber(value.due_day),
+    frequency: isFixedExpenseFrequency(value.frequency) ? value.frequency : null,
+    auto_debit: typeof value.auto_debit === "boolean" ? value.auto_debit : null,
+    auto_debit_source: value.auto_debit_source == null
+      ? null
+      : isAutoDebitSource(value.auto_debit_source)
+        ? value.auto_debit_source
+        : undefined,
     is_active: typeof value.is_active === "boolean"
       ? value.is_active
       : null,
@@ -211,6 +260,11 @@ function parseFixedExpense(value: unknown): FixedExpense {
     fixedExpense.amount === null ||
     fixedExpense.charge_day === null ||
     fixedExpense.due_day === null ||
+    fixedExpense.frequency === null ||
+    fixedExpense.auto_debit === null ||
+    fixedExpense.auto_debit_source === undefined ||
+    (fixedExpense.auto_debit && fixedExpense.auto_debit_source === null) ||
+    (!fixedExpense.auto_debit && fixedExpense.auto_debit_source !== null) ||
     fixedExpense.is_active === null ||
     !fixedExpense.created_at ||
     !fixedExpense.updated_at
@@ -280,6 +334,37 @@ function parseFixedExpensePeriod(value: unknown): FixedExpensePeriod {
   }
 
   return period as FixedExpensePeriod
+}
+
+function parseFixedExpenseHistory(value: unknown): FixedExpenseHistory {
+  if (!isRecord(value) || !Array.isArray(value.amountChanges) || !Array.isArray(value.periods)) {
+    throw new Error("La API devolvió un historial inválido.")
+  }
+
+  return {
+    expense: parseFixedExpense(value.expense),
+    amountChanges: value.amountChanges.map(parseAmountChange),
+    periods: value.periods.map(parseFixedExpensePeriod),
+  }
+}
+
+function parseAmountChange(value: unknown): FixedExpenseAmountChange {
+  if (!isRecord(value)) {
+    throw new Error("La API devolvió un cambio de monto inválido.")
+  }
+
+  const change = {
+    id: getString(value.id),
+    effectivePeriod: getString(value.effectivePeriod),
+    amount: getNumber(value.amount),
+    createdAt: getString(value.createdAt),
+  }
+
+  if (!change.id || !change.effectivePeriod || change.amount === null || !change.createdAt) {
+    throw new Error("La API devolvió un cambio de monto incompleto.")
+  }
+
+  return change as FixedExpenseAmountChange
 }
 
 function parseLastPayment(value: unknown): FixedExpensePeriod["lastPayment"] {
