@@ -48,7 +48,9 @@ import {
 import { ActivityItem } from "../../activity/components/ActivityItem"
 import { useActivity } from "../../activity/hooks/useActivity"
 import { useUnreadActivity } from "../../activity/hooks/useUnreadActivity"
+import { ListSection } from "../../../components/layout/ListSection"
 import { ScreenContainer } from "../../../components/layout/ScreenContainer"
+import { SectionHeader } from "../../../components/layout/SectionHeader"
 import { TopSection } from "../../../components/layout/TopSection"
 import { TopSectionHeader } from "../../../components/layout/TopSectionHeader"
 import { TopSectionHandle } from "../../../components/layout/TopSectionHandle"
@@ -58,7 +60,7 @@ import { HomeIncomeExpenseSummary } from "../components/HomeIncomeExpenseSummary
 import { DueSoonCard } from "../components/DueSoonCard"
 import { HomeAiSection } from "../components/HomeAiSection"
 import { MovementsSection } from "../components/MovementsSection"
-import { colors, fonts, radii, refreshControlColors } from "../../../theme"
+import { colors, fonts, layout, radii, refreshControlColors } from "../../../theme"
 import {
   settleTopSectionProgress,
   topSectionCollapseRange,
@@ -644,20 +646,20 @@ export function HomeScreen({ navigation }: HomeScreenProps) {
       />
 
       {isCoupleHousehold ? (
+        <ListSection>
         <View style={styles.activitySection}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>
-              Actividad compartida
-            </Text>
-
-            {unreadCount > 0 && (
-              <View style={styles.activityBadge}>
-                <Text style={styles.activityBadgeText}>
-                  {unreadCount} nuevas
-                </Text>
-              </View>
-            )}
-          </View>
+          <SectionHeader
+            title="Actividad compartida"
+            trailing={
+              unreadCount > 0 ? (
+                <View style={styles.activityBadge}>
+                  <Text style={styles.activityBadgeText}>
+                    {unreadCount} nuevas
+                  </Text>
+                </View>
+              ) : null
+            }
+          />
 
           {activityLoading ? (
             <Text style={styles.activityStatus}>
@@ -679,6 +681,7 @@ export function HomeScreen({ navigation }: HomeScreenProps) {
             </Text>
           )}
         </View>
+        </ListSection>
       ) : null}
 
         </Animated.ScrollView>
@@ -717,7 +720,6 @@ const styles =
     },
 
     scrollContent: {
-      paddingHorizontal: 20,
       paddingBottom: 120,
       gap: 24,
     },
@@ -737,8 +739,8 @@ const styles =
     },
 
     panelGesture: {
-      marginHorizontal: -20,
-      paddingHorizontal: 20,
+      marginHorizontal: -layout.sectionInset,
+      paddingHorizontal: layout.sectionInset,
     },
 
     center: {
@@ -781,19 +783,6 @@ const styles =
     activityStatus: {
       color: colors.mutedForeground,
       fontFamily: fonts.sans,
-    },
-
-    sectionHeader: {
-      flexDirection: "row",
-      justifyContent:
-        "space-between",
-      alignItems: "center",
-    },
-
-    sectionTitle: {
-      color: colors.foreground,
-      fontFamily: fonts.sansSemibold,
-      fontSize: 16,
     },
 
     activityBadge: {

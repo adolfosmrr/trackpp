@@ -1,5 +1,6 @@
 import { Pressable, StyleSheet, Text } from "react-native"
 
+import { ListSection } from "../../../components/layout/ListSection"
 import { formatMoney } from "../../../utils/formatMoney"
 import { colors, fonts, radii } from "../../../theme"
 import {
@@ -26,6 +27,7 @@ export function DueSoonCard({ onPress }: DueSoonCardProps) {
     : `Tenés ${due.length} gastos fijos por vencer.`
 
   return (
+    <ListSection>
     <Pressable accessibilityRole="button" onPress={onPress} style={styles.card}>
       <Text style={styles.kicker}>Por vencer</Text>
       <Text style={styles.title}>{countLabel}</Text>
@@ -35,6 +37,7 @@ export function DueSoonCard({ onPress }: DueSoonCardProps) {
       </Text>
       <Text style={styles.link}>Ver todos</Text>
     </Pressable>
+    </ListSection>
   )
 }
 

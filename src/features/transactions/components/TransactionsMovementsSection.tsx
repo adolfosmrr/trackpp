@@ -1,9 +1,11 @@
-import { Pressable, StyleSheet, Text, View } from "react-native"
-import { colors, fonts, radii } from "../../../theme"
+import { StyleSheet, Text, View } from "react-native"
+import { colors, fonts } from "../../../theme"
 import { useMemo } from "react"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 
 import { EmptyState } from "../../../components/feedback/EmptyState"
+import { ListSection } from "../../../components/layout/ListSection"
+import { SectionHeader } from "../../../components/layout/SectionHeader"
 import { TransactionCard } from "./TransactionCard"
 import type { Transaction, TransactionFilters } from "../types"
 import {
@@ -48,16 +50,13 @@ export function TransactionsMovementsSection({
   const hasFilteredResults = filteredTransactions.length > 0
 
   return (
-    <View style={[styles.section, { paddingBottom: bottomPadding }]}> 
-      <View style={styles.content}>
-        <View style={styles.titleRow}>
-          <Text style={styles.sectionTitle}>Todos los{"\n"}Movimientos</Text>
-          <Pressable accessibilityRole="button" style={styles.filterButton} onPress={onOpenFilters}>
-            <Text style={styles.filterButtonText}>
-              {activeFilterCount ? `Filtrar · ${activeFilterCount}` : "Filtrar"}
-            </Text>
-          </Pressable>
-        </View>
+    <ListSection style={{ paddingBottom: bottomPadding }}>
+      <View style={styles.section}>
+        <SectionHeader
+          actionLabel={activeFilterCount ? `Filtrar · ${activeFilterCount}` : "Filtrar"}
+          onAction={onOpenFilters}
+          title={"Todos los\nMovimientos"}
+        />
 
         <View style={styles.transactionGroups}>
           {transactionsByDate.length ? (
@@ -102,7 +101,7 @@ export function TransactionsMovementsSection({
           )}
         </View>
       </View>
-    </View>
+    </ListSection>
   )
 }
 
@@ -113,39 +112,6 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     marginHorizontal: 0,
     paddingTop: 16,
-  },
-  content: {
-    paddingHorizontal: 20,
-  },
-  sectionTitle: {
-    color: colors.foreground,
-    fontFamily: fonts.sansSemibold,
-    fontSize: 22,
-    letterSpacing: -0.4,
-    lineHeight: 26,
-  },
-  titleRow: {
-    alignItems: "flex-start",
-    flexDirection: "row",
-    justifyContent: "space-between",
-    gap: 12,
-  },
-  filterButton: {
-    alignItems: "center",
-    backgroundColor: colors.transparent,
-    borderColor: colors.borderStrong,
-    borderRadius: radii.sm,
-    borderWidth: 1,
-    justifyContent: "center",
-    marginTop: 4,
-    minHeight: 44,
-    paddingHorizontal: 14,
-  },
-  filterButtonText: {
-    color: colors.foreground,
-    fontFamily: fonts.sansMedium,
-    fontSize: 12,
-    lineHeight: 12,
   },
   transactionGroups: {
     marginTop: 40,

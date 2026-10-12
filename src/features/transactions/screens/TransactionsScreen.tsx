@@ -301,7 +301,6 @@ import { useDeleteTransaction } from "../hooks/useDeleteTransaction"
     },
   
     list: {
-      paddingHorizontal: 20,
       paddingTop: 20,
       gap: 12,
     },

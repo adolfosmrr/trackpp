@@ -4,7 +4,6 @@ import {
   View,
   Text,
   TextInput,
-  Pressable,
   StyleSheet,
   Alert,
 } from "react-native"
@@ -12,6 +11,7 @@ import type { NativeStackScreenProps } from "@react-navigation/native-stack"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import { colors, fonts, radii } from "../../../theme"
 
+import { Button } from "../../../components/buttons/Button"
 import { BackLink } from "../../../components/navigation/BackLink"
 
 import { useCreateInvitation } from "../hooks/useCreateInvitation"
@@ -89,23 +89,12 @@ export function InviteMemberScreen({
         onChangeText={setEmail}
       />
 
-      <Pressable
-        style={[
-          styles.button,
-          invitationMutation.isPending &&
-            styles.buttonDisabled,
-        ]}
+      <Button
+        disabled={invitationMutation.isPending}
+        label={invitationMutation.isPending ? "Enviando..." : "Crear invitación"}
         onPress={handleInvite}
-        disabled={
-          invitationMutation.isPending
-        }
-      >
-        <Text style={styles.buttonText}>
-          {invitationMutation.isPending
-            ? "Enviando..."
-            : "Crear invitación"}
-        </Text>
-      </Pressable>
+        tone="brand"
+      />
     </View>
   )
 }
@@ -159,22 +148,5 @@ const styles =
       color: colors.foreground,
       fontFamily: fonts.sans,
       padding: 12,
-    },
-
-    button: {
-      backgroundColor: colors.brand,
-      padding: 12,
-      borderRadius: radii.sm,
-      alignItems: "center",
-    },
-
-    buttonDisabled: {
-      opacity: 0.6,
-    },
-
-    buttonText: {
-      color: colors.brandForeground,
-      fontFamily: fonts.sansSemibold,
-      fontWeight: "600",
     },
   })

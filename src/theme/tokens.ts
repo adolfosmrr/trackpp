@@ -52,6 +52,11 @@ export const spacing = {
   xxl: 24,
 } as const
 
+export const layout = {
+  /** Horizontal inset for list sections. Home's recent movements is the reference. */
+  sectionInset: spacing.xl,
+} as const
+
 export const radii = {
   xs: 4,
   sm: 6,

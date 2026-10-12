@@ -1,39 +1,33 @@
-import { Pressable, StyleSheet, Text } from "react-native"
+import { StyleSheet } from "react-native"
 
 import { useCreateTransactionSheet } from "../../features/transactions/components/CreateTransactionSheetProvider"
-import { colors, fonts, radii } from "../../theme"
+import { fonts } from "../../theme"
+import { Button } from "../buttons/Button"
 
 export function AddMovementButton() {
   const { openCreateTransaction } = useCreateTransactionSheet()
 
   return (
-    <Pressable
+    <Button
       accessibilityLabel="Agregar movimiento"
-      accessibilityRole="button"
       hitSlop={{ top: 2, bottom: 2 }}
+      label="+ Movimiento"
+      labelStyle={styles.label}
       onPress={() => {
         void openCreateTransaction()
       }}
+      size="compact"
       style={styles.button}
-    >
-      <Text style={styles.label}>+ Movimiento</Text>
-    </Pressable>
+      tone="brand"
+    />
   )
 }
 
 const styles = StyleSheet.create({
   button: {
-    alignItems: "center",
-    backgroundColor: colors.brand,
-    borderRadius: radii.md,
     flexShrink: 0,
-    height: 40,
-    justifyContent: "center",
-    minWidth: 44,
-    paddingHorizontal: 14,
   },
   label: {
-    color: colors.brandForeground,
     fontFamily: fonts.sansSemibold,
     fontSize: 16,
     lineHeight: 20,

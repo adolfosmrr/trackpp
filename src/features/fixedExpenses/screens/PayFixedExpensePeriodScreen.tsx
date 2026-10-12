@@ -2,7 +2,6 @@ import { useState } from "react"
 import {
   ActivityIndicator,
   Alert,
-  Pressable,
   StyleSheet,
   Text,
   TextInput,
@@ -12,6 +11,7 @@ import type { NativeStackScreenProps } from "@react-navigation/native-stack"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import { colors, fonts, radii } from "../../../theme"
 
+import { Button } from "../../../components/buttons/Button"
 import { BackLink } from "../../../components/navigation/BackLink"
 import { formatMoney } from "../../../utils/formatMoney"
 
@@ -102,12 +102,17 @@ export function PayFixedExpensePeriodScreen({
         onChangeText={setAmount}
       />
 
-      <Pressable style={styles.secondaryButton} onPress={() => setAmount(String(period.remaining))}>
-        <Text style={styles.secondaryButtonText}>Pagar saldo completo</Text>
-      </Pressable>
-      <Pressable style={[styles.button, mutation.isPending && styles.disabled]} onPress={() => void handlePay()} disabled={mutation.isPending}>
-        <Text style={styles.buttonText}>{mutation.isPending ? "Registrando..." : "Registrar pago parcial"}</Text>
-      </Pressable>
+      <Button
+        label="Pagar saldo completo"
+        onPress={() => setAmount(String(period.remaining))}
+        tone="outline"
+      />
+      <Button
+        disabled={mutation.isPending}
+        label={mutation.isPending ? "Registrando..." : "Registrar pago parcial"}
+        onPress={() => void handlePay()}
+        tone="brand"
+      />
     </View>
   )
 }
@@ -118,9 +123,4 @@ const styles = StyleSheet.create({
   title: { color: colors.foreground, fontFamily: fonts.sansSemibold, fontSize: 22, fontWeight: "600" },
   meta: { color: colors.mutedForeground, fontFamily: fonts.mono, fontSize: 14 },
   input: { borderWidth: 1, borderColor: colors.borderStrong, borderRadius: radii.sm, backgroundColor: colors.field, color: colors.foreground, fontFamily: fonts.sans, padding: 12 },
-  secondaryButton: { alignItems: "center", borderColor: colors.borderStrong, borderRadius: radii.sm, borderWidth: 1, minHeight: 44, justifyContent: "center", paddingHorizontal: 12 },
-  secondaryButtonText: { color: colors.foreground, fontFamily: fonts.sansMedium, fontWeight: "600" },
-  button: { alignItems: "center", backgroundColor: colors.brand, borderRadius: radii.sm, justifyContent: "center", minHeight: 44, paddingHorizontal: 12 },
-  disabled: { opacity: 0.6 },
-  buttonText: { color: colors.brandForeground, fontFamily: fonts.sansSemibold, fontWeight: "600" },
 })

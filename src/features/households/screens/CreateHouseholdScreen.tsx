@@ -4,7 +4,6 @@ import {
   View,
   Text,
   TextInput,
-  Pressable,
   StyleSheet,
   Alert,
 } from "react-native"
@@ -12,6 +11,7 @@ import type { NativeStackScreenProps } from "@react-navigation/native-stack"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import { colors, fonts, radii } from "../../../theme"
 
+import { Button } from "../../../components/buttons/Button"
 import { BackLink } from "../../../components/navigation/BackLink"
 
 import {
@@ -83,25 +83,12 @@ export function CreateHouseholdScreen({
         onChangeText={setName}
       />
 
-      <Pressable
-        style={[
-          styles.button,
-          createHouseholdMutation.isPending &&
-            styles.buttonDisabled,
-        ]}
+      <Button
+        disabled={createHouseholdMutation.isPending}
+        label={createHouseholdMutation.isPending ? "Creando..." : "Crear espacio"}
         onPress={handleCreate}
-        disabled={
-          createHouseholdMutation.isPending
-        }
-      >
-        <Text
-          style={styles.buttonText}
-        >
-          {createHouseholdMutation.isPending
-            ? "Creando..."
-            : "Crear espacio"}
-        </Text>
-      </Pressable>
+        tone="brand"
+      />
     </View>
   )
 }
@@ -137,22 +124,5 @@ const styles =
       color: colors.foreground,
       fontFamily: fonts.sans,
       padding: 12,
-    },
-
-    button: {
-      backgroundColor: colors.brand,
-      padding: 12,
-      borderRadius: radii.sm,
-      alignItems: "center",
-    },
-
-    buttonDisabled: {
-      opacity: 0.6,
-    },
-
-    buttonText: {
-      color: colors.brandForeground,
-      fontFamily: fonts.sansSemibold,
-      fontWeight: "600",
     },
   })

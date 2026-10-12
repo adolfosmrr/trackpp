@@ -1,6 +1,7 @@
-import { Pressable, StyleSheet, Text, View } from "react-native"
+import { StyleSheet, Text, View } from "react-native"
 
-import { colors, fonts, radii } from "../../theme"
+import { colors, fonts } from "../../theme"
+import { Button } from "../buttons/Button"
 
 type EmptyStateProps = {
   title: string
@@ -14,9 +15,7 @@ export function EmptyState({ title, body, actionLabel, onAction }: EmptyStatePro
     <View style={styles.container}>
       <Text style={styles.title}>{title}</Text>
       <Text style={styles.body}>{body}</Text>
-      <Pressable accessibilityRole="button" onPress={onAction} style={styles.button}>
-        <Text style={styles.buttonText}>{actionLabel}</Text>
-      </Pressable>
+      <Button label={actionLabel} onPress={onAction} style={styles.button} tone="brand" />
     </View>
   )
 }
@@ -43,17 +42,6 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   button: {
-    alignItems: "center",
-    backgroundColor: colors.brand,
-    borderRadius: radii.sm,
-    justifyContent: "center",
     marginTop: 8,
-    minHeight: 44,
-    paddingHorizontal: 18,
-  },
-  buttonText: {
-    color: colors.brandForeground,
-    fontFamily: fonts.sansSemibold,
-    fontSize: 15,
   },
 })

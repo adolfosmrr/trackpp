@@ -1,6 +1,8 @@
 import { Pressable, StyleSheet, Text, View } from "react-native"
 import { colors, fonts, radii } from "../../../theme"
 
+import { ListSection } from "../../../components/layout/ListSection"
+
 import { usePendingCharges } from "../hooks/usePendingCharges"
 
 type PendingChargesBannerProps = {
@@ -20,6 +22,7 @@ export function PendingChargesBanner({ onPress }: PendingChargesBannerProps) {
     : `Tenés ${count} gastos de tarjeta para cargar`
 
   return (
+    <ListSection>
     <Pressable
       accessibilityRole="button"
       accessibilityLabel={`${title}. Elegí el espacio y la categoría.`}
@@ -34,6 +37,7 @@ export function PendingChargesBanner({ onPress }: PendingChargesBannerProps) {
         <Text style={styles.subtitle}>Elegí el espacio y la categoría</Text>
       </View>
     </Pressable>
+    </ListSection>
   )
 }
 

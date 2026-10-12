@@ -9,7 +9,7 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import { useSharedValue, type SharedValue } from "react-native-reanimated"
 
-import { colors, radii } from "../../theme"
+import { colors, layout, radii } from "../../theme"
 import { GradientBackground } from "../visual/GradientBackground"
 
 type TopSectionProps = {
@@ -42,7 +42,7 @@ export function TopSection({
                 {
                     minHeight: insets.top + 120,
                     paddingTop: insets.top,
-                    paddingHorizontal: 20,
+                    paddingHorizontal: layout.sectionInset,
                 },
                 style,
             ]}

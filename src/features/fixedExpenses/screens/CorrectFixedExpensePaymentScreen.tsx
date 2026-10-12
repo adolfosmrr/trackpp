@@ -2,7 +2,6 @@ import { useEffect, useState } from "react"
 import {
   ActivityIndicator,
   Alert,
-  Pressable,
   StyleSheet,
   Text,
   TextInput,
@@ -12,6 +11,7 @@ import type { NativeStackScreenProps } from "@react-navigation/native-stack"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import { colors, fonts, radii } from "../../../theme"
 
+import { Button } from "../../../components/buttons/Button"
 import { BackLink } from "../../../components/navigation/BackLink"
 import { formatMoney } from "../../../utils/formatMoney"
 
@@ -116,16 +116,13 @@ export function CorrectFixedExpensePaymentScreen({
         editable={!mutation.isPending}
       />
 
-      <Pressable
+      <Button
         accessibilityLabel="Guardar corrección"
-        style={[styles.button, mutation.isPending && styles.disabled]}
-        onPress={() => void handleSave()}
         disabled={mutation.isPending}
-      >
-        <Text style={styles.buttonText}>
-          {mutation.isPending ? "Guardando..." : "Guardar corrección"}
-        </Text>
-      </Pressable>
+        label={mutation.isPending ? "Guardando..." : "Guardar corrección"}
+        onPress={() => void handleSave()}
+        tone="brand"
+      />
     </View>
   )
 }
@@ -137,7 +134,4 @@ const styles = StyleSheet.create({
   name: { color: colors.foreground, fontFamily: fonts.sansMedium, fontSize: 18, fontWeight: "600" },
   meta: { color: colors.mutedForeground, fontFamily: fonts.mono, fontSize: 14 },
   input: { borderWidth: 1, borderColor: colors.borderStrong, borderRadius: radii.sm, backgroundColor: colors.field, color: colors.foreground, fontFamily: fonts.sans, padding: 12 },
-  button: { padding: 12, borderRadius: radii.sm, backgroundColor: colors.brand, alignItems: "center" },
-  disabled: { opacity: 0.6 },
-  buttonText: { color: colors.brandForeground, fontFamily: fonts.sansSemibold, fontWeight: "600" },
 })

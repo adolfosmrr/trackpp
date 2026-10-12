@@ -7,6 +7,7 @@ import {
   } from "react-native"
   import { useNavigation, type NavigationProp, type ParamListBase } from "@react-navigation/native"
   import { colors, fonts, radii } from "../../../theme"
+  import { Button } from "../../../components/buttons/Button"
   import { GlassButton } from "../../../components/buttons/GlassButton"
   import { useState } from "react"
   
@@ -145,13 +146,12 @@ import {
                 )
               })}
 
-              <Pressable
-                accessibilityRole="button"
-                style={styles.createOption}
+              <Button
+                label="+ Crear espacio"
+                labelStyle={styles.createOptionText}
                 onPress={openCreateHousehold}
-              >
-                <Text style={styles.createOptionText}>+ Crear espacio</Text>
-              </Pressable>
+                tone="outline"
+              />
             </Pressable>
           </Pressable>
         </Modal>
@@ -236,7 +236,6 @@ import {
       alignItems: "center",
       backgroundColor: colors.transparent,
       borderColor: colors.borderStrong,
-      borderRadius: radii.md,
       borderWidth: 1,
       flexShrink: 1,
       gap: 8,
@@ -246,7 +245,6 @@ import {
     },
 
     glassTrigger: {
-      borderRadius: radii.md,
       flexShrink: 1,
       height: 40,
       marginLeft: 15,
@@ -302,7 +300,7 @@ import {
       padding: 14,
       borderWidth: 1,
       borderColor: colors.border,
-      borderRadius: radii.sm,
+      borderRadius: radii.pill,
       flexDirection: "row",
       alignItems: "center",
       justifyContent: "space-between",
@@ -338,14 +336,6 @@ import {
       color: colors.brand,
       fontSize: 18,
       fontWeight: "700",
-    },
-
-    createOption: {
-      alignItems: "center",
-      borderColor: colors.border,
-      borderRadius: radii.sm,
-      borderWidth: 1,
-      padding: 14,
     },
 
     createOptionText: {

@@ -1,12 +1,12 @@
 import {
   View,
   Text,
-  Pressable,
   StyleSheet,
   ActivityIndicator,
 } from "react-native"
 import { BottomSheetScrollView } from "@gorhom/bottom-sheet"
 
+import { Button } from "../../../components/buttons/Button"
 import { colors, fonts, radii } from "../../../theme"
 import { navigationRef } from "../../../navigation/navigationRef"
 import { closeProfileMenu } from "../profileMenu"
@@ -93,14 +93,7 @@ export function ProfileScreen() {
           No se pudo cargar el perfil.
         </Text>
 
-        <Pressable
-          style={styles.logoutButton}
-          onPress={handleLogout}
-        >
-          <Text style={styles.logoutText}>
-            Cerrar sesión
-          </Text>
-        </Pressable>
+        <Button label="Cerrar sesión" onPress={handleLogout} tone="destructive" />
       </View>
     )
   }
@@ -160,25 +153,19 @@ export function ProfileScreen() {
           Espacio financiero
         </Text>
 
-        <Pressable
-          accessibilityRole="button"
-          style={styles.inviteButton}
+        <Button
+          label="Invitar pareja"
           onPress={() => openScreen("InviteMember")}
-        >
-          <Text style={styles.inviteButtonText}>
-            Invitar pareja
-          </Text>
-        </Pressable>
+          style={styles.spacedButton}
+          tone="outline"
+        />
 
-        <Pressable
-          accessibilityRole="button"
-          style={styles.inviteButton}
+        <Button
+          label="Crear espacio"
           onPress={() => openScreen("CreateHousehold")}
-        >
-          <Text style={styles.inviteButtonText}>
-            Crear espacio
-          </Text>
-        </Pressable>
+          style={styles.spacedButton}
+          tone="outline"
+        />
 
         <View style={styles.row}>
           <Text style={styles.label}>
@@ -233,27 +220,13 @@ export function ProfileScreen() {
         </View>
       </View>
 
-      <Pressable
-        accessibilityRole="button"
-        style={styles.actionButton}
+      <Button
+        label="Ver invitaciones"
         onPress={() => openScreen("Invitations")}
-      >
-        <Text
-          style={styles.actionButtonText}
-        >
-          Ver invitaciones
-        </Text>
-      </Pressable>
+        tone="outline"
+      />
 
-      <Pressable
-        accessibilityRole="button"
-        style={styles.logoutButton}
-        onPress={handleLogout}
-      >
-        <Text style={styles.logoutText}>
-          Cerrar sesión
-        </Text>
-      </Pressable>
+      <Button label="Cerrar sesión" onPress={handleLogout} tone="destructive" />
     </BottomSheetScrollView>
   )
 }
@@ -386,47 +359,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.border,
   },
 
-  logoutButton: {
-    minHeight: 44,
-    padding: 16,
-    borderRadius: radii.sm,
-    borderWidth: 1,
-    borderColor: colors.border,
-    alignItems: "center",
-  },
-
-  logoutText: {
-    fontWeight: "600",
-    color: colors.destructive,
-    fontFamily: fonts.sansMedium,
-  },
-  inviteButton: {
+  spacedButton: {
     marginTop: 8,
-    minHeight: 44,
-    padding: 14,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: radii.sm,
-    alignItems: "center",
-  },
-
-  inviteButtonText: {
-    color: colors.foreground,
-    fontFamily: fonts.sansMedium,
-    fontWeight: "600",
-  },
-  actionButton: {
-    minHeight: 44,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: radii.sm,
-    alignItems: "center",
-  },
-  
-  actionButtonText: {
-    color: colors.foreground,
-    fontFamily: fonts.sansMedium,
-    fontWeight: "600",
   },
 })

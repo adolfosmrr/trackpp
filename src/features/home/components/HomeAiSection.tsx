@@ -1,11 +1,11 @@
 import { useState } from "react"
 import { StyleSheet, View } from "react-native"
 
+import { ListSection } from "../../../components/layout/ListSection"
+import { SectionHeader } from "../../../components/layout/SectionHeader"
 import { useDashboardInsights } from "../../dashboard/hooks/useDashboardInsights"
 import type { HomeAiInsight } from "../../dashboard/types/homeAiInsight"
 import { HomeInsightCard } from "./HomeInsightCard"
-import { HomeSectionTitle } from "./HomeSectionTitle"
-import { HomeSectionToggle } from "./HomeSectionToggle"
 import { InsightSectionIcon } from "./icons/InsightSectionIcon"
 import { StackedCardList } from "./StackedCardList"
 import { HomeInfoCard, type HomeInfoCardVariant } from "./HomeInfoCard"
@@ -33,43 +33,44 @@ export function HomeAiSection() {
 
   if (!hasNarrative && cards.length === 0) return null
 
+  const expandedLabel = expanded ? "Cerrar" : "Ver más"
+
   return (
-    <View style={styles.section}>
-      <HomeSectionTitle
-        icon={<InsightSectionIcon />}
-        title="Para tener en cuenta"
-        rightElement={
-          <HomeSectionToggle
-            expanded={expanded}
-            onPress={() => setExpanded((current) => !current)}
-          />
-        }
-      />
-      {expanded ? (
-        <View style={styles.body}>
-          {cards.length ? (
-            <StackedCardList
-              items={cards}
-              expanded
-              renderItem={(insight, index) => (
-                <HomeInfoCard
-                  icon={insight.categoryIcon}
-                  message={insight.message}
-                  variant={INFO_CARD_VARIANTS[index % INFO_CARD_VARIANTS.length]}
-                />
-              )}
-            />
-          ) : null}
-          {hasNarrative && narrative ? (
-            <HomeInsightCard
-              actionDetails={actionDetailsQuery.actionDetails}
-              insight={narrative}
-              variant="card"
-            />
-          ) : null}
-        </View>
-      ) : null}
-    </View>
+    <ListSection>
+      <View style={styles.section}>
+        <SectionHeader
+          actionAccessibilityLabel={expanded ? "Cerrar insights" : "Ver insights"}
+          actionLabel={expandedLabel}
+          icon={<InsightSectionIcon />}
+          onAction={() => setExpanded((current) => !current)}
+          title="Para tener en cuenta"
+        />
+        {expanded ? (
+          <View style={styles.body}>
+            {cards.length ? (
+              <StackedCardList
+                items={cards}
+                expanded
+                renderItem={(insight, index) => (
+                  <HomeInfoCard
+                    icon={insight.categoryIcon}
+                    message={insight.message}
+                    variant={INFO_CARD_VARIANTS[index % INFO_CARD_VARIANTS.length]}
+                  />
+                )}
+              />
+            ) : null}
+            {hasNarrative && narrative ? (
+              <HomeInsightCard
+                actionDetails={actionDetailsQuery.actionDetails}
+                insight={narrative}
+                variant="card"
+              />
+            ) : null}
+          </View>
+        ) : null}
+      </View>
+    </ListSection>
   )
 }
 

@@ -10,6 +10,7 @@ import {
 import { colors, fonts, radii } from "../../../theme"
 import { useEffect, useState, type ReactNode } from "react"
 
+import { Button } from "../../../components/buttons/Button"
 import { FilterChevronIcon } from "../../../components/icons/FilterChevronIcon"
 import type {
   TransactionCategory,
@@ -199,12 +200,8 @@ export function TransactionFiltersModal({
           </ScrollView>
 
           <View style={styles.actions}>
-            <Pressable style={styles.clearButton} onPress={onClear}>
-              <Text style={styles.clearText}>Limpiar</Text>
-            </Pressable>
-            <Pressable style={styles.applyButton} onPress={onApply}>
-              <Text style={styles.applyText}>Aplicar</Text>
-            </Pressable>
+            <Button label="Limpiar" onPress={onClear} style={styles.actionSlot} tone="outline" />
+            <Button label="Aplicar" onPress={onApply} style={styles.actionSlot} tone="brand" />
           </View>
         </Pressable>
       </Pressable>
@@ -321,7 +318,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     backgroundColor: colors.card,
     borderColor: colors.border,
-    borderRadius: radii.sm,
+    borderRadius: radii.pill,
     borderWidth: 1,
     flexDirection: "row",
     justifyContent: "space-between",
@@ -367,34 +364,7 @@ const styles = StyleSheet.create({
     gap: 10,
     padding: 20,
   },
-  clearButton: {
-    alignItems: "center",
-    backgroundColor: "transparent",
-    borderColor: colors.borderStrong,
-    borderRadius: radii.sm,
-    borderWidth: 1,
+  actionSlot: {
     flex: 1,
-    justifyContent: "center",
-    paddingVertical: 13,
-  },
-  clearText: {
-    color: colors.foreground,
-    fontFamily: fonts.sansMedium,
-    fontSize: 16,
-    lineHeight: 16,
-  },
-  applyButton: {
-    alignItems: "center",
-    backgroundColor: colors.brand,
-    borderRadius: radii.sm,
-    flex: 1,
-    justifyContent: "center",
-    paddingVertical: 13,
-  },
-  applyText: {
-    color: colors.brandForeground,
-    fontFamily: fonts.sansSemibold,
-    fontSize: 16,
-    lineHeight: 16,
   },
 })

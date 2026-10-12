@@ -1,5 +1,6 @@
 import { forwardRef, useCallback, useState } from "react"
 import { Pressable, StyleSheet, Text, useWindowDimensions, View } from "react-native"
+import { Button } from "../../../components/buttons/Button"
 import { colors, fonts, radii } from "../../../theme"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import {
@@ -64,9 +65,7 @@ export const HouseholdSelectorSheet = forwardRef<
         bottomInset={insets.bottom}
         style={styles.footer}
       >
-        <Pressable style={styles.doneButton} onPress={onDone}>
-          <Text style={styles.doneText}>Listo</Text>
-        </Pressable>
+        <Button label="Listo" onPress={onDone} tone="brand" />
       </BottomSheetFooter>
     ),
     [insets.bottom, onDone],
@@ -206,7 +205,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     backgroundColor: colors.card,
     borderColor: colors.border,
-    borderRadius: radii.sm,
+    borderRadius: radii.pill,
     borderWidth: 1,
     flexDirection: "row",
     gap: 8,
@@ -232,16 +231,5 @@ const styles = StyleSheet.create({
   },
   optionTypeSelected: {
     color: colors.brandForeground,
-  },
-  doneButton: {
-    alignItems: "center",
-    backgroundColor: colors.brand,
-    borderRadius: radii.sm,
-    padding: 14,
-  },
-  doneText: {
-    color: colors.brandForeground,
-    fontFamily: fonts.sansSemibold,
-    fontWeight: "600",
   },
 })

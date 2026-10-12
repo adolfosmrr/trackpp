@@ -2,6 +2,7 @@ export {
   colors,
   fonts,
   gradients,
+  layout,
   meshColors,
   radii,
   refreshControlColors,

@@ -32,7 +32,7 @@ import { THINKING_PLACEHOLDER, useFinancialChat } from "../hooks/useFinancialCha
 import { useReduceMotion, useTypewriter } from "../hooks/useTypewriter"
 import type { AiMessage } from "../types"
 import { BackLink } from "../../../components/navigation/BackLink"
-import { colors, fonts, radii } from "../../../theme"
+import { colors, fonts, layout, radii } from "../../../theme"
 
 const FIELD_FADE_MS = 400
 
@@ -263,8 +263,8 @@ const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.background },
   container: { flex: 1 },
   messages: { flex: 1 },
-  header: { paddingHorizontal: 20, paddingBottom: 8 },
-  messagesContent: { gap: 12, padding: 20, paddingTop: 12 },
+  header: { paddingHorizontal: layout.sectionInset, paddingBottom: 8 },
+  messagesContent: { gap: 12, padding: layout.sectionInset, paddingTop: 12 },
   emptyState: { gap: 16 },
   subtitle: {
     color: colors.foreground,
@@ -276,7 +276,7 @@ const styles = StyleSheet.create({
   suggestion: {
     backgroundColor: colors.card,
     borderColor: colors.border,
-    borderRadius: radii.sm,
+    borderRadius: radii.pill,
     borderWidth: 1,
     paddingHorizontal: 12,
     paddingVertical: 10,
@@ -308,7 +308,7 @@ const styles = StyleSheet.create({
     fontSize: 15,
   },
   composerWrapper: {
-    paddingHorizontal: 20,
+    paddingHorizontal: layout.sectionInset,
     width: "100%",
   },
   composer: {
@@ -336,7 +336,7 @@ const styles = StyleSheet.create({
   sendButton: {
     alignItems: "center",
     backgroundColor: colors.brand,
-    borderRadius: radii.sm,
+    borderRadius: radii.pill,
     height: 42,
     justifyContent: "center",
     overflow: "hidden",

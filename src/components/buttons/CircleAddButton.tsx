@@ -1,6 +1,6 @@
 import { Pressable, StyleSheet, Text } from "react-native"
 
-import { colors, fonts } from "../../theme"
+import { colors, fonts, radii } from "../../theme"
 
 type CircleAddButtonProps = {
   accessibilityLabel: string
@@ -25,7 +25,7 @@ const styles = StyleSheet.create({
   button: {
     alignItems: "center",
     backgroundColor: colors.brand,
-    borderRadius: 20,
+    borderRadius: radii.pill,
     height: 40,
     justifyContent: "center",
     width: 40,

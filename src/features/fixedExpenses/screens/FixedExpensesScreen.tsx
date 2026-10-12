@@ -3,7 +3,6 @@ import {
   ActivityIndicator,
   Alert,
   LayoutChangeEvent,
-  Pressable,
   RefreshControl,
   ScrollView,
   StyleSheet,
@@ -15,7 +14,10 @@ import type { NativeBottomTabScreenProps } from "@react-navigation/bottom-tabs/u
 import type { NativeStackScreenProps } from "@react-navigation/native-stack"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import { useQueryClient } from "@tanstack/react-query"
-import { colors, fonts, radii, refreshControlColors } from "../../../theme"
+import { colors, fonts, refreshControlColors } from "../../../theme"
+import { Button } from "../../../components/buttons/Button"
+import { CircleAddButton } from "../../../components/buttons/CircleAddButton"
+import { ListSection } from "../../../components/layout/ListSection"
 import { formatMoney } from "../../../utils/formatMoney"
 import { showUndo } from "../../../components/feedback/undo"
 import { useDeleteFixedExpense } from "../hooks/useDeleteFixedExpense"
@@ -201,10 +203,7 @@ export function FixedExpensesScreen({ navigation }: FixedExpensesScreenProps) {
       <ScreenContainer paddingHorizontal={0}>
         <ScrollView
           style={!topSectionHeight ? styles.hiddenList : undefined}
-          contentContainerStyle={[
-            styles.list,
-            { paddingBottom: Math.max(insets.bottom, 0) + 66 },
-          ]}
+          contentContainerStyle={{ paddingBottom: Math.max(insets.bottom, 0) + 66 }}
           refreshControl={
             <RefreshControl
               refreshing={refreshing}
@@ -214,16 +213,21 @@ export function FixedExpensesScreen({ navigation }: FixedExpensesScreenProps) {
             />
           }
         >
+          <ListSection style={styles.list}>
           {topSectionHeight > 0 ? (
             <View>
               <View style={{ height: topSectionHeight }} />
               <NotificationPermissionBanner />
               <SectionHeader
-                actionLabel="Agregar gasto fijo"
-                onAction={() => {
-                  void openCreateTransaction("fixed")
-                }}
                 title="Gastos fijos"
+                trailing={
+                  <CircleAddButton
+                    accessibilityLabel="Agregar gasto fijo"
+                    onPress={() => {
+                      void openCreateTransaction("fixed")
+                    }}
+                  />
+                }
               />
             </View>
           ) : null}
@@ -239,64 +243,58 @@ export function FixedExpensesScreen({ navigation }: FixedExpensesScreenProps) {
               const lastPayment = period?.lastPayment
               return (
                 <View style={styles.actions}>
-                  <Pressable
-                    accessibilityRole="button"
-                    style={styles.actionButton}
+                  <Button
+                    label="Editar"
+                    labelStyle={styles.actionButtonText}
                     onPress={() => openEditFixedExpense(expense, currentPeriod)}
-                  >
-                    <Text style={styles.actionButtonText}>Editar</Text>
-                  </Pressable>
+                    tone="outline"
+                  />
 
-                  <Pressable
-                    style={styles.actionButton}
+                  <Button
                     disabled={deletingId !== null}
+                    label={deletingId === expense.id ? "Eliminando..." : "Eliminar"}
+                    labelStyle={styles.actionButtonText}
                     onPress={() => confirmDelete(expense)}
-                  >
-                    <Text style={styles.actionButtonText}>
-                      {deletingId === expense.id ? "Eliminando..." : "Eliminar"}
-                    </Text>
-                  </Pressable>
+                    tone="outline"
+                  />
 
                   {period && period.remaining > 0 ? (
                     <>
-                      <View style={styles.gradientButton}>
-                        <Pressable
-                          accessibilityLabel="Pago completado"
-                          disabled={processingPeriodId !== null}
-                          style={[styles.actionButton, styles.gradientActionButton, processingPeriodId !== null && styles.disabled]}
-                          onPress={() => confirmComplete(period)}
-                        >
-                          <Text style={[styles.actionButtonText, styles.completeActionButtonText]}>
-                            {processingPeriodId === period.id ? "Procesando..." : "Pago Completo"}
-                          </Text>
-                        </Pressable>
-                      </View>
+                      <Button
+                        accessibilityLabel="Pago completado"
+                        disabled={processingPeriodId !== null}
+                        label={processingPeriodId === period.id ? "Procesando..." : "Pago Completo"}
+                        labelStyle={styles.completeActionButtonText}
+                        onPress={() => confirmComplete(period)}
+                        tone="brand"
+                      />
 
-                      <Pressable
+                      <Button
                         accessibilityLabel="Pago parcial"
                         disabled={processingPeriodId !== null}
-                        style={[styles.actionButton, processingPeriodId !== null && styles.disabled]}
+                        label="Pago Parcial"
+                        labelStyle={styles.actionButtonText}
                         onPress={() => navigation.navigate("PayFixedExpensePeriod", { periodId: period.id })}
-                      >
-                        <Text style={styles.actionButtonText}>Pago Parcial</Text>
-                      </Pressable>
+                        tone="outline"
+                      />
                     </>
                   ) : null}
 
                   {lastPayment ? (
-                    <Pressable
+                    <Button
                       accessibilityLabel="Corregir último pago"
                       disabled={processingPeriodId !== null}
-                      style={[styles.actionButton, processingPeriodId !== null && styles.disabled]}
+                      label="Corregir Último Pago"
+                      labelStyle={styles.actionButtonText}
                       onPress={() => navigation.navigate("CorrectFixedExpensePayment", { paymentId: lastPayment.id })}
-                    >
-                      <Text style={styles.actionButtonText}>Corregir Último Pago</Text>
-                    </Pressable>
+                      tone="outline"
+                    />
                   ) : null}
                 </View>
               )
             }}
           />
+          </ListSection>
         </ScrollView>
       </ScreenContainer>
       <TopSection
@@ -336,40 +334,22 @@ const styles = StyleSheet.create({
   },
   hiddenList: { opacity: 0 },
   center: { flex: 1, backgroundColor: colors.background, alignItems: "center", justifyContent: "center", padding: 24 },
-  list: { gap: 12, paddingHorizontal: 20, paddingTop: 8, paddingBottom: 24 },
-  disabled: { opacity: 0.55 },
+  list: { gap: 12, paddingTop: 8 },
   actions: {
     flexDirection: "row",
     flexWrap: "wrap",
     gap: 10,
     marginTop: 15,
   },
-  actionButton: {
-    alignItems: "center",
-    justifyContent: "center",
-    minHeight: 44,
-    paddingHorizontal: 12,
-    borderRadius: radii.sm,
-    borderColor: colors.borderStrong,
-    borderWidth: 1,
-    backgroundColor: colors.transparent,
-  },
   actionButtonText: {
-    color: colors.foreground,
     fontFamily: fonts.sansMedium,
     fontSize: 12,
     lineHeight: 12,
   },
-  gradientActionButton: {
-    backgroundColor: colors.brand,
-    borderColor: colors.brand,
-  },
   completeActionButtonText: {
-    color: colors.brandForeground,
-  },
-  gradientButton: {
-    borderRadius: radii.sm,
-    overflow: "hidden",
+    fontFamily: fonts.sansMedium,
+    fontSize: 12,
+    lineHeight: 12,
   },
   empty: { color: colors.mutedForeground, fontFamily: fonts.sans, textAlign: "center", padding: 24 },
   errorDetail: { color: colors.destructive, fontFamily: fonts.sans, textAlign: "center" },

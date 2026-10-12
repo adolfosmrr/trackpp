@@ -2,7 +2,6 @@ import { useState } from "react"
 import {
   ActivityIndicator,
   Alert,
-  Pressable,
   ScrollView,
   StyleSheet,
   Text,
@@ -12,8 +11,9 @@ import {
 import type { NativeStackScreenProps } from "@react-navigation/native-stack"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 
+import { Button } from "../../../components/buttons/Button"
 import { BackLink } from "../../../components/navigation/BackLink"
-import { colors, fonts, radii } from "../../../theme"
+import { colors, fonts, layout, radii } from "../../../theme"
 import { formatMoney } from "../../../utils/formatMoney"
 import type { AppStackParamList } from "../../../navigation/types"
 import { OptionChips } from "../components/OptionChips"
@@ -86,13 +86,7 @@ export function FixedExpenseHistoryScreen({
       ) : historyQuery.isError || !history ? (
         <View style={styles.block}>
           <Text style={styles.message}>No se pudo cargar el historial.</Text>
-          <Pressable
-            accessibilityRole="button"
-            onPress={() => void historyQuery.refetch()}
-            style={styles.primaryButton}
-          >
-            <Text style={styles.primaryButtonText}>Reintentar</Text>
-          </Pressable>
+          <Button label="Reintentar" onPress={() => void historyQuery.refetch()} tone="brand" />
         </View>
       ) : (
         <>
@@ -140,16 +134,12 @@ export function FixedExpenseHistoryScreen({
                 value={selectedPeriod}
               />
             ) : null}
-            <Pressable
-              accessibilityRole="button"
+            <Button
               disabled={recordAmount.isPending || !selectedPeriod}
+              label={recordAmount.isPending ? "Guardando..." : "Guardar monto"}
               onPress={() => void handleRecordAmount()}
-              style={[styles.primaryButton, recordAmount.isPending && styles.disabled]}
-            >
-              <Text style={styles.primaryButtonText}>
-                {recordAmount.isPending ? "Guardando..." : "Guardar monto"}
-              </Text>
-            </Pressable>
+              tone="brand"
+            />
           </View>
 
           <View style={styles.section}>
@@ -199,7 +189,7 @@ const styles = StyleSheet.create({
   },
   content: {
     gap: 18,
-    paddingHorizontal: 20,
+    paddingHorizontal: layout.sectionInset,
   },
   loader: {
     marginTop: 32,
@@ -248,20 +238,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     minHeight: 52,
     paddingHorizontal: 16,
-  },
-  primaryButton: {
-    alignItems: "center",
-    backgroundColor: colors.brand,
-    borderRadius: radii.sm,
-    padding: 16,
-  },
-  primaryButtonText: {
-    color: colors.brandForeground,
-    fontFamily: fonts.sansSemibold,
-    fontSize: 15,
-  },
-  disabled: {
-    opacity: 0.55,
   },
   row: {
     alignItems: "center",

@@ -158,7 +158,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     backgroundColor: colors.card,
     borderColor: colors.border,
-    borderRadius: radii.sm,
+    borderRadius: radii.pill,
     borderWidth: 1,
     flexDirection: "row",
     gap: 8,

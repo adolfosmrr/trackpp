@@ -1,7 +1,6 @@
 import {
     View,
     Text,
-    Pressable,
     StyleSheet,
     ActivityIndicator,
     ScrollView,
@@ -11,6 +10,7 @@ import type { NativeStackScreenProps } from "@react-navigation/native-stack"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import { colors, fonts, radii } from "../../../theme"
 
+import { Button } from "../../../components/buttons/Button"
 import { BackLink } from "../../../components/navigation/BackLink"
   
   import {
@@ -140,32 +140,12 @@ import { BackLink } from "../../../components/navigation/BackLink"
                   financiero.
                 </Text>
   
-                <Pressable
-                  style={[
-                    styles.button,
-  
-                    acceptMutation.isPending &&
-                      styles.buttonDisabled,
-                  ]}
-                  disabled={
-                    acceptMutation.isPending
-                  }
-                  onPress={() =>
-                    handleAccept(
-                      invitation.id
-                    )
-                  }
-                >
-                  <Text
-                    style={
-                      styles.buttonText
-                    }
-                  >
-                    {acceptMutation.isPending
-                      ? "Aceptando..."
-                      : "Aceptar invitación"}
-                  </Text>
-                </Pressable>
+                <Button
+                  disabled={acceptMutation.isPending}
+                  label={acceptMutation.isPending ? "Aceptando..." : "Aceptar invitación"}
+                  onPress={() => handleAccept(invitation.id)}
+                  tone="brand"
+                />
               </View>
             )
           )
@@ -249,20 +229,4 @@ import { BackLink } from "../../../components/navigation/BackLink"
         lineHeight: 20,
       },
   
-      button: {
-        padding: 12,
-        backgroundColor: colors.brand,
-        borderRadius: radii.sm,
-        alignItems: "center",
-      },
-  
-      buttonDisabled: {
-        opacity: 0.6,
-      },
-  
-      buttonText: {
-        color: colors.brandForeground,
-        fontFamily: fonts.sansSemibold,
-        fontWeight: "600",
-      },
     })

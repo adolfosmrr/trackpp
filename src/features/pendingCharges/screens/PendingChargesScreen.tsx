@@ -10,7 +10,7 @@ import {
 } from "react-native"
 import { useQueryClient } from "@tanstack/react-query"
 import Swipeable from "react-native-gesture-handler/Swipeable"
-import { colors, fonts, radii } from "../../../theme"
+import { colors, fonts, layout, radii } from "../../../theme"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 
 import { BackLink } from "../../../components/navigation/BackLink"
@@ -250,7 +250,7 @@ const styles = StyleSheet.create({
   },
   content: {
     gap: 16,
-    paddingHorizontal: 20,
+    paddingHorizontal: layout.sectionInset,
   },
   title: {
     color: colors.foreground,
@@ -308,7 +308,7 @@ const styles = StyleSheet.create({
   },
   action: {
     alignItems: "center",
-    borderRadius: radii.md,
+    borderRadius: radii.pill,
     justifyContent: "center",
     marginVertical: 0,
     minWidth: 96,

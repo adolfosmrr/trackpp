@@ -40,7 +40,7 @@ export function PrimaryAuthButton({
 const styles = StyleSheet.create({
   button: {
     padding: 12,
-    borderRadius: radii.sm,
+    borderRadius: radii.pill,
     backgroundColor: colors.brand,
     alignItems: "center",
   },

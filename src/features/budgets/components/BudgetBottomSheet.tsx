@@ -7,6 +7,7 @@ import {
   View,
   useWindowDimensions,
 } from "react-native"
+import { Button } from "../../../components/buttons/Button"
 import { colors, fonts, radii } from "../../../theme"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import {
@@ -201,17 +202,14 @@ function BudgetForm({
           onChangeText={setAmount}
         />
 
-        <Pressable
-          style={[styles.button, isPending && styles.buttonDisabled]}
-          onPress={handleSubmit}
+        <Button
           disabled={isPending}
-        >
-          <Text style={styles.buttonText}>
-            {isCreate
-              ? isPending ? "Creando..." : "Crear presupuesto"
-              : isPending ? "Guardando..." : "Guardar cambios"}
-          </Text>
-        </Pressable>
+          label={isCreate
+            ? isPending ? "Creando..." : "Crear presupuesto"
+            : isPending ? "Guardando..." : "Guardar cambios"}
+          onPress={handleSubmit}
+          tone="brand"
+        />
       </View>
 
       {isCreate ? (
@@ -298,18 +296,5 @@ const styles = StyleSheet.create({
     fontSize: 15,
     lineHeight: 18,
     textAlign: "right",
-  },
-  button: {
-    alignItems: "center",
-    backgroundColor: colors.brand,
-    borderRadius: radii.sm,
-    padding: 16,
-  },
-  buttonDisabled: {
-    opacity: 0.6,
-  },
-  buttonText: {
-    color: colors.brandForeground,
-    fontFamily: fonts.sansSemibold,
   },
 })

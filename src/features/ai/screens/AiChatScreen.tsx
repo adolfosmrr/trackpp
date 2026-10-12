@@ -223,7 +223,6 @@ const styles = StyleSheet.create({
   newConversationButton: {
     alignItems: "center",
     backgroundColor: colors.brand,
-    borderRadius: radii.sm,
     flexDirection: "row",
     justifyContent: "space-between",
     marginTop: 20,
@@ -232,7 +231,6 @@ const styles = StyleSheet.create({
     width: "100%",
   },
   newConversationGlass: {
-    borderRadius: radii.sm,
     marginTop: 20,
     width: "100%",
   },

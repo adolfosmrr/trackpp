@@ -7,6 +7,7 @@ import {
   Text,
   View,
 } from "react-native"
+import { Button } from "../../../components/buttons/Button"
 import { colors, fonts, radii } from "../../../theme"
 import {
   BottomSheetModal,
@@ -697,29 +698,22 @@ export function CreateTransactionForm({
         />
       </View>
 
-      <Pressable
-        style={[styles.button, (
-          isEditingFixedExpense
-            ? updateFixedExpenseMutation.isPending
-            : createTransactionMutation.isPending || createFixedExpenseMutation.isPending
-        ) && styles.buttonDisabled]}
-        onPress={handleSubmit}
+      <Button
         disabled={isEditingFixedExpense
           ? updateFixedExpenseMutation.isPending
           : createTransactionMutation.isPending || createFixedExpenseMutation.isPending}
-      >
-        <Text style={styles.buttonText}>
-          {(
-            isEditingFixedExpense
-              ? updateFixedExpenseMutation.isPending
-              : createTransactionMutation.isPending || createFixedExpenseMutation.isPending
-          )
-            ? "Guardando..."
-            : isEditingFixedExpense
-              ? "Guardar cambios"
-              : "Guardar movimiento"}
-        </Text>
-      </Pressable>
+        label={(
+          isEditingFixedExpense
+            ? updateFixedExpenseMutation.isPending
+            : createTransactionMutation.isPending || createFixedExpenseMutation.isPending
+        )
+          ? "Guardando..."
+          : isEditingFixedExpense
+            ? "Guardar cambios"
+            : "Guardar movimiento"}
+        onPress={handleSubmit}
+        tone="brand"
+      />
       </View>
       </View>
     </GestureDetector>
@@ -809,12 +803,4 @@ const styles = StyleSheet.create({
   categorySection: { gap: 10 },
   helperText: { color: colors.mutedForeground, fontFamily: fonts.sans },
   errorText: { color: colors.destructive, fontFamily: fonts.sans },
-  button: {
-    alignItems: "center",
-    backgroundColor: colors.brand,
-    borderRadius: radii.sm,
-    padding: 16,
-  },
-  buttonDisabled: { opacity: 0.6 },
-  buttonText: { color: colors.brandForeground, fontFamily: fonts.sansSemibold, fontWeight: "600" },
 })

@@ -4,7 +4,6 @@ import { useQueryClient } from "@tanstack/react-query"
 import {
   View,
   Text,
-  Pressable,
   ScrollView,
   StyleSheet,
   ActivityIndicator,
@@ -12,6 +11,8 @@ import {
   RefreshControl,
 } from "react-native"
 import { colors, fonts, radii, refreshControlColors } from "../../../theme"
+import { Button } from "../../../components/buttons/Button"
+import { CircleAddButton } from "../../../components/buttons/CircleAddButton"
 import { formatMoney } from "../../../utils/formatMoney"
 import { EmptyState } from "../../../components/feedback/EmptyState"
 import { showUndo } from "../../../components/feedback/undo"
@@ -27,6 +28,7 @@ import { useBudgetSheet } from "../components/BudgetSheetProvider"
 import { BudgetSheetProvider } from "../components/BudgetSheetProvider"
 import { getCurrentMonth } from "../hooks/useBudgets"
 import type { BudgetWithProgress } from "../types"
+import { ListSection } from "../../../components/layout/ListSection"
 import { ScreenContainer } from "../../../components/layout/ScreenContainer"
 import { TopSection } from "../../../components/layout/TopSection"
 import { SectionHeader } from "../../../components/layout/SectionHeader"
@@ -177,7 +179,7 @@ function BudgetsScreenContent() {
           }
         >
           <View style={styles.budgetSection}>
-            <View
+            <ListSection
               style={[
                 styles.budgetContent,
                 {
@@ -186,9 +188,13 @@ function BudgetsScreenContent() {
               ]}
             >
               <SectionHeader
-                    actionLabel="Crear presupuesto"
-                    onAction={openCreateBudget}
                     title="Presupuesto del mes"
+                    trailing={
+                      <CircleAddButton
+                        accessibilityLabel="Crear presupuesto"
+                        onPress={openCreateBudget}
+                      />
+                    }
                   />
 
                   <View style={styles.list}>
@@ -241,21 +247,19 @@ function BudgetsScreenContent() {
                           <View style={styles.cardSeparator} />
 
                           <View style={styles.actions}>
-                            <Pressable
-                              accessibilityRole="button"
-                              style={styles.actionsButtons}
+                            <Button
+                              label="Editar"
+                              labelStyle={styles.editText}
                               onPress={() => openEditBudget(budget)}
-                            >
-                              <Text style={styles.editText}>Editar</Text>
-                            </Pressable>
+                              tone="outline"
+                            />
 
-                            <Pressable
-                              accessibilityRole="button"
-                              style={styles.actionsButtons}
+                            <Button
+                              label="Eliminar"
+                              labelStyle={styles.deleteText}
                               onPress={() => handleDeleteBudget(budget.id)}
-                            >
-                              <Text style={styles.deleteText}>Eliminar</Text>
-                            </Pressable>
+                              tone="destructive"
+                            />
                           </View>
                         </View>
                       ))
@@ -268,7 +272,7 @@ function BudgetsScreenContent() {
                       />
                     )}
                   </View>
-            </View>
+            </ListSection>
           </View>
         </ScrollView>
       </ScreenContainer>
@@ -345,7 +349,6 @@ const styles =
     },
 
     budgetContent: {
-      paddingHorizontal: 20,
       gap: 18,
     },
 
@@ -435,17 +438,6 @@ const styles =
       justifyContent: 'flex-end',
       gap: 10,
       flexWrap: "wrap",
-    },
-
-    actionsButtons: {
-      alignItems: "center",
-      backgroundColor: colors.transparent,
-      borderColor: colors.borderStrong,
-      borderRadius: radii.sm,
-      borderWidth: 1,
-      justifyContent: "center",
-      minHeight: 44,
-      paddingHorizontal: 20,
     },
 
     editText: {

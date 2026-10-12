@@ -1,7 +1,9 @@
-import { Pressable, StyleSheet, Text, View } from "react-native"
+import { StyleSheet, Text, View } from "react-native"
 import type { Transaction } from "../../transactions/types"
 import { EmptyState } from "../../../components/feedback/EmptyState"
-import { colors, fonts, radii } from "../../../theme"
+import { ListSection } from "../../../components/layout/ListSection"
+import { SectionHeader } from "../../../components/layout/SectionHeader"
+import { colors, fonts } from "../../../theme"
 import { MovementItem } from "./MovementItem"
 
 type MovementsSectionProps = {
@@ -14,14 +16,9 @@ export function MovementsSection({ transactions, onViewAll, onCreate }: Movement
   const transactionsByDate = groupTransactionsByDate(transactions)
 
   return (
-    <View style={styles.section}>
-      <View style={styles.content}>
-        <View>
-          <Text style={styles.sectionTitle}>Movimientos{"\n"}Recientes</Text>
-          <Pressable accessibilityRole="button" style={styles.viewAllButton} onPress={onViewAll}>
-            <Text style={styles.viewAllText}>Ver todos</Text>
-          </Pressable>
-        </View>
+    <ListSection>
+      <View style={styles.section}>
+        <SectionHeader actionLabel="Ver todos" onAction={onViewAll} title={"Movimientos\nRecientes"} />
 
         <View style={styles.transactionGroups}>
           {transactionsByDate.length ? (
@@ -54,7 +51,7 @@ export function MovementsSection({ transactions, onViewAll, onCreate }: Movement
           )}
         </View>
       </View>
-    </View>
+    </ListSection>
   )
 }
 
@@ -111,32 +108,6 @@ const styles = StyleSheet.create({
     paddingTop: 8,
     borderTopColor: colors.border,
     borderTopWidth: 1,
-  },
-  content: {},
-  sectionTitle: {
-    marginBottom: 12,
-    fontSize: 22,
-    lineHeight: 26,
-    letterSpacing: -0.4,
-    fontFamily: fonts.sansSemibold,
-    color: colors.foreground,
-  },
-  viewAllButton: {
-    height: 44,
-    paddingHorizontal: 12,
-    backgroundColor: colors.transparent,
-    borderColor: colors.borderStrong,
-    borderRadius: radii.sm,
-    borderWidth: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    alignSelf: "flex-start",
-  },
-  viewAllText: {
-    color: colors.foreground,
-    fontFamily: fonts.sansMedium,
-    fontSize: 12,
-    lineHeight: 14,
   },
   transactions: {
     gap: 12,

@@ -9,9 +9,10 @@ import {
   Text,
   View,
 } from "react-native"
+import { Button } from "../../../components/buttons/Button"
 import { BackLink } from "../../../components/navigation/BackLink"
 import { showUndo } from "../../../components/feedback/undo"
-import { colors, fonts, radii } from "../../../theme"
+import { colors, fonts, layout, radii } from "../../../theme"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import { BottomSheetModal } from "@gorhom/bottom-sheet"
 
@@ -163,13 +164,7 @@ export function PendingChargeScreen({ navigation, route }: PendingChargeScreenPr
         ) : chargeQuery.isError ? (
           <View style={styles.messageBlock}>
             <Text style={styles.message}>No se pudo cargar este gasto.</Text>
-            <Pressable
-              accessibilityRole="button"
-              onPress={() => void chargeQuery.refetch()}
-              style={styles.primaryButton}
-            >
-              <Text style={styles.primaryButtonText}>Reintentar</Text>
-            </Pressable>
+            <Button label="Reintentar" onPress={() => void chargeQuery.refetch()} tone="brand" />
           </View>
         ) : !charge ? (
           <Text style={styles.message}>No encontramos ese gasto.</Text>
@@ -210,17 +205,13 @@ export function PendingChargeScreen({ navigation, route }: PendingChargeScreenPr
                       {formatMoney(suggestion.expectedAmount)}, pendiente{" "}
                       {formatMoney(suggestion.remaining)}. Confirmá para registrarlo como pago de ese gasto fijo.
                     </Text>
-                    <Pressable
-                      accessibilityRole="button"
+                    <Button
                       accessibilityLabel={`Vincular con ${suggestion.name}`}
                       disabled={isSaving}
+                      label={linkMutation.isPending ? "Vinculando..." : "Vincular al gasto fijo"}
                       onPress={() => void handleLink()}
-                      style={[styles.primaryButton, isSaving && styles.buttonDisabled]}
-                    >
-                      <Text style={styles.primaryButtonText}>
-                        {linkMutation.isPending ? "Vinculando..." : "Vincular al gasto fijo"}
-                      </Text>
-                    </Pressable>
+                      tone="brand"
+                    />
                   </View>
                 ) : null}
 
@@ -266,33 +257,24 @@ export function PendingChargeScreen({ navigation, route }: PendingChargeScreenPr
                   <Text style={styles.error}>Este espacio no tiene categorías de gasto.</Text>
                 ) : null}
 
-                <Pressable
-                  accessibilityRole="button"
+                <Button
                   disabled={!householdId || !category || !currencyMatches || isSaving || !isPending}
-                  onPress={() => void handleAssign()}
-                  style={[
-                    suggestion ? styles.secondaryButton : styles.primaryButton,
-                    (!householdId || !category || !currencyMatches || isSaving) && styles.buttonDisabled,
-                  ]}
-                >
-                  <Text style={suggestion ? styles.secondaryButtonText : styles.primaryButtonText}>
-                    {assignMutation.isPending
+                  label={
+                    assignMutation.isPending
                       ? "Cargando..."
                       : suggestion
                         ? "Cargarlo como gasto común"
-                        : "Cargar gasto"}
-                  </Text>
-                </Pressable>
-                <Pressable
-                  accessibilityRole="button"
+                        : "Cargar gasto"
+                  }
+                  onPress={() => void handleAssign()}
+                  tone={suggestion ? "ghost" : "brand"}
+                />
+                <Button
                   disabled={isSaving}
+                  label={dismissMutation.isPending ? "Descartando..." : "Descartar"}
                   onPress={handleDismiss}
-                  style={styles.secondaryButton}
-                >
-                  <Text style={styles.secondaryButtonText}>
-                    {dismissMutation.isPending ? "Descartando..." : "Descartar"}
-                  </Text>
-                </Pressable>
+                  tone="ghost"
+                />
               </>
             )}
           </>
@@ -344,7 +326,7 @@ const styles = StyleSheet.create({
   },
   content: {
     gap: 14,
-    paddingHorizontal: 20,
+    paddingHorizontal: layout.sectionInset,
   },
   back: {
     color: colors.brand,
@@ -442,29 +424,5 @@ const styles = StyleSheet.create({
     fontFamily: fonts.sans,
     fontSize: 14,
     lineHeight: 20,
-  },
-  primaryButton: {
-    alignItems: "center",
-    backgroundColor: colors.brand,
-    borderRadius: radii.sm,
-    marginTop: 8,
-    padding: 16,
-  },
-  primaryButtonText: {
-    color: colors.brandForeground,
-    fontFamily: fonts.sansSemibold,
-    fontSize: 15,
-  },
-  secondaryButton: {
-    alignItems: "center",
-    padding: 12,
-  },
-  secondaryButtonText: {
-    color: colors.mutedForeground,
-    fontFamily: fonts.sansMedium,
-    fontSize: 15,
-  },
-  buttonDisabled: {
-    opacity: 0.45,
   },
 })

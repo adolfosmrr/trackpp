@@ -10,7 +10,7 @@ import {
 } from "react-native"
 import { GlassView, isGlassEffectAPIAvailable, isLiquidGlassAvailable } from "expo-glass-effect"
 
-import { colors } from "../../theme"
+import { colors, radii } from "../../theme"
 
 const liquidGlassEnabled = isLiquidGlassAvailable() && isGlassEffectAPIAvailable()
 
@@ -69,7 +69,7 @@ export function GlassButton({
         accessibilityRole="button"
         hitSlop={hitSlop}
         onPress={onPress}
-        style={fallbackStyle}
+        style={[fallbackStyle, styles.shape]}
       >
         {content}
       </Pressable>
@@ -77,7 +77,7 @@ export function GlassButton({
   }
 
   return (
-    <GlassView glassEffectStyle="clear" style={glassStyle}>
+    <GlassView glassEffectStyle="clear" style={[glassStyle, styles.shape]}>
       <Pressable
         accessibilityLabel={accessibilityLabel}
         accessibilityRole="button"
@@ -94,5 +94,9 @@ export function GlassButton({
 const styles = StyleSheet.create({
   pressable: {
     backgroundColor: "transparent",
+  },
+  shape: {
+    borderRadius: radii.pill,
+    overflow: "hidden",
   },
 })

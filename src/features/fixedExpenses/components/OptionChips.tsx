@@ -56,7 +56,7 @@ const styles = StyleSheet.create({
   chip: {
     alignItems: "center",
     backgroundColor: colors.control,
-    borderRadius: radii.sm,
+    borderRadius: radii.pill,
     justifyContent: "center",
     minHeight: 36,
     paddingHorizontal: 12,
