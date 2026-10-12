@@ -119,7 +119,7 @@ Deno.serve(async (request) => {
   }
 
   return json({ status: "created", id: inserted.id }, 201)
-}
+})
 
 async function matchAutoDebit(
   supabase: SupabaseClient,
