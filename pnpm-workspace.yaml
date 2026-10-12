@@ -1,5 +1,7 @@
 allowBuilds:
   '@shopify/react-native-skia': true
+overrides:
+  '@radix-ui/react-dialog': '1.2.0'
 minimumReleaseAgeExclude:
   - expo-asset@57.0.15
   - expo-constants@57.0.15
