@@ -22,7 +22,6 @@ import { CorrectFixedExpensePaymentScreen } from "../features/fixedExpenses/scre
 import { PendingChargeScreen } from "../features/pendingCharges/screens/PendingChargeScreen"
 import { PendingChargesScreen } from "../features/pendingCharges/screens/PendingChargesScreen"
 import { BudgetEditorScreen } from "../features/budgets/screens/BudgetEditorScreen"
-import { SelectSpaceScreen } from "../features/households/screens/SelectSpaceScreen"
 import { ProfileScreen } from "../features/profile/screens/ProfileScreen"
 import { CategoryPickerScreen } from "../features/transactions/screens/CategoryPickerScreen"
 import { CreateMovementScreen } from "../features/transactions/screens/CreateMovementScreen"
@@ -124,11 +123,6 @@ export function AppNavigator() {
         name="TransactionFilters"
         component={TransactionFiltersScreen}
         options={formSheetOptions([0.72, 1])}
-      />
-      <Stack.Screen
-        name="SelectSpace"
-        component={SelectSpaceScreen}
-        options={formSheetOptions("fitToContents")}
       />
       <Stack.Screen
         name="BudgetEditor"

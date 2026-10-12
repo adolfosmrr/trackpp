@@ -97,7 +97,6 @@ export type AppStackParamList = {
   CategoryPicker: CategoryPickerParams
   HouseholdPicker: HouseholdPickerParams
   TransactionFilters: { filters: TransactionFilters }
-  SelectSpace: undefined
   BudgetEditor: BudgetEditorParams
   Profile: undefined
 }
