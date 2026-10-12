@@ -39,7 +39,6 @@ export function TopSection({
             onLayout={onLayout}
             pointerEvents={overlay ? "box-none" : "auto"}
             style={[
-                styles.container,
                 {
                     minHeight: insets.top + 120,
                     paddingTop: insets.top,
@@ -62,10 +61,6 @@ export function TopSection({
 }
 
 const styles = StyleSheet.create({
-    container: {
-        borderBottomColor: colors.border,
-        borderBottomWidth: 1,
-    },
     backgroundLayer: {
         backgroundColor: colors.background,
         borderBottomLeftRadius: radii.xl,
