@@ -1,11 +1,14 @@
 import { StyleSheet } from "react-native"
+import { useNavigation, type NavigationProp, type ParamListBase } from "@react-navigation/native"
+import type { NativeStackNavigationProp } from "@react-navigation/native-stack"
 
-import { useCreateTransactionSheet } from "../../features/transactions/components/CreateTransactionSheetProvider"
+import { createMovementParams } from "../../features/transactions/openCreateMovement"
+import type { AppStackParamList } from "../../navigation/types"
 import { fonts } from "../../theme"
 import { Button } from "../buttons/Button"
 
 export function AddMovementButton() {
-  const { openCreateTransaction } = useCreateTransactionSheet()
+  const navigation = useNavigation<NavigationProp<ParamListBase>>()
 
   return (
     <Button
@@ -14,7 +17,11 @@ export function AddMovementButton() {
       label="+ Movimiento"
       labelStyle={styles.label}
       onPress={() => {
-        void openCreateTransaction()
+        const parent = navigation.getParent<NativeStackNavigationProp<AppStackParamList>>()
+        if (!parent) return
+        void createMovementParams().then((params) => {
+          parent.navigate("CreateMovement", params)
+        })
       }}
       size="compact"
       style={styles.button}

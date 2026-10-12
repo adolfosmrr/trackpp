@@ -4,15 +4,13 @@ import {
   StyleSheet,
   Switch,
   Text,
+  TextInput,
   View,
 } from "react-native"
+import type { NativeStackScreenProps } from "@react-navigation/native-stack"
 import { Button } from "../../../components/buttons/Button"
-import { FieldRow, fieldStyles } from "../../../components/inputs/TextField"
+import { FieldRow, TextField, fieldStyles } from "../../../components/inputs/TextField"
 import { colors, fonts } from "../../../theme"
-import {
-  BottomSheetModal,
-  BottomSheetTextInput,
-} from "@gorhom/bottom-sheet"
 import { Gesture, GestureDetector } from "react-native-gesture-handler"
 import { runOnJS, useSharedValue } from "react-native-reanimated"
 
@@ -36,10 +34,8 @@ import {
   setLastCategoryId,
   setLastEntryMode,
 } from "../services/entryPreferences"
-import { CategorySelectorSheet } from "./CategorySelectorSheet"
-import { HouseholdSelectorSheet } from "./HouseholdSelectorSheet"
+import type { AppStackParamList } from "../../../navigation/types"
 
-import type { Category } from "../../categories/types"
 import type {
   CreateMovementMode,
   LinkedTransactionTarget,
@@ -53,14 +49,22 @@ const MODE_SWIPE_VELOCITY = 650
 const MODE_HORIZONTAL_INTENT_RATIO = 1.3
 const MODE_VERTICAL_FAIL_DISTANCE = 26
 
+type SelectedCategoryDisplay = {
+  id: string
+  name: string
+  icon: string | null
+}
+
 type CreateTransactionFormProps = {
-  onSuccess?: () => void
+  navigation: NativeStackScreenProps<AppStackParamList, "CreateMovement">["navigation"]
+  route: NativeStackScreenProps<AppStackParamList, "CreateMovement">["route"]
   request: TransactionSheetRequest
 }
 
 export function CreateTransactionForm({
-  onSuccess,
+  navigation,
   request,
+  route,
 }: CreateTransactionFormProps) {
   const editingFixedExpense = request.kind === "edit-fixed"
     ? request.fixedExpense
@@ -101,11 +105,8 @@ export function CreateTransactionForm({
       ? [{ householdId: selectedHouseholdId, categoryId: null }]
       : []
   )
-  const [activeCategoryHouseholdId, setActiveCategoryHouseholdId] = useState<string | null>(null)
   const [selectedCategoriesByHousehold, setSelectedCategoriesByHousehold] =
-    useState<Record<string, Category>>({})
-  const householdSelectorRef = useRef<BottomSheetModal>(null)
-  const categorySelectorRef = useRef<BottomSheetModal>(null)
+    useState<Record<string, SelectedCategoryDisplay>>({})
   const createTransactionMutation = useCreateLinkedTransactions()
   const createFixedExpenseMutation = useCreateFixedExpense()
   const updateFixedExpenseMutation = useUpdateFixedExpense()
@@ -119,20 +120,7 @@ export function CreateTransactionForm({
   const additionalTargets = primaryTarget
     ? targets.filter((target) => target.householdId !== primaryTarget.householdId)
     : []
-  const {
-    data: categories,
-    isLoading: categoriesLoading,
-    isError: categoriesError,
-  } = useHouseholdCategories(
-    activeCategoryHouseholdId,
-    type,
-    Boolean(activeCategoryHouseholdId) && !isFixedMode,
-  )
-  const {
-    data: fixedCategories,
-    isLoading: fixedCategoriesLoading,
-    isError: fixedCategoriesError,
-  } = useHouseholdCategories(
+  const { data: fixedCategories } = useHouseholdCategories(
     fixedCategoryHouseholdId,
     "expense",
     isFixedMode,
@@ -168,17 +156,6 @@ export function CreateTransactionForm({
         : []
     })
   }, [memberships, selectedHouseholdId])
-
-  useEffect(() => {
-    if (
-      !isEditingFixedExpense &&
-      activeCategoryHouseholdId &&
-      !targets.some((target) => target.householdId === activeCategoryHouseholdId)
-    ) {
-      setActiveCategoryHouseholdId(null)
-      categorySelectorRef.current?.dismiss()
-    }
-  }, [activeCategoryHouseholdId, isEditingFixedExpense, targets])
 
   const suggestionHouseholdId = isFixedMode
     ? fixedCategoryHouseholdId
@@ -232,6 +209,69 @@ export function CreateTransactionForm({
     suggestionKey,
   ])
 
+  useEffect(() => {
+    const selection = route.params?.categorySelection
+    if (!selection) return
+
+    if (mode === "fixed") {
+      if (selection.householdId === fixedCategoryHouseholdId) {
+        setFixedCategoryId(selection.categoryId)
+        if (fixedCategoryHouseholdId) {
+          void setLastCategoryId(fixedCategoryHouseholdId, "fixed", selection.categoryId)
+        }
+      }
+    } else {
+      setTargets((currentTargets) =>
+        currentTargets.map((target) =>
+          target.householdId === selection.householdId
+            ? { ...target, categoryId: selection.categoryId }
+            : target
+        )
+      )
+      setSelectedCategoriesByHousehold((currentCategories) => ({
+        ...currentCategories,
+        [selection.householdId]: {
+          id: selection.categoryId,
+          name: selection.name,
+          icon: selection.icon,
+        },
+      }))
+      void setLastCategoryId(selection.householdId, type, selection.categoryId)
+    }
+
+    navigation.setParams({ categorySelection: undefined })
+  }, [
+    fixedCategoryHouseholdId,
+    mode,
+    navigation,
+    route.params?.categorySelection,
+    type,
+  ])
+
+  useEffect(() => {
+    const selection = route.params?.householdSelection
+    if (!selection) return
+    if (selection.householdIds.length > 0) {
+      setTargets((currentTargets) =>
+        selection.householdIds.map(
+          (householdId) =>
+            currentTargets.find((target) => target.householdId === householdId) ?? {
+              householdId,
+              categoryId: null,
+            }
+        )
+      )
+      setSelectedCategoriesByHousehold((currentCategories) =>
+        Object.fromEntries(
+          Object.entries(currentCategories).filter(([householdId]) =>
+            selection.householdIds.includes(householdId)
+          )
+        )
+      )
+    }
+    navigation.setParams({ householdSelection: undefined })
+  }, [navigation, route.params?.householdSelection])
+
   function handleModeChange(newMode: CreateMovementMode) {
     setMode(newMode)
     void setLastEntryMode(newMode)
@@ -242,8 +282,6 @@ export function CreateTransactionForm({
     setFixedCategoryId(null)
     if (newMode !== "fixed") {
       setType(newMode)
-    } else {
-      setActiveCategoryHouseholdId(null)
     }
   }
 
@@ -370,7 +408,7 @@ export function CreateTransactionForm({
           await setLastCategoryId(fixedCategoryHouseholdId, "fixed", fixedCategoryId)
         }
         await setLastEntryMode("fixed")
-        onSuccess?.()
+        navigation.goBack()
       } catch (error) {
         const message = error instanceof Error
           ? error.message
@@ -413,7 +451,7 @@ export function CreateTransactionForm({
           .map((target) => setLastCategoryId(target.householdId, type, target.categoryId!))
       )
       await setLastEntryMode(type)
-      onSuccess?.()
+      navigation.goBack()
     } catch (error) {
       const message = error instanceof Error
         ? error.message
@@ -422,63 +460,40 @@ export function CreateTransactionForm({
     }
   }
 
-  function handleHouseholdSelection(householdIds: string[]) {
-    if (householdIds.length === 0) return
-
-    setTargets((currentTargets) =>
-      householdIds.map(
-        (householdId) =>
-          currentTargets.find((target) => target.householdId === householdId) ?? {
-            householdId,
-            categoryId: null,
-          }
-      )
-    )
-    setSelectedCategoriesByHousehold((currentCategories) =>
-      Object.fromEntries(
-        Object.entries(currentCategories).filter(([householdId]) =>
-          householdIds.includes(householdId)
-        )
-      )
-    )
-  }
-
-  function handleCategorySelect(category: Category) {
-    if (!activeCategoryHouseholdId) return
-
-    if (isFixedMode) {
-      setFixedCategoryId(category.id)
-      if (fixedCategoryHouseholdId) {
-        void setLastCategoryId(fixedCategoryHouseholdId, "fixed", category.id)
-      }
-      categorySelectorRef.current?.dismiss()
-      return
-    }
-
-    setTargets((currentTargets) =>
-      currentTargets.map((target) =>
-        target.householdId === activeCategoryHouseholdId
-          ? { ...target, categoryId: category.id }
-          : target
-      )
-    )
-    setSelectedCategoriesByHousehold((currentCategories) => ({
-      ...currentCategories,
-      [activeCategoryHouseholdId]: category,
-    }))
-    void setLastCategoryId(activeCategoryHouseholdId, type, category.id)
-    categorySelectorRef.current?.dismiss()
-  }
-
   function openCategorySelector(householdId: string) {
-    setActiveCategoryHouseholdId(householdId)
-    categorySelectorRef.current?.present()
+    const householdName = memberships?.find(
+      (membership) => membership.household_id === householdId,
+    )?.household.name ?? ""
+    navigation.navigate("CategoryPicker", {
+      returnTo: "CreateMovement",
+      householdId,
+      householdName,
+      entryType: type,
+      selectedCategoryId: targets.find((target) => target.householdId === householdId)?.categoryId ?? null,
+    })
   }
 
   function openFixedCategorySelector() {
     if (!fixedCategoryHouseholdId) return
-    setActiveCategoryHouseholdId(fixedCategoryHouseholdId)
-    categorySelectorRef.current?.present()
+    const householdName = memberships?.find(
+      (membership) => membership.household_id === fixedCategoryHouseholdId,
+    )?.household.name ?? ""
+    navigation.navigate("CategoryPicker", {
+      returnTo: "CreateMovement",
+      householdId: fixedCategoryHouseholdId,
+      householdName,
+      entryType: "expense",
+      selectedCategoryId: fixedCategoryId,
+    })
+  }
+
+  function openHouseholdSelector() {
+    navigation.navigate("HouseholdPicker", {
+      returnTo: "CreateMovement",
+      selectedHouseholdIds: targets.map((target) => target.householdId),
+      selectionMode: "multiple",
+      title: "Añadir a",
+    })
   }
 
   function renderCategoryField(target: LinkedTransactionTarget) {
@@ -548,21 +563,17 @@ export function CreateTransactionForm({
           ) : null}
 
       <View style={styles.fieldsStack}>
-      <BottomSheetTextInput
+      <TextField
         accessibilityLabel="Monto"
         autoFocus={!isEditingFixedExpense}
-        style={[fieldStyles.surface, fieldStyles.text, fieldStyles.pill]}
         placeholder="Monto"
-        placeholderTextColor={colors.mutedForeground}
         keyboardType="decimal-pad"
         value={amount}
         onChangeText={setAmount}
       />
-      <BottomSheetTextInput
+      <TextField
         accessibilityLabel="Título"
-        style={[fieldStyles.surface, fieldStyles.text, fieldStyles.pill]}
         placeholder="Título"
-        placeholderTextColor={colors.mutedForeground}
         value={title}
         onChangeText={setTitle}
       />
@@ -572,7 +583,7 @@ export function CreateTransactionForm({
           {renderFixedCategoryField()}
           <View style={[fieldStyles.surface, fieldStyles.row, fieldStyles.pill]}>
             <Text style={styles.dayFieldLabel}>Día de cobro</Text>
-            <BottomSheetTextInput
+            <TextInput
               style={styles.dayInput}
               keyboardType="number-pad"
               maxLength={2}
@@ -582,7 +593,7 @@ export function CreateTransactionForm({
           </View>
           <View style={[fieldStyles.surface, fieldStyles.row, fieldStyles.pill]}>
             <Text style={styles.dayFieldLabel}>Día de vencimiento</Text>
-            <BottomSheetTextInput
+            <TextInput
               style={styles.dayInput}
               keyboardType="number-pad"
               maxLength={2}
@@ -634,7 +645,7 @@ export function CreateTransactionForm({
           {primaryTarget ? renderCategoryField(primaryTarget) : null}
 
           <FieldRow
-            onPress={() => householdSelectorRef.current?.present()}
+            onPress={openHouseholdSelector}
           >
             <Text style={styles.fieldLabel}>Añadir a Espacio</Text>
             <View style={styles.fieldValueGroup}>
@@ -661,36 +672,6 @@ export function CreateTransactionForm({
           </View>
         </>
       )}
-
-      <View style={styles.categorySection}>
-        {!isFixedMode ? (
-          <HouseholdSelectorSheet
-            ref={householdSelectorRef}
-            memberships={memberships ?? []}
-            selectedHouseholdIds={targets.map((target) => target.householdId)}
-            onChange={handleHouseholdSelection}
-            onDone={() => householdSelectorRef.current?.dismiss()}
-          />
-        ) : null}
-        <CategorySelectorSheet
-          ref={categorySelectorRef}
-          householdName={
-            memberships?.find(
-              (membership) => membership.household_id === activeCategoryHouseholdId
-            )?.household.name ?? ""
-          }
-          categories={isFixedMode ? fixedCategories : categories}
-          selectedCategoryId={
-            isFixedMode
-              ? fixedCategoryId
-              : targets.find((target) => target.householdId === activeCategoryHouseholdId)
-                ?.categoryId ?? null
-          }
-          isLoading={isFixedMode ? fixedCategoriesLoading : categoriesLoading}
-          hasError={isFixedMode ? fixedCategoriesError : categoriesError}
-          onSelect={handleCategorySelect}
-        />
-      </View>
 
       <Button
         disabled={isEditingFixedExpense
@@ -763,7 +744,5 @@ const styles = StyleSheet.create({
     textAlign: "right",
   },
   optionBlock: { gap: 8 },
-  categorySection: { gap: 10 },
   helperText: { color: colors.mutedForeground, fontFamily: fonts.sans },
-  errorText: { color: colors.destructive, fontFamily: fonts.sans },
 })

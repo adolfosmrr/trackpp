@@ -8,19 +8,18 @@ import {
   Text,
   View,
 } from "react-native"
+import type { NativeStackScreenProps } from "@react-navigation/native-stack"
 import { Button } from "../../../components/buttons/Button"
 import { BackLink } from "../../../components/navigation/BackLink"
 import { showUndo } from "../../../components/feedback/undo"
 import { colors, fonts, layout, radii } from "../../../theme"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
-import { BottomSheetModal } from "@gorhom/bottom-sheet"
 
 import { FieldChevronIcon } from "../../../components/icons/FieldChevronIcon"
 import { useHouseholdCategories } from "../../categories/hooks/useHouseholdCategories"
 import { useHouseholds } from "../../households/hooks/useHouseholds"
 import { FieldRow } from "../../../components/inputs/TextField"
-import { CategorySelectorSheet } from "../../transactions/components/CategorySelectorSheet"
-import { HouseholdSelectorSheet } from "../../transactions/components/HouseholdSelectorSheet"
+import type { AppStackParamList } from "../../../navigation/types"
 import { useHouseholdStore } from "../../../store/householdStore"
 import { formatPeriodLabel } from "../../fixedExpenses/utils/frequency"
 import { formatMoney } from "../../../utils/formatMoney"
@@ -37,17 +36,18 @@ import {
   formatChargeDate,
 } from "../utils/pendingChargeFormat"
 
-import type { Category } from "../../categories/types"
-
-type PendingChargeScreenProps = {
-  navigation: { goBack: () => void }
-  route: { params?: { chargeId?: string } }
+type ChargeCategory = {
+  id: string
+  name: string
+  icon: string | null
 }
+
+type PendingChargeScreenProps = NativeStackScreenProps<AppStackParamList, "PendingCharge">
 
 export function PendingChargeScreen({ navigation, route }: PendingChargeScreenProps) {
   const insets = useSafeAreaInsets()
   const queryClient = useQueryClient()
-  const chargeId = typeof route.params?.chargeId === "string" ? route.params.chargeId : null
+  const chargeId = route.params.chargeId
   const chargeQuery = usePendingCharge(chargeId)
   const { data: memberships } = useHouseholds()
   const selectedHouseholdId = useHouseholdStore((state) => state.selectedHouseholdId)
@@ -58,10 +58,10 @@ export function PendingChargeScreen({ navigation, route }: PendingChargeScreenPr
     chargeId,
     Boolean(chargeQuery.data?.suggestedPeriodId) && chargeQuery.data?.status === "pending",
   )
-  const householdSheetRef = useRef<BottomSheetModal>(null)
-  const categorySheetRef = useRef<BottomSheetModal>(null)
   const [householdId, setHouseholdId] = useState<string | null>(null)
-  const [category, setCategory] = useState<Category | null>(null)
+  const [category, setCategory] = useState<ChargeCategory | null>(null)
+  const householdIdRef = useRef(householdId)
+  householdIdRef.current = householdId
   const charge = chargeQuery.data
   const categoriesQuery = useHouseholdCategories(
     householdId,
@@ -94,6 +94,30 @@ export function PendingChargeScreen({ navigation, route }: PendingChargeScreenPr
       setHouseholdId(preferred.household.id)
     }
   }, [charge, householdId, memberships, selectedHouseholdId])
+
+  useEffect(() => {
+    const selection = route.params.householdSelection
+    if (!selection) return
+    const next = selection.householdIds[0] ?? null
+    if (next !== householdIdRef.current) {
+      setHouseholdId(next)
+      setCategory(null)
+    }
+    navigation.setParams({ householdSelection: undefined })
+  }, [navigation, route.params.householdSelection])
+
+  useEffect(() => {
+    const selection = route.params.categorySelection
+    if (!selection) return
+    if (selection.householdId === householdIdRef.current) {
+      setCategory({
+        id: selection.categoryId,
+        name: selection.name,
+        icon: selection.icon,
+      })
+    }
+    navigation.setParams({ categorySelection: undefined })
+  }, [navigation, route.params.categorySelection])
 
   async function handleLink() {
     if (!charge || !suggestion || isSaving) return
@@ -216,7 +240,15 @@ export function PendingChargeScreen({ navigation, route }: PendingChargeScreenPr
                 ) : null}
 
                 <FieldRow
-                  onPress={() => householdSheetRef.current?.present()}
+                  onPress={() => {
+                    navigation.navigate("HouseholdPicker", {
+                      returnTo: "PendingCharge",
+                      chargeId,
+                      selectedHouseholdIds: householdId ? [householdId] : [],
+                      selectionMode: "single",
+                      title: "Espacio",
+                    })
+                  }}
                 >
                   <Text style={styles.fieldLabel}>Espacio</Text>
                   <View style={styles.fieldValueGroup}>
@@ -229,7 +261,17 @@ export function PendingChargeScreen({ navigation, route }: PendingChargeScreenPr
 
                 <FieldRow
                   disabled={!householdId}
-                  onPress={() => categorySheetRef.current?.present()}
+                  onPress={() => {
+                    if (!householdId) return
+                    navigation.navigate("CategoryPicker", {
+                      returnTo: "PendingCharge",
+                      chargeId,
+                      householdId,
+                      householdName: selectedMembership?.household.name ?? "",
+                      entryType: "expense",
+                      selectedCategoryId: category?.id ?? null,
+                    })
+                  }}
                   style={!householdId ? styles.fieldDisabled : undefined}
                 >
                   <Text style={styles.fieldLabel}>Categoría</Text>
@@ -277,34 +319,6 @@ export function PendingChargeScreen({ navigation, route }: PendingChargeScreenPr
           </>
         )}
       </ScrollView>
-
-      <HouseholdSelectorSheet
-        ref={householdSheetRef}
-        memberships={memberships ?? []}
-        onChange={(householdIds) => {
-          const nextHouseholdId = householdIds[0] ?? null
-          setHouseholdId(nextHouseholdId)
-          if (nextHouseholdId !== householdId) {
-            setCategory(null)
-          }
-        }}
-        onDone={() => householdSheetRef.current?.dismiss()}
-        selectedHouseholdIds={householdId ? [householdId] : []}
-        selectionMode="single"
-        title="Espacio"
-      />
-      <CategorySelectorSheet
-        ref={categorySheetRef}
-        categories={categoriesQuery.data}
-        hasError={categoriesQuery.isError}
-        householdName={selectedMembership?.household.name ?? ""}
-        isLoading={categoriesQuery.isLoading}
-        onSelect={(nextCategory) => {
-          setCategory(nextCategory)
-          categorySheetRef.current?.dismiss()
-        }}
-        selectedCategoryId={category?.id ?? null}
-      />
     </View>
   )
 }

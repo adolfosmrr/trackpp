@@ -66,7 +66,7 @@ import {
   topSectionCollapseRange,
   topSectionSnapTarget,
 } from "../../../components/layout/topSectionCollapse"
-import { useCreateTransactionSheet } from "../../transactions/components/CreateTransactionSheetProvider"
+import { createMovementParams } from "../../transactions/openCreateMovement"
 import { useDelayedHomeAmounts } from "../hooks/useDelayedHomeAmounts"
 import { PendingChargesBanner } from "../../pendingCharges/components/PendingChargesBanner"
 import type { AppStackParamList, MainTabsParamList } from "../../../navigation/types"
@@ -323,8 +323,6 @@ export function HomeScreen({ navigation }: HomeScreenProps) {
     isMarkingSeen,
     refetch: refetchUnreadActivity,
   } = useUnreadActivity(isCoupleHousehold)
-
-  const { openCreateTransaction } = useCreateTransactionSheet()
 
   const handleExpandedLayout = useCallback((event: LayoutChangeEvent) => {
     const height = event.nativeEvent.layout.height
@@ -641,7 +639,9 @@ export function HomeScreen({ navigation }: HomeScreenProps) {
         transactions={dashboard?.recentTransactions ?? []}
         onViewAll={() => navigation.navigate("Transactions")}
         onCreate={() => {
-          void openCreateTransaction()
+          void createMovementParams().then((params) => {
+            navigation.navigate("CreateMovement", params)
+          })
         }}
       />
 

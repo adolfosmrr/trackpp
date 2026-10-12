@@ -8,8 +8,11 @@ import {
   RefreshControl,
 } from "react-native"
 import { useQueryClient } from "@tanstack/react-query"
+import type { CompositeScreenProps } from "@react-navigation/native"
+import type { NativeBottomTabScreenProps } from "@react-navigation/bottom-tabs/unstable"
+import type { NativeStackScreenProps } from "@react-navigation/native-stack"
 import { colors, fonts, refreshControlColors } from "../../../theme"
-  import { useMemo, useState } from "react"
+  import { useEffect, useState } from "react"
 
   import { useAuth } from "../../auth/context/AuthContext"
   import { useProfile } from "../../profile/hooks/useProfile"
@@ -24,8 +27,7 @@ import { colors, fonts, refreshControlColors } from "../../../theme"
   import { HomeIncomeExpenseSummary } from "../../home/components/HomeIncomeExpenseSummary"
 import { TransactionsMovementsSection } from "../components/TransactionsMovementsSection"
 import { showUndo } from "../../../components/feedback/undo"
-import { TransactionFiltersModal } from "../components/TransactionFiltersModal"
-import { useCreateTransactionSheet } from "../components/CreateTransactionSheetProvider"
+import { createMovementParams } from "../openCreateMovement"
   import { useTransactions } from "../hooks/useTransactions"
   import { useCreateLinkedTransactions } from "../hooks/useCreateLinkedTransactions"
 import { useDeleteTransaction } from "../hooks/useDeleteTransaction"
@@ -34,21 +36,20 @@ import { useDeleteTransaction } from "../hooks/useDeleteTransaction"
     type Transaction,
     type TransactionFilters,
   } from "../types"
-  import {
-    getTransactionCategories,
-    getTransactionCreators,
-  } from "../utils/transactionFilters"
+import type { AppStackParamList, MainTabsParamList } from "../../../navigation/types"
 
-  export function TransactionsScreen() {
+type TransactionsScreenProps = CompositeScreenProps<
+  NativeBottomTabScreenProps<MainTabsParamList, "Transactions">,
+  NativeStackScreenProps<AppStackParamList>
+>
+
+  export function TransactionsScreen({ navigation, route }: TransactionsScreenProps) {
     const queryClient = useQueryClient()
     const [topSectionHeight, setTopSectionHeight] = useState(0)
     const [appliedFilters, setAppliedFilters] = useState(defaultTransactionFilters)
-    const [draftFilters, setDraftFilters] = useState(defaultTransactionFilters)
-    const [filtersVisible, setFiltersVisible] = useState(false)
     const [refreshing, setRefreshing] = useState(false)
     const deleteMutation = useDeleteTransaction()
     const restoreMutation = useCreateLinkedTransactions()
-    const { openCreateTransaction } = useCreateTransactionSheet()
 
     function handleTopSectionLayout(event: LayoutChangeEvent) {
       const height = event.nativeEvent.layout.height
@@ -83,17 +84,18 @@ import { useDeleteTransaction } from "../hooks/useDeleteTransaction"
       isLoading,
       error,
     } = transactionsQuery
-    const transactionList = transactions ?? []
     const householdType = currentHousehold?.type === "couple" ? "couple" : "personal"
-    const categories = useMemo(
-      () => getTransactionCategories(transactionList),
-      [transactionList]
-    )
-    const creators = useMemo(
-      () => getTransactionCreators(transactionList),
-      [transactionList]
-    )
     const activeFilterCount = getActiveFilterCount(appliedFilters, householdType)
+
+    useEffect(() => {
+      const next = route.params?.appliedFilters
+      if (!next) return
+      setAppliedFilters({
+        ...next,
+        creatorId: householdType === "couple" ? next.creatorId : null,
+      })
+      navigation.setParams({ appliedFilters: undefined })
+    }, [householdType, navigation, route.params?.appliedFilters])
 
     async function handleRefresh() {
       setRefreshing(true)
@@ -110,16 +112,11 @@ import { useDeleteTransaction } from "../hooks/useDeleteTransaction"
     }
 
     function openFilters() {
-      setDraftFilters(appliedFilters)
-      setFiltersVisible(true)
-    }
-
-    function applyFilters() {
-      setAppliedFilters({
-        ...draftFilters,
-        creatorId: householdType === "couple" ? draftFilters.creatorId : null,
+      navigation.navigate("TransactionFilters", {
+        filters: householdType === "couple"
+          ? appliedFilters
+          : { ...appliedFilters, creatorId: null },
       })
-      setFiltersVisible(false)
     }
 
     async function requestDelete(transaction: Transaction) {
@@ -207,11 +204,12 @@ import { useDeleteTransaction } from "../hooks/useDeleteTransaction"
               userId={user?.id}
               onDelete={requestDelete}
               onCreate={() => {
-                void openCreateTransaction()
+                void createMovementParams().then((params) => {
+                  navigation.navigate("CreateMovement", params)
+                })
               }}
               onClearFilters={() => {
                 setAppliedFilters(defaultTransactionFilters)
-                setDraftFilters(defaultTransactionFilters)
               }}
               filters={householdType === "couple"
                 ? appliedFilters
@@ -222,17 +220,6 @@ import { useDeleteTransaction } from "../hooks/useDeleteTransaction"
           )}
          />
         </ScreenContainer>
-        <TransactionFiltersModal
-          visible={filtersVisible}
-          filters={draftFilters}
-          householdType={householdType}
-          categories={categories}
-          creators={creators}
-          onChange={setDraftFilters}
-          onClear={() => setDraftFilters(defaultTransactionFilters)}
-          onApply={applyFilters}
-          onCancel={() => setFiltersVisible(false)}
-        />
         <TopSection
           mode="collapsed"
           overlay

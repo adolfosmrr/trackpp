@@ -3,13 +3,15 @@ import {
   Text,
   StyleSheet,
   ActivityIndicator,
+  ScrollView,
 } from "react-native"
-import { BottomSheetScrollView } from "@gorhom/bottom-sheet"
+import { useNavigation } from "@react-navigation/native"
+import type { NativeStackNavigationProp } from "@react-navigation/native-stack"
+import { useSafeAreaInsets } from "react-native-safe-area-context"
 
 import { Button } from "../../../components/buttons/Button"
 import { colors, fonts, radii } from "../../../theme"
-import { navigationRef } from "../../../navigation/navigationRef"
-import { closeProfileMenu } from "../profileMenu"
+import type { AppStackParamList } from "../../../navigation/types"
 
 import { supabase } from "../../../services/supabase"
 
@@ -21,6 +23,8 @@ import { useMe } from "../../auth/hooks/useMe"
 import { useHouseholdStore } from "../../../store/householdStore"
 
 export function ProfileScreen() {
+  const navigation = useNavigation<NativeStackNavigationProp<AppStackParamList>>()
+  const insets = useSafeAreaInsets()
   const { user } = useAuth()
 
   const selectedHouseholdId = useHouseholdStore(
@@ -54,12 +58,10 @@ export function ProfileScreen() {
   )?.household
 
   function openScreen(name: "InviteMember" | "CreateHousehold" | "Invitations") {
-    closeProfileMenu()
-    if (navigationRef.isReady()) navigationRef.navigate(name)
+    navigation.navigate(name)
   }
 
   async function handleLogout() {
-    closeProfileMenu()
     await supabase.auth.signOut()
   }
 
@@ -99,9 +101,9 @@ export function ProfileScreen() {
   }
 
   return (
-    <BottomSheetScrollView
+    <ScrollView
       style={styles.container}
-      contentContainerStyle={styles.content}
+      contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 32 }]}
       showsVerticalScrollIndicator={false}
     >
       <View style={styles.header}>
@@ -227,7 +229,7 @@ export function ProfileScreen() {
       />
 
       <Button label="Cerrar sesión" onPress={handleLogout} tone="destructive" />
-    </BottomSheetScrollView>
+    </ScrollView>
   )
 }
 
@@ -264,7 +266,6 @@ function formatHouseholdType(
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
   },
 
   content: {
@@ -274,7 +275,6 @@ const styles = StyleSheet.create({
   },
   center: {
     flex: 1,
-    backgroundColor: colors.background,
     alignItems: "center",
     justifyContent: "center",
     gap: 20,

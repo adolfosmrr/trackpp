@@ -1,5 +1,8 @@
 import { useState } from "react"
 import { useQueryClient } from "@tanstack/react-query"
+import type { CompositeScreenProps } from "@react-navigation/native"
+import type { NativeBottomTabScreenProps } from "@react-navigation/bottom-tabs/unstable"
+import type { NativeStackScreenProps } from "@react-navigation/native-stack"
 
 import {
   View,
@@ -24,10 +27,9 @@ import { createBudget } from "../services/budgetService"
 import { useProfile } from "../../profile/hooks/useProfile"
 import { useHouseholdStore } from "../../../store/householdStore"
 import { useDashboard } from "../../dashboard/hooks/useDashboard"
-import { useBudgetSheet } from "../components/BudgetSheetProvider"
-import { BudgetSheetProvider } from "../components/BudgetSheetProvider"
 import { getCurrentMonth } from "../hooks/useBudgets"
 import type { BudgetWithProgress } from "../types"
+import type { AppStackParamList, MainTabsParamList } from "../../../navigation/types"
 import { ListSection } from "../../../components/layout/ListSection"
 import { ScreenContainer } from "../../../components/layout/ScreenContainer"
 import { TopSection } from "../../../components/layout/TopSection"
@@ -37,15 +39,12 @@ import { HomeBalance } from "../../home/components/HomeBalance"
 import { HomeGreeting } from "../../home/components/HomeGreeting"
 import { HomeIncomeExpenseSummary } from "../../home/components/HomeIncomeExpenseSummary"
 
-export function BudgetsScreen() {
-  return (
-    <BudgetSheetProvider>
-      <BudgetsScreenContent />
-    </BudgetSheetProvider>
-  )
-}
+type BudgetsScreenProps = CompositeScreenProps<
+  NativeBottomTabScreenProps<MainTabsParamList, "Budgets">,
+  NativeStackScreenProps<AppStackParamList>
+>
 
-function BudgetsScreenContent() {
+export function BudgetsScreen({ navigation }: BudgetsScreenProps) {
   const insets = useSafeAreaInsets()
   const queryClient = useQueryClient()
   const selectedHouseholdId = useHouseholdStore((state) => state.selectedHouseholdId)
@@ -63,7 +62,14 @@ function BudgetsScreenContent() {
   } = budgetsQuery
 
   const deleteBudgetMutation = useDeleteBudget()
-  const { openCreateBudget, openEditBudget } = useBudgetSheet()
+
+  function openCreateBudget() {
+    navigation.navigate("BudgetEditor", { request: { kind: "create" } })
+  }
+
+  function openEditBudget(budget: BudgetWithProgress) {
+    navigation.navigate("BudgetEditor", { request: { kind: "edit", budget } })
+  }
 
   function handleTopSectionLayout(event: LayoutChangeEvent) {
     const height = event.nativeEvent.layout.height

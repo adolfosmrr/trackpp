@@ -1,5 +1,4 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
-import { BottomSheetModalProvider } from "@gorhom/bottom-sheet"
 import { useFonts } from "expo-font"
 import { StatusBar } from "expo-status-bar"
 import { StyleSheet } from "react-native"
@@ -10,8 +9,6 @@ import { AuthProvider } from "./src/features/auth/context/AuthContext"
 import { RootNavigator } from "./src/navigation/RootNavigator"
 import { NotificationObserver } from "./src/features/notifications/components/NotificationObserver"
 import { PushTokenRegistrar } from "./src/features/notifications/components/PushTokenRegistrar"
-import { CreateTransactionSheetProvider } from "./src/features/transactions/components/CreateTransactionSheetProvider"
-import { ProfileMenuSheet } from "./src/features/profile/components/ProfileMenuSheet"
 import { UndoSnackbar } from "./src/components/feedback/UndoSnackbar"
 import { colors } from "./src/theme"
 import "./src/features/notifications/services/notificationSetup"
@@ -39,15 +36,10 @@ export default function App() {
       <SafeAreaProvider>
         <QueryClientProvider client={queryClient}>
           <AuthProvider>
-            <BottomSheetModalProvider>
-              <CreateTransactionSheetProvider>
-                <NotificationObserver />
-                <PushTokenRegistrar />
-                <RootNavigator />
-                <ProfileMenuSheet />
-                <UndoSnackbar />
-              </CreateTransactionSheetProvider>
-            </BottomSheetModalProvider>
+            <NotificationObserver />
+            <PushTokenRegistrar />
+            <RootNavigator />
+            <UndoSnackbar />
           </AuthProvider>
         </QueryClientProvider>
       </SafeAreaProvider>

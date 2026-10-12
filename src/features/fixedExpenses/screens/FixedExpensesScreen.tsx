@@ -42,7 +42,7 @@ import { ScreenContainer } from "../../../components/layout/ScreenContainer"
 import { TopSection } from "../../../components/layout/TopSection"
 import { SectionHeader } from "../../../components/layout/SectionHeader"
 import { TopSectionHeader } from "../../../components/layout/TopSectionHeader"
-import { useCreateTransactionSheet } from "../../transactions/components/CreateTransactionSheetProvider"
+import { createMovementParams, editFixedExpenseParams } from "../../transactions/openCreateMovement"
 import type { AppStackParamList, MainTabsParamList } from "../../../navigation/types"
 
 type FixedExpensesScreenProps = CompositeScreenProps<
@@ -61,7 +61,6 @@ export function FixedExpensesScreen({ navigation }: FixedExpensesScreenProps) {
   const { data: profile, isLoading: profileLoading, error: profileError } = profileQuery
   const dashboardQuery = useDashboard()
   const { data: dashboard, isLoading: dashboardLoading, error: dashboardError } = dashboardQuery
-  const { openCreateTransaction, openEditFixedExpense } = useCreateTransactionSheet()
   const fixedExpensesQuery = useFixedExpenses()
   const { data, isLoading, error } = fixedExpensesQuery
   const currentPeriod = getCurrentFixedExpensePeriod()
@@ -224,7 +223,9 @@ export function FixedExpensesScreen({ navigation }: FixedExpensesScreenProps) {
                   <CircleAddButton
                     accessibilityLabel="Agregar gasto fijo"
                     onPress={() => {
-                      void openCreateTransaction("fixed")
+                      void createMovementParams("fixed").then((params) => {
+                        navigation.navigate("CreateMovement", params)
+                      })
                     }}
                   />
                 }
@@ -234,7 +235,9 @@ export function FixedExpensesScreen({ navigation }: FixedExpensesScreenProps) {
           <FixedExpenseList
             emptyBody="Sumá alquiler, servicios o suscripciones para seguirlos todos los meses."
             onCreate={() => {
-              void openCreateTransaction("fixed")
+              void createMovementParams("fixed").then((params) => {
+                navigation.navigate("CreateMovement", params)
+              })
             }}
             onOpenHistory={(expense) => {
               navigation.navigate("FixedExpenseHistory", { fixedExpenseId: expense.id })
@@ -246,7 +249,9 @@ export function FixedExpensesScreen({ navigation }: FixedExpensesScreenProps) {
                   <Button
                     label="Editar"
                     labelStyle={styles.actionButtonText}
-                    onPress={() => openEditFixedExpense(expense, currentPeriod)}
+                    onPress={() => {
+                      navigation.navigate("CreateMovement", editFixedExpenseParams(expense, currentPeriod))
+                    }}
                     tone="outline"
                   />
 
