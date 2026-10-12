@@ -634,6 +634,7 @@ export function HomeScreen({ navigation }: HomeScreenProps) {
       <PendingChargesBanner
         onPress={() => navigation.navigate("PendingCharges")}
       />
+      <HomeAiSection />
       <MovementsSection
         transactions={dashboard?.recentTransactions ?? []}
         onViewAll={() => navigation.navigate("Transactions")}
@@ -679,8 +680,6 @@ export function HomeScreen({ navigation }: HomeScreenProps) {
           )}
         </View>
       ) : null}
-
-      <HomeAiSection />
 
         </Animated.ScrollView>
       </ScreenContainer>

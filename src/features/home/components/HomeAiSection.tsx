@@ -2,6 +2,7 @@ import { useState } from "react"
 import { StyleSheet, View } from "react-native"
 
 import { useDashboardInsights } from "../../dashboard/hooks/useDashboardInsights"
+import type { HomeAiInsight } from "../../dashboard/types/homeAiInsight"
 import { HomeInsightCard } from "./HomeInsightCard"
 import { HomeSectionTitle } from "./HomeSectionTitle"
 import { HomeSectionToggle } from "./HomeSectionToggle"
@@ -24,12 +25,13 @@ export function HomeAiSection() {
   const actionDetailsQuery = useHomeInsightActionDetails(
     insightQuery.isError ? undefined : insightQuery.data,
   )
-  const cards = insightsQuery.isError ? [] : insightsQuery.data ?? []
+  const cards = insightsQuery.isError
+    ? []
+    : (insightsQuery.data ?? []).filter((insight) => insight.message.trim().length > 0)
   const narrative = insightQuery.isError ? undefined : insightQuery.data
-  const hasNarrative = Boolean(narrative?.intro || narrative?.groups.length)
-  const hasContent = hasNarrative || cards.length > 0
+  const hasNarrative = hasInsightCopy(narrative)
 
-  if (!hasContent) return null
+  if (!hasNarrative && cards.length === 0) return null
 
   return (
     <View style={styles.section}>
@@ -69,6 +71,12 @@ export function HomeAiSection() {
       ) : null}
     </View>
   )
+}
+
+function hasInsightCopy(insight: HomeAiInsight | undefined) {
+  if (!insight) return false
+  if (insight.intro.trim().length > 0) return true
+  return insight.groups.some((group) => group.text.trim().length > 0)
 }
 
 const styles = StyleSheet.create({
