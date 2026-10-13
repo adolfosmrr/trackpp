@@ -105,10 +105,15 @@ export const fonts = {
 } as const
 
 /**
- * Roles for screen copy. Numeric display (balances, hero greetings) stays
- * outside this scale because those sizes are part of the motion layout.
+ * Roles for screen copy. Sizes that belong to a motion layout (balances)
+ * stay outside this scale.
  */
 export const typography = {
+  display: {
+    fontFamily: fonts.sansSemibold,
+    fontSize: 32,
+    lineHeight: 34,
+  },
   title: {
     fontFamily: fonts.sansSemibold,
     fontSize: 22,

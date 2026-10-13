@@ -155,12 +155,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   authMessage: {
-    ...typography.title,
+    ...typography.display,
     color: "#FFFFFF",
   },
   authMessageClip: {
     width: "100%",
-    minHeight: typography.title.lineHeight,
+    minHeight: typography.display.lineHeight,
     overflow: "hidden",
     alignItems: "center",
     justifyContent: "center",
