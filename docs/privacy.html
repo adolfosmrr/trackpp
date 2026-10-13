@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Política de privacidad · trackpp</title>
+  <meta name="description" content="Política de privacidad de trackpp: inicio de sesión con Google, movimientos, espacios compartidos y cómo pedir la eliminación de los datos.">
+  <link rel="canonical" href="https://adolfosmrr.github.io/trackpp/privacy.html">
+  <link rel="icon" href="logo.png" type="image/png">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <main>
+    <a class="back" href="./">trackpp</a>
+    <h1>Política de privacidad</h1>
+    <p class="meta">Última actualización: 13 de octubre de 2026</p>
+
+    <p>trackpp es una app para iOS, hecha con Expo, para anotar gastos e ingresos personales o compartidos. Los datos de la cuenta viven en Supabase. Esta página dice qué se guarda y cómo pedir que se borre.</p>
+
+    <h2>Inicio de sesión con Google</h2>
+    <p>El ingreso con Google pasa por Supabase Auth. Google entrega el nombre, el correo electrónico y la foto de perfil de la cuenta, y con eso se identifica la sesión. La sesión queda guardada en el teléfono.</p>
+
+    <h2>Correo y contraseña</h2>
+    <p>También se puede crear una cuenta con correo y contraseña. Supabase Auth guarda esas credenciales y puede mandar un correo para confirmar la cuenta o un cambio de correo. La app no conserva la contraseña por su cuenta.</p>
+
+    <h2>Perfil</h2>
+    <p>En el perfil se pueden guardar el nombre, la fecha de nacimiento y un alias. También se guardan la moneda y la zona horaria. La foto de perfil, cuando existe, es la URL asociada a la cuenta.</p>
+
+    <h2>Movimientos, categorías y espacios</h2>
+    <p>Cada movimiento que cargás incluye título, descripción si la escribís, monto, tipo (gasto o ingreso), fecha y categoría. También podés crear categorías, presupuestos y gastos fijos.</p>
+    <p>Un espacio se puede compartir. La invitación guarda el correo de la persona invitada mientras está pendiente. Quienes están en el mismo espacio ven los movimientos, las categorías, los presupuestos, los gastos fijos, la actividad del espacio y el nombre y la foto de los demás miembros.</p>
+
+    <h2>Asistente</h2>
+    <p>El texto que escribís en el asistente se envía al servidor de trackpp, en la ruta <code>/ai/chat</code>, junto con el espacio activo y tu sesión de Supabase. Ese servidor devuelve la respuesta. Las conversaciones, con tus mensajes y las respuestas, se guardan en Supabase y las personas del mismo espacio pueden leerlas. El resumen de la pantalla de inicio sale del mismo servidor, a partir de los datos del espacio. El código de la app no nombra la empresa del modelo que redacta esas respuestas.</p>
+
+    <h2>Correos de cargos de tarjeta</h2>
+    <p>Un automatismo del dueño de trackpp lee su Gmail y detecta cargos de Naranja, Naranja X o Banco Galicia. La app no pide acceso al Gmail de cada persona. Si la casilla está en ese automatismo, el cargo entra a una función de Supabase. Se guardan el correo de la casilla, el identificador del mensaje, el origen (Naranja, Naranja X, Galicia u otro), el monto, la moneda, el comercio, los últimos cuatro dígitos de la tarjeta si vienen en el mail, la fecha y, si el automatismo los incluye, un extracto del mensaje. Llega una notificación para elegir espacio y categoría. El movimiento se crea al confirmarlo. No se guarda el número completo de la tarjeta.</p>
+
+    <h2>Notificaciones</h2>
+    <p>Si das permiso, la app registra en Supabase un token de notificaciones de Expo y la plataforma del teléfono, para avisar de un cargo pendiente. Expo entrega ese aviso. Los recordatorios de gastos fijos pueden quedar solo en el dispositivo.</p>
+
+    <h2>Uso y cesión</h2>
+    <p>Estos datos sirven para que la cuenta funcione, para mostrar y compartir los movimientos del espacio, para responder en el asistente y para avisar de un cargo pendiente. No vendemos datos y no los usamos para publicidad. La app no incluye un servicio de analítica.</p>
+    <p>Además de las personas de tu espacio, intervienen Google en el inicio de sesión, Supabase en la autenticación y la base de datos, y Expo en las notificaciones push si las activás.</p>
+
+    <h2>Eliminación</h2>
+    <p>Para pedir la eliminación de tu cuenta y de los datos asociados, escribinos a <a href="mailto:adolfosmesenr@gmail.com">adolfosmesenr@gmail.com</a> desde el correo de la cuenta. En la app podés borrar una conversación del asistente. Cerrar sesión no borra los datos del servidor.</p>
+
+    <h2>Contacto</h2>
+    <p><a href="mailto:adolfosmesenr@gmail.com">adolfosmesenr@gmail.com</a></p>
+  </main>
+</body>
+</html>
