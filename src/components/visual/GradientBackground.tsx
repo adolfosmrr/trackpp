@@ -153,13 +153,16 @@ half4 main(float2 fragCoord) {
   float3 ink = dotColor.rgb;
   float inkAlpha = dotColor.a;
   if (dotMotion > 0.5) {
+    // energy 0 keeps the static dot (radius, edge, ink, alpha) computed above.
+    // A 0.3x floor made outer coverage smaller than a pixel and swapped in a
+    // dark green, so dots between patches vanished. The pulse peak is unchanged.
     float energy = dotEnergy(uv, aspect);
-    float radius = dotRadius * mix(0.3, 1.8, energy);
-    float edge = mix(0.6, 1.4, energy);
-    inner = max(radius - edge, 0.0);
-    outer = radius + edge;
-    ink = mix(float3(0.078431, 0.239216, 0.172549), float3(0.243137, 0.811765, 0.556863), energy);
-    inkAlpha = mix(0.28, 1.0, energy);
+    float pulseRadius = dotRadius * 1.8;
+    float pulseEdge = 1.4;
+    inner = mix(inner, max(pulseRadius - pulseEdge, 0.0), energy);
+    outer = mix(outer, pulseRadius + pulseEdge, energy);
+    ink = mix(ink, float3(0.243137, 0.811765, 0.556863), energy);
+    inkAlpha = mix(inkAlpha, 1.0, energy);
   }
   float dotMask = (1.0 - smoothstep(inner, outer, gridDist)) * step(0.5, dotSpacing);
   col = mix(col, ink, dotMask * inkAlpha);
