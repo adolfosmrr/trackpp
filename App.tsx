@@ -1,7 +1,7 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import { useFonts } from "expo-font"
 import { StatusBar } from "expo-status-bar"
-import { StyleSheet } from "react-native"
+import { Appearance, StyleSheet } from "react-native"
 import { GestureHandlerRootView } from "react-native-gesture-handler"
 import { SafeAreaProvider } from "react-native-safe-area-context"
 
@@ -16,6 +16,11 @@ import "./src/features/notifications/services/notificationSetup"
 const queryClient = new QueryClient()
 
 export default function App() {
+  // app.json already requests a dark interface, but a dev client built before
+  // that plist key still follows the system. Forcing the scheme here sets
+  // overrideUserInterfaceStyle on every window, including presented sheets.
+  Appearance.setColorScheme("dark")
+
   const [fontsLoaded] = useFonts({
     "Inter-Regular": require("./assets/fonts/Inter-Regular.ttf"),
     "Inter-Medium": require("./assets/fonts/Inter-Medium.ttf"),

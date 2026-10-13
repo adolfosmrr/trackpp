@@ -12,10 +12,14 @@ export function formSheetOptions(
     headerShown: false,
     sheetGrabberVisible: true,
     sheetCornerRadius: radii.topSection,
-    sheetAllowedDetents: detents,
+    // iOS 26 insets every detent below large (side margins and a gap above
+    // the bottom edge). The large detent is the supported way to keep the
+    // sheet full-width and attached to the bottom. Android sheets already
+    // sit on the bottom edge, so they keep the caller's detents.
+    sheetAllowedDetents: Platform.OS === "ios" ? [1] : detents,
     sheetExpandsWhenScrolledToEdge: expandsWhenScrolledToEdge,
     contentStyle: {
-      backgroundColor: Platform.OS === "ios" ? "transparent" : colors.background,
+      backgroundColor: colors.background,
     },
   }
 }

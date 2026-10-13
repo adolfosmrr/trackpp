@@ -53,7 +53,6 @@ export function SegmentedToggle<T extends string>({
     <SegmentedControl
       activeFontStyle={selectedSegmentFont}
       appearance="dark"
-      backgroundColor={colors.control}
       fontStyle={segmentFont}
       onChange={handleChange}
       selectedIndex={selectedIndex}
