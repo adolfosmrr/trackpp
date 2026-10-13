@@ -6,6 +6,7 @@ import { GlassView, isGlassEffectAPIAvailable, isLiquidGlassAvailable } from "ex
 import { CircleAddButton } from "../../../components/buttons/CircleAddButton"
 import { AppText } from "../../../components/text/AppText"
 import { colors, fonts, layout, radii } from "../../../theme"
+import { DEFAULT_CATEGORY_ICON } from "../constants"
 import { createCategory } from "../services/categoryService"
 import type { Category, CategoryType } from "../types"
 
@@ -92,7 +93,7 @@ export function CustomCategoryBar({
     createMutation.mutate({
       householdId,
       name: trimmed,
-      icon: emoji || null,
+      icon: emoji.trim() ? emoji : DEFAULT_CATEGORY_ICON,
       type,
     })
   }
@@ -104,7 +105,7 @@ export function CustomCategoryBar({
         autoCapitalize="none"
         autoCorrect={false}
         onChangeText={(value) => setEmoji(firstGrapheme(value))}
-        placeholder="😀"
+        placeholder={DEFAULT_CATEGORY_ICON}
         placeholderTextColor={colors.mutedForeground}
         style={styles.emojiInput}
         value={emoji}

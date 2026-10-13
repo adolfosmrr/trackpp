@@ -1,5 +1,7 @@
 import { supabase } from "../../../services/supabase"
 
+import { DEFAULT_CATEGORY_ICON } from "../constants"
+
 import type { Category, CategoryType } from "../types"
 
 export async function getCategories(
@@ -10,9 +12,6 @@ export async function getCategories(
     .from("categories")
     .select("*")
     .eq("household_id", householdId)
-    .order("name", {
-      ascending: true,
-    })
 
   if (type) {
     query = query.eq("type", type)
@@ -24,7 +23,20 @@ export async function getCategories(
     throw error
   }
 
-  return data as Category[]
+  return (data as Category[]).sort(compareCategories)
+}
+
+function compareCategories(left: Category, right: Category) {
+  if (left.is_default !== right.is_default) {
+    return left.is_default ? 1 : -1
+  }
+
+  if (!left.is_default) {
+    const byAge = right.created_at.localeCompare(left.created_at)
+    if (byAge !== 0) return byAge
+  }
+
+  return left.name.localeCompare(right.name, "es")
 }
 
 export async function createCategory(input: {
@@ -38,7 +50,7 @@ export async function createCategory(input: {
     .insert({
       household_id: input.householdId,
       name: input.name,
-      icon: input.icon,
+      icon: input.icon?.trim() ? input.icon : DEFAULT_CATEGORY_ICON,
       type: input.type,
       is_default: false,
     })
