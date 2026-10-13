@@ -8,7 +8,7 @@ import {
   type ViewStyle,
 } from "react-native"
 
-import { colors, fonts, radii } from "../../theme"
+import { colors, fonts, layout, radii } from "../../theme"
 
 type ButtonTone = "brand" | "outline" | "destructive" | "ghost"
 
@@ -65,8 +65,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 18,
   },
   compact: {
-    height: 40,
-    minHeight: 40,
+    height: layout.headerPill,
+    minHeight: layout.headerPill,
     paddingHorizontal: 14,
   },
   disabled: {

@@ -12,7 +12,7 @@ import {
   truncationMode,
 } from "@expo/ui/swift-ui/modifiers"
 
-import { fonts } from "../../../theme"
+import { fonts, layout } from "../../../theme"
 import {
   CREATE_SPACE_LABEL,
   SPACE_MENU_LABEL,
@@ -24,8 +24,12 @@ export function SpaceMenu({ compact, label, items, onSelect, onCreate }: SpaceMe
     <Host
       colorScheme="dark"
       ignoreSafeArea="all"
-      matchContents
-      style={compact ? { flexShrink: 1, marginLeft: 15 } : { flexShrink: 1 }}
+      matchContents={compact ? { horizontal: true } : true}
+      style={
+        compact
+          ? { flexShrink: 1, height: layout.headerPill, marginLeft: 15 }
+          : { flexShrink: 1 }
+      }
     >
       <Menu
         label={
@@ -46,6 +50,7 @@ export function SpaceMenu({ compact, label, items, onSelect, onCreate }: SpaceMe
           menuIndicator("visible"),
           menuOrder("fixed"),
           accessibilityLabel(SPACE_MENU_LABEL),
+          ...(compact ? [frame({ height: layout.headerPill })] : []),
         ]}
       >
         {items.map((item) => (

@@ -7,7 +7,7 @@ import {
 } from "react-native"
 
 import { ChevronDownIcon } from "../../../components/icons/ChevronDownIcon"
-import { colors, fonts, radii } from "../../../theme"
+import { colors, fonts, layout, radii } from "../../../theme"
 import { SPACE_MENU_LABEL } from "./spaceMenu"
 
 type SpaceMenuTriggerProps = {
@@ -54,7 +54,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     flexShrink: 1,
     gap: 8,
-    height: 40,
+    height: layout.headerPill,
     marginLeft: 15,
     paddingHorizontal: 20,
   },

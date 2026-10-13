@@ -3,7 +3,7 @@ import { useNavigation, type NavigationProp, type ParamListBase } from "@react-n
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack"
 
 import type { AppStackParamList } from "../../../navigation/types"
-import { colors, fonts } from "../../../theme"
+import { colors, fonts, layout } from "../../../theme"
 import { useHouseholdStore } from "../../../store/householdStore"
 import { useHouseholds } from "../hooks/useHouseholds"
 import { SpaceMenu } from "./SpaceMenu"
@@ -59,7 +59,7 @@ const styles = StyleSheet.create({
   compactLoading: {
     color: colors.mutedForeground,
     fontFamily: fonts.sans,
-    height: 40,
+    height: layout.headerPill,
     marginLeft: 15,
   },
 })

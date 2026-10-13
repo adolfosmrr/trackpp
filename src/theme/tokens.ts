@@ -55,6 +55,8 @@ export const spacing = {
 export const layout = {
   /** Horizontal inset for list sections. Home's recent movements is the reference. */
   sectionInset: spacing.xl,
+  /** Height of the header pills: the space menu and + Movimiento. */
+  headerPill: 40,
   /**
    * Height of the native tab bar's glass pill.
    * Native tabs render `UITabBar` and do not publish `BottomTabBarHeightContext`.

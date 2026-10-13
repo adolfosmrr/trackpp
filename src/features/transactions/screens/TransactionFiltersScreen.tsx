@@ -1,11 +1,13 @@
 import { useMemo, useState, type ReactNode } from "react"
-import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native"
+import { Platform, Pressable, ScrollView, StyleSheet, Text, View, type LayoutChangeEvent } from "react-native"
 import type { NativeStackScreenProps } from "@react-navigation/native-stack"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 
 import { Button } from "../../../components/buttons/Button"
+import { GlassButton } from "../../../components/buttons/GlassButton"
 import { FilterChevronIcon } from "../../../components/icons/FilterChevronIcon"
 import { TextField } from "../../../components/inputs/TextField"
+import { SheetHeader } from "../../../components/layout/SheetHeader"
 import { useHouseholds } from "../../households/hooks/useHouseholds"
 import { useHouseholdStore } from "../../../store/householdStore"
 import type { AppStackParamList } from "../../../navigation/types"
@@ -25,6 +27,7 @@ type TransactionFiltersScreenProps = NativeStackScreenProps<AppStackParamList, "
 export function TransactionFiltersScreen({ navigation, route }: TransactionFiltersScreenProps) {
   const insets = useSafeAreaInsets()
   const [filters, setFilters] = useState<TransactionFilters>(route.params.filters)
+  const [footerHeight, setFooterHeight] = useState(0)
   const selectedHouseholdId = useHouseholdStore((state) => state.selectedHouseholdId)
   const { data: memberships } = useHouseholds()
   const { data: transactions } = useTransactions()
@@ -69,17 +72,30 @@ export function TransactionFiltersScreen({ navigation, route }: TransactionFilte
     })
   }
 
+  function handleFooterLayout(event: LayoutChangeEvent) {
+    const next = event.nativeEvent.layout.height
+    setFooterHeight((current) => (current === next ? current : next))
+  }
+
   return (
-    <View style={styles.screen}>
-      <View style={styles.header}>
-        <Text style={styles.title}>Filtrar movimientos</Text>
-        <Pressable accessibilityLabel="Cerrar filtros" onPress={() => navigation.goBack()}>
-          <Text style={styles.close}>×</Text>
-        </Pressable>
-      </View>
+    <>
+      <SheetHeader
+        closeAccessibilityLabel="Cerrar filtros"
+        onClose={() => navigation.goBack()}
+        title="Filtrar movimientos"
+      />
       <ScrollView
-        contentContainerStyle={styles.content}
+        contentContainerStyle={[
+          styles.content,
+          {
+            // iOS sizes this scroll view to the sheet minus the header and
+            // draws it underneath the footer. The extra inset lets the last
+            // row scroll clear of that bar.
+            paddingBottom: Platform.OS === "ios" ? footerHeight + insets.bottom : 12,
+          },
+        ]}
         keyboardShouldPersistTaps="handled"
+        style={styles.scroll}
       >
         <FilterGroup title="Tipo">
           <OptionRow>
@@ -188,16 +204,23 @@ export function TransactionFiltersScreen({ navigation, route }: TransactionFilte
           </FilterGroup>
         ) : null}
       </ScrollView>
-      <View style={[styles.actions, { paddingBottom: Math.max(insets.bottom, 16) }]}>
-        <Button
+      <View
+        collapsable={false}
+        onLayout={handleFooterLayout}
+        style={[styles.actions, { paddingBottom: Math.max(insets.bottom, 16) }]}
+      >
+        <GlassButton
+          accessibilityLabel="Limpiar filtros"
+          fallbackStyle={styles.clearFallback}
+          glassStyle={styles.actionSlot}
           label="Limpiar"
+          labelStyle={styles.clearLabel}
           onPress={() => setFilters(defaultTransactionFilters)}
-          style={styles.actionSlot}
-          tone="outline"
+          style={styles.clearPressable}
         />
         <Button label="Aplicar" onPress={apply} style={styles.actionSlot} tone="brand" />
       </View>
-    </View>
+    </>
   )
 }
 
@@ -269,32 +292,12 @@ function DateInput({
 }
 
 const styles = StyleSheet.create({
-  screen: {
+  scroll: {
     flex: 1,
-  },
-  header: {
-    alignItems: "center",
-    flexDirection: "row",
-    justifyContent: "space-between",
-    paddingHorizontal: 20,
-    paddingTop: 8,
-    paddingBottom: 10,
-  },
-  title: {
-    color: colors.foreground,
-    fontFamily: fonts.sansSemibold,
-    fontSize: 20,
-    lineHeight: 24,
-  },
-  close: {
-    color: colors.mutedForeground,
-    fontSize: 30,
-    lineHeight: 30,
   },
   content: {
     gap: 30,
     padding: 20,
-    paddingBottom: 12,
   },
   group: {
     gap: 10,
@@ -345,12 +348,35 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   actions: {
+    backgroundColor: colors.background,
     flexDirection: "row",
     gap: 10,
     paddingHorizontal: 20,
     paddingTop: 12,
+    zIndex: 1,
   },
   actionSlot: {
     flex: 1,
+  },
+  clearFallback: {
+    alignItems: "center",
+    backgroundColor: colors.transparent,
+    borderColor: colors.borderStrong,
+    borderWidth: 1,
+    flex: 1,
+    justifyContent: "center",
+    minHeight: 44,
+  },
+  clearPressable: {
+    alignItems: "center",
+    flex: 1,
+    justifyContent: "center",
+    minHeight: 44,
+  },
+  clearLabel: {
+    color: colors.foreground,
+    fontFamily: fonts.sansSemibold,
+    fontSize: 15,
+    lineHeight: 20,
   },
 })
