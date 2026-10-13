@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react"
 import { Alert, AppState, Pressable, StyleSheet, View } from "react-native"
 import { useIsFocused } from "@react-navigation/native"
-import { colors, fonts, layout } from "../../../theme"
+import { colors, layout, typography } from "../../../theme"
 import { AppText } from "../../../components/text/AppText"
 
 import AnimatedText from "../../../components/text/AnimatedText"
@@ -128,7 +128,7 @@ export function AuthScreen() {
           <Pressable
             onPress={() => setMode(mode === "login" ? "register" : "login")}
           >
-            <AppText style={styles.link} tone="brand" variant="body">
+            <AppText style={styles.link} variant="body">
               {mode === "login"
                 ? "¿No tienes cuenta? Regístrate"
                 : "¿Ya tienes cuenta? Inicia sesión"}
@@ -155,16 +155,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   authMessage: {
-    fontFamily: fonts.sansSemibold,
-    letterSpacing: -1,
-    fontSize: 40,
-    lineHeight: 42,
-    color: colors.foreground,
-    opacity: 0.3
+    ...typography.title,
+    color: "#FFFFFF",
   },
   authMessageClip: {
     width: "100%",
-    minHeight: 40,
+    minHeight: typography.title.lineHeight,
     overflow: "hidden",
     alignItems: "center",
     justifyContent: "center",
@@ -188,6 +184,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.border,
   },
   link: {
+    color: "#FFFFFF",
     textAlign: "center",
     marginTop: layout.titleContentGap,
   },

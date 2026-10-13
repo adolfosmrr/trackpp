@@ -40,7 +40,7 @@ const styles = StyleSheet.create({
     borderRadius: radii.pill,
     borderWidth: 1,
     borderColor: colors.borderStrong,
-    backgroundColor: colors.transparent,
+    backgroundColor: colors.background,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
