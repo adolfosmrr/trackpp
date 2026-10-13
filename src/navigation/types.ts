@@ -78,9 +78,17 @@ export type BudgetEditorParams = {
   categorySelection?: CategorySelection
 }
 
+export type CurrencySelection = {
+  token: string
+  code: string
+  country: string
+  currencyName: string
+}
+
 export type AppStackParamList = {
   Main: NavigatorScreenParams<MainTabsParamList> | undefined
-  CreateHousehold: undefined
+  CreateHousehold: { currencySelection?: CurrencySelection } | undefined
+  CurrencyPicker: { selectedCode: string; selectedCountry: string }
   InviteMember: undefined
   Invitations: undefined
   AiConversation: { conversationId?: string }

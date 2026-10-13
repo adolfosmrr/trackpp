@@ -8,6 +8,7 @@ import type { NativeStackNavigationProp } from "@react-navigation/native-stack"
 
 import { Button } from "../../../components/buttons/Button"
 import { GlassButton } from "../../../components/buttons/GlassButton"
+import { ProfileAvatar } from "../../../components/profile/ProfileAvatar"
 import { SheetScaffold } from "../../../components/layout/SheetScaffold"
 import { AppText } from "../../../components/text/AppText"
 import { colors, radii } from "../../../theme"
@@ -16,9 +17,9 @@ import type { AppStackParamList } from "../../../navigation/types"
 import { supabase } from "../../../services/supabase"
 
 import { useAuth } from "../../auth/context/AuthContext"
+import { PersonalInfoSection } from "../components/PersonalInfoSection"
 import { useProfile } from "../hooks/useProfile"
 import { useHouseholds } from "../../households/hooks/useHouseholds"
-import { useMe } from "../../auth/hooks/useMe"
 
 import { useHouseholdStore } from "../../../store/householdStore"
 
@@ -29,13 +30,6 @@ export function ProfileScreen() {
   const selectedHouseholdId = useHouseholdStore(
     (state) => state.selectedHouseholdId
   )
-
-  const meQuery = useMe()
-  const {
-    data: backendUser,
-    isLoading: backendUserLoading,
-    error: backendUserError,
-  } = meQuery
 
   const profileQuery = useProfile()
   const {
@@ -68,11 +62,7 @@ export function ProfileScreen() {
     navigation.goBack()
   }
 
-  if (
-    profileLoading ||
-    householdsLoading ||
-    backendUserLoading
-  ) {
+  if (profileLoading || householdsLoading) {
     return (
       <SheetScaffold onClose={close} title="Perfil">
         <View style={styles.center}>
@@ -82,18 +72,7 @@ export function ProfileScreen() {
     )
   }
 
-  if (backendUserError) {
-    console.error(
-      "Backend /me error:",
-      backendUserError
-    )
-  }
-
-  if (
-    profileError ||
-    householdsError ||
-    backendUserError
-  ) {
+  if (profileError || householdsError) {
     return (
       <SheetScaffold onClose={close} title="Perfil">
         <View style={styles.center}>
@@ -110,11 +89,12 @@ export function ProfileScreen() {
   return (
     <SheetScaffold onClose={close} title="Perfil">
       <View style={styles.header}>
-        <View style={styles.avatar}>
-          <AppText variant="title">
-            {getInitials(profile?.name)}
-          </AppText>
-        </View>
+        <ProfileAvatar
+          name={profile?.name}
+          style={styles.avatar}
+          uri={profile?.avatar_url}
+          variant="title"
+        />
 
         <AppText variant="title">
           {profile?.name ?? "Usuario"}
@@ -124,6 +104,10 @@ export function ProfileScreen() {
           {user?.email ?? ""}
         </AppText>
       </View>
+
+      {profile ? (
+        <PersonalInfoSection email={user?.email ?? ""} profile={profile} />
+      ) : null}
 
       <View style={styles.section}>
         <AppText variant="sectionTitle">
@@ -195,34 +179,6 @@ export function ProfileScreen() {
         </View>
       </View>
 
-      <View style={styles.section}>
-        <AppText variant="sectionTitle">
-          Backend
-        </AppText>
-
-        <View style={styles.row}>
-          <AppText tone="muted" variant="body">
-            ID
-          </AppText>
-
-          <AppText style={styles.value} variant="subtitle">
-            {backendUser?.id ?? "-"}
-          </AppText>
-        </View>
-
-        <View style={styles.separator} />
-
-        <View style={styles.row}>
-          <AppText tone="muted" variant="body">
-            Email
-          </AppText>
-
-          <AppText style={styles.value} variant="subtitle">
-            {backendUser?.email ?? "-"}
-          </AppText>
-        </View>
-      </View>
-
       <GlassButton
         accessibilityLabel="Ver invitaciones"
         label="Ver invitaciones"
@@ -232,22 +188,6 @@ export function ProfileScreen() {
       <Button label="Cerrar sesión" onPress={handleLogout} tone="destructive" />
     </SheetScaffold>
   )
-}
-
-function getInitials(
-  name: string | null | undefined
-) {
-  if (!name) {
-    return "?"
-  }
-
-  return name
-    .trim()
-    .split(/\s+/)
-    .slice(0, 2)
-    .map((part) => part[0])
-    .join("")
-    .toUpperCase()
 }
 
 function formatHouseholdType(
@@ -279,15 +219,10 @@ const styles = StyleSheet.create({
   },
 
   avatar: {
-    width: 72,
-    height: 72,
     borderRadius: 36,
-    backgroundColor: colors.control,
-    borderColor: colors.border,
-    borderWidth: 1,
-    alignItems: "center",
-    justifyContent: "center",
+    height: 72,
     marginBottom: 4,
+    width: 72,
   },
 
   section: {

@@ -9,6 +9,7 @@ import {
 import {
   CreateHouseholdScreen,
 } from "../features/households/screens/CreateHouseholdScreen"
+import { CurrencyPickerScreen } from "../features/households/screens/CurrencyPickerScreen"
 
 import {
   InvitationsScreen,
@@ -54,6 +55,11 @@ export function AppNavigator() {
         component={
           CreateHouseholdScreen
         }
+        options={formSheetOptions("fitToContents")}
+      />
+      <Stack.Screen
+        name="CurrencyPicker"
+        component={CurrencyPickerScreen}
         options={formSheetOptions("fitToContents")}
       />
 

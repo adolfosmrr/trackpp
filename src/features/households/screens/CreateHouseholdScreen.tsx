@@ -1,41 +1,46 @@
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { Alert, StyleSheet, View } from "react-native"
 import type { NativeStackScreenProps } from "@react-navigation/native-stack"
 
 import { Button } from "../../../components/buttons/Button"
+import { FieldChevronIcon } from "../../../components/icons/FieldChevronIcon"
 import { SegmentedToggle } from "../../../components/inputs/SegmentedToggle"
-import { TextField } from "../../../components/inputs/TextField"
+import { FieldRow, TextField } from "../../../components/inputs/TextField"
 import { SheetScaffold } from "../../../components/layout/SheetScaffold"
 import { AppText } from "../../../components/text/AppText"
-import { OptionChips } from "../../fixedExpenses/components/OptionChips"
 import type { AppStackParamList } from "../../../navigation/types"
 import { useHouseholdStore } from "../../../store/householdStore"
 import { layout } from "../../../theme"
+import {
+  currencyChoiceLabel,
+  DEFAULT_SPACE_CURRENCY,
+  type CurrencyOption,
+} from "../data/currencies"
 import { useCreateHousehold } from "../hooks/useCreateHousehold"
 import { createHouseholdInvitation } from "../services/invitationService"
 import type { HouseholdKind } from "../services/householdService"
 
-const SPACE_CURRENCIES = [
-  { value: "ARS", label: "ARS" },
-  { value: "USD", label: "USD" },
-  { value: "EUR", label: "EUR" },
-  { value: "BRL", label: "BRL" },
-  { value: "UYU", label: "UYU" },
-  { value: "CLP", label: "CLP" },
-] as const
-
-type SpaceCurrency = (typeof SPACE_CURRENCIES)[number]["value"]
-
 type CreateHouseholdScreenProps = NativeStackScreenProps<AppStackParamList, "CreateHousehold">
 
-export function CreateHouseholdScreen({ navigation }: CreateHouseholdScreenProps) {
+export function CreateHouseholdScreen({ navigation, route }: CreateHouseholdScreenProps) {
   const setSelectedHouseholdId = useHouseholdStore((state) => state.setSelectedHouseholdId)
   const createHouseholdMutation = useCreateHousehold()
   const [kind, setKind] = useState<HouseholdKind>("personal")
   const [name, setName] = useState("")
-  const [currency, setCurrency] = useState<SpaceCurrency>("ARS")
+  const [currency, setCurrency] = useState<CurrencyOption>(DEFAULT_SPACE_CURRENCY)
   const [inviteEmail, setInviteEmail] = useState("")
   const [submitting, setSubmitting] = useState(false)
+
+  useEffect(() => {
+    const selection = route.params?.currencySelection
+    if (!selection) return
+    setCurrency({
+      code: selection.code,
+      country: selection.country,
+      currency: selection.currencyName,
+    })
+    navigation.setParams({ currencySelection: undefined })
+  }, [navigation, route.params?.currencySelection])
 
   async function handleCreate() {
     const cleanName = name.trim()
@@ -50,7 +55,7 @@ export function CreateHouseholdScreen({ navigation }: CreateHouseholdScreenProps
       const household = await createHouseholdMutation.mutateAsync({
         name: cleanName,
         type: kind,
-        currency,
+        currency: currency.code,
       })
       setSelectedHouseholdId(household.id)
 
@@ -98,20 +103,28 @@ export function CreateHouseholdScreen({ navigation }: CreateHouseholdScreenProps
           placeholder="Nombre del espacio"
           value={name}
         />
-        <View style={styles.section}>
-          <AppText variant="sectionTitle">Moneda</AppText>
-          <OptionChips
-            accessibilityLabel="Moneda del espacio"
-            onChange={setCurrency}
-            options={SPACE_CURRENCIES}
-            value={currency}
-          />
-        </View>
+        <FieldRow
+          accessibilityLabel="Moneda del espacio"
+          onPress={() => {
+            navigation.navigate("CurrencyPicker", {
+              selectedCode: currency.code,
+              selectedCountry: currency.country,
+            })
+          }}
+        >
+          <AppText variant="subtitle">Moneda</AppText>
+          <View style={styles.currencyValue}>
+            <AppText numberOfLines={1} style={styles.currencyLabel} tone="muted" variant="subtitle">
+              {currencyChoiceLabel(currency)}
+            </AppText>
+            <FieldChevronIcon />
+          </View>
+        </FieldRow>
         {kind === "couple" ? (
           <View style={styles.section}>
             <AppText variant="sectionTitle">Invitar ahora</AppText>
             <AppText tone="muted" variant="caption">
-              Opcional. Si lo dejás vacío, podés invitar más tarde.
+              Opcional. Si lo dejás vacío, podés invitar a otras personas más tarde desde Perfil.
             </AppText>
             <TextField
               autoCapitalize="none"
@@ -141,6 +154,18 @@ const styles = StyleSheet.create({
     gap: layout.titleContentGap,
   },
   section: {
-    gap: 8,
+    gap: layout.titleContentGap,
+  },
+  currencyValue: {
+    alignItems: "center",
+    flex: 1,
+    flexDirection: "row",
+    gap: layout.titleContentGap,
+    justifyContent: "flex-end",
+    marginLeft: layout.titleContentGap,
+  },
+  currencyLabel: {
+    flexShrink: 1,
+    textAlign: "right",
   },
 })
