@@ -630,6 +630,7 @@ export function HomeScreen({ navigation }: HomeScreenProps) {
         pointerEvents="none"
         style={topSectionSpacerStyle}
       />
+      <View style={styles.belowTopSection}>
       <DueSoonCard onPress={() => navigation.navigate("FixedExpenses")} />
       <PendingChargesBanner
         onPress={() => navigation.navigate("PendingCharges")}
@@ -683,6 +684,7 @@ export function HomeScreen({ navigation }: HomeScreenProps) {
         </View>
         </ListSection>
       ) : null}
+      </View>
 
         </Animated.ScrollView>
       </ScreenContainer>
@@ -721,7 +723,10 @@ const styles =
 
     scrollContent: {
       paddingBottom: 120,
+    },
+    belowTopSection: {
       gap: 24,
+      paddingTop: layout.belowTopSection,
     },
 
     screen: {

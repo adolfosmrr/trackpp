@@ -1,10 +1,12 @@
-import { useMemo, useState, type ReactNode } from "react"
+import { useCallback, useState, type ReactNode } from "react"
 import {
-  Animated,
   Platform,
+  ScrollView,
   StyleSheet,
   View,
   type LayoutChangeEvent,
+  type NativeScrollEvent,
+  type NativeSyntheticEvent,
   type StyleProp,
   type ViewStyle,
 } from "react-native"
@@ -31,16 +33,15 @@ export function SheetScaffold({
   contentStyle,
 }: SheetScaffoldProps) {
   const insets = useSafeAreaInsets()
-  const scrollY = useMemo(() => new Animated.Value(0), [])
   const [footerHeight, setFooterHeight] = useState(0)
+  const [scrolled, setScrolled] = useState(false)
 
-  const onScroll = useMemo(
-    () => Animated.event(
-      [{ nativeEvent: { contentOffset: { y: scrollY } } }],
-      { useNativeDriver: true },
-    ),
-    [scrollY],
-  )
+  const onScroll = useCallback((event: NativeSyntheticEvent<NativeScrollEvent>) => {
+    const { contentInset, contentOffset } = event.nativeEvent
+    const distance = contentOffset.y + contentInset.top
+    const next = distance > 8
+    setScrolled((current) => (current === next ? current : next))
+  }, [])
 
   function handleFooterLayout(event: LayoutChangeEvent) {
     const next = event.nativeEvent.layout.height
@@ -53,7 +54,7 @@ export function SheetScaffold({
 
   return (
     <>
-      <Animated.ScrollView
+      <ScrollView
         contentContainerStyle={[
           styles.content,
           { paddingBottom: bottomPadding },
@@ -65,7 +66,7 @@ export function SheetScaffold({
         style={styles.scroll}
       >
         {children}
-      </Animated.ScrollView>
+      </ScrollView>
       {footer ? (
         <View
           collapsable={false}
@@ -78,7 +79,7 @@ export function SheetScaffold({
       <SheetHeader
         closeAccessibilityLabel={closeAccessibilityLabel}
         onClose={onClose}
-        scrollY={scrollY}
+        scrolled={scrolled}
         title={title}
       />
     </>

@@ -104,8 +104,6 @@ function formatTransactionDate(date: string) {
 const styles = StyleSheet.create({
   section: {
     position: "relative",
-    marginTop: 4,
-    paddingTop: 8,
     borderTopColor: colors.border,
     borderTopWidth: 1,
   },

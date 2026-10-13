@@ -111,7 +111,7 @@ const styles = StyleSheet.create({
     borderTopColor: colors.border,
     borderTopWidth: 1,
     marginHorizontal: 0,
-    paddingTop: layout.titleContentGap,
+    marginTop: layout.belowTopSection,
   },
   transactionGroups: {
     marginTop: layout.titleContentGap,

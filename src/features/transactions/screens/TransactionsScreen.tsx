@@ -288,8 +288,7 @@ type TransactionsScreenProps = CompositeScreenProps<
     },
   
     list: {
-      paddingTop: layout.sheetPadding,
-      gap: 12,
+      paddingTop: 0,
     },
   
   })

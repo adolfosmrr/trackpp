@@ -64,6 +64,11 @@ export const layout = {
   sheetPadding: spacing.xl,
   /** Space between a title and the content it introduces. */
   titleContentGap: spacing.lg,
+  /**
+   * Gap between the bottom of the top section and the first content on a tab.
+   * Presupuesto and Fijos already used 8; Home and Movimientos were larger.
+   */
+  belowTopSection: spacing.sm,
   /** Space from a form sheet's top edge to the title row, clear of the grabber. */
   sheetHeaderTop: SHEET_HEADER_TOP,
   /** Title row plus the gaps above and below it. Content starts under this. */

@@ -352,7 +352,7 @@ const styles =
     budgetSection: {
       backgroundColor: colors.background,
       flexGrow: 1,
-      paddingTop: 8,
+      paddingTop: layout.belowTopSection,
     },
 
     budgetContent: {

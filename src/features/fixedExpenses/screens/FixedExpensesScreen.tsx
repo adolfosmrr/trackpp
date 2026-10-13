@@ -334,7 +334,7 @@ const styles = StyleSheet.create({
   },
   hiddenList: { opacity: 0 },
   center: { flex: 1, backgroundColor: colors.background, alignItems: "center", justifyContent: "center", padding: layout.sheetPadding },
-  list: { gap: layout.titleContentGap, paddingTop: 8 },
+  list: { gap: layout.titleContentGap, paddingTop: layout.belowTopSection },
   actions: {
     flexDirection: "row",
     flexWrap: "wrap",

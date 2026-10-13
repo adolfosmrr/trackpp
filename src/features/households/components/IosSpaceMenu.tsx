@@ -3,12 +3,15 @@ import {
   accessibilityLabel,
   buttonBorderShape,
   buttonStyle,
+  clipShape,
+  controlSize,
   font,
   foregroundStyle,
   frame,
   lineLimit,
   menuIndicator,
   menuOrder,
+  padding,
   truncationMode,
 } from "@expo/ui/swift-ui/modifiers"
 
@@ -19,15 +22,29 @@ import {
   type SpaceMenuProps,
 } from "./spaceMenu"
 
+const compactCapsule = [
+  // `frame(height:)` proposes 40 but does not clip, and @expo/ui drops
+  // min/max height when `height` is set. `clipShape` masks the regular
+  // glass ideal size, which draws outside that frame, down to 40pt.
+  frame({ height: layout.headerPill }),
+  clipShape("capsule"),
+]
+
 export function SpaceMenu({ compact, label, items, onSelect, onCreate }: SpaceMenuProps) {
   return (
     <Host
       colorScheme="dark"
       ignoreSafeArea="all"
       matchContents={compact ? { horizontal: true } : true}
+      modifiers={compact ? compactCapsule : undefined}
       style={
         compact
-          ? { flexShrink: 1, height: layout.headerPill, marginLeft: 15 }
+          ? {
+              flexShrink: 1,
+              height: layout.headerPill,
+              marginLeft: 15,
+              overflow: "hidden",
+            }
           : { flexShrink: 1 }
       }
     >
@@ -47,10 +64,13 @@ export function SpaceMenu({ compact, label, items, onSelect, onCreate }: SpaceMe
         modifiers={[
           buttonStyle("glass"),
           buttonBorderShape("capsule"),
+          // Regular is the default. Smaller sizes do not stretch up to the frame.
+          controlSize("regular"),
+          padding({ vertical: 0 }),
           menuIndicator("visible"),
           menuOrder("fixed"),
           accessibilityLabel(SPACE_MENU_LABEL),
-          ...(compact ? [frame({ height: layout.headerPill })] : []),
+          ...(compact ? compactCapsule : []),
         ]}
       >
         {items.map((item) => (

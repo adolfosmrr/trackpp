@@ -1,3 +1,4 @@
+import { useEffect, useRef } from "react"
 import { Animated, StyleSheet, View } from "react-native"
 import { GlassView, isGlassEffectAPIAvailable, isLiquidGlassAvailable } from "expo-glass-effect"
 
@@ -12,34 +13,43 @@ type SheetHeaderProps = {
   title: string
   onClose: () => void
   closeAccessibilityLabel?: string
-  scrollY: Animated.Value
+  /** True once the sheet content has moved under the title. */
+  scrolled: boolean
 }
 
 export function SheetHeader({
   title,
   onClose,
   closeAccessibilityLabel = "Cerrar",
-  scrollY,
+  scrolled,
 }: SheetHeaderProps) {
-  const glassOpacity = scrollY.interpolate({
-    inputRange: [0, 12],
-    outputRange: [0, 1],
-    extrapolate: "clamp",
-  })
+  const scrimOpacity = useRef(new Animated.Value(0)).current
+
+  useEffect(() => {
+    if (liquidGlassEnabled) return
+    Animated.timing(scrimOpacity, {
+      toValue: scrolled ? 1 : 0,
+      duration: 180,
+      useNativeDriver: true,
+    }).start()
+  }, [scrolled, scrimOpacity])
 
   return (
     <View collapsable={false} pointerEvents="box-none" style={styles.header}>
-      <Animated.View pointerEvents="none" style={[StyleSheet.absoluteFill, { opacity: glassOpacity }]}>
-        {liquidGlassEnabled ? (
-          <GlassView
-            colorScheme="dark"
-            glassEffectStyle="regular"
-            style={StyleSheet.absoluteFill}
-          />
-        ) : (
-          <View style={styles.fallbackScrim} />
-        )}
-      </Animated.View>
+      {liquidGlassEnabled ? (
+        <GlassView
+          colorScheme="dark"
+          glassEffectStyle={{
+            style: scrolled ? "regular" : "none",
+            animate: true,
+            animationDuration: 0.18,
+          }}
+          pointerEvents="none"
+          style={styles.glass}
+        />
+      ) : (
+        <Animated.View pointerEvents="none" style={[styles.fallbackScrim, { opacity: scrimOpacity }]} />
+      )}
       <AppText style={styles.title} variant="title">{title}</AppText>
       <GlassButton
         accessibilityLabel={closeAccessibilityLabel}
@@ -71,6 +81,13 @@ const styles = StyleSheet.create({
   },
   title: {
     flexShrink: 1,
+  },
+  glass: {
+    bottom: 0,
+    left: 0,
+    position: "absolute",
+    right: 0,
+    top: 0,
   },
   fallbackScrim: {
     backgroundColor: colors.background,
