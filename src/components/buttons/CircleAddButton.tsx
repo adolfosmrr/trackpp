@@ -13,13 +13,15 @@ const SymbolView = symbolModule
 
 type CircleAddButtonProps = {
   accessibilityLabel: string
+  disabled?: boolean
   onPress: () => void
 }
 
-export function CircleAddButton({ accessibilityLabel, onPress }: CircleAddButtonProps) {
+export function CircleAddButton({ accessibilityLabel, disabled = false, onPress }: CircleAddButtonProps) {
   return (
     <GlassButton
       accessibilityLabel={accessibilityLabel}
+      disabled={disabled}
       fallbackStyle={styles.fallback}
       glassStyle={styles.circle}
       hitSlop={2}

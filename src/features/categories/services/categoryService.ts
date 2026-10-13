@@ -26,3 +26,28 @@ export async function getCategories(
 
   return data as Category[]
 }
+
+export async function createCategory(input: {
+  householdId: string
+  name: string
+  icon: string | null
+  type: CategoryType
+}): Promise<Category> {
+  const { data, error } = await supabase
+    .from("categories")
+    .insert({
+      household_id: input.householdId,
+      name: input.name,
+      icon: input.icon,
+      type: input.type,
+      is_default: false,
+    })
+    .select("*")
+    .single()
+
+  if (error) {
+    throw error
+  }
+
+  return data as Category
+}

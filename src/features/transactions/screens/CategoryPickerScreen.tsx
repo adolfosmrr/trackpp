@@ -3,6 +3,7 @@ import type { NativeStackScreenProps } from "@react-navigation/native-stack"
 
 import { SheetScaffold } from "../../../components/layout/SheetScaffold"
 import { AppText } from "../../../components/text/AppText"
+import { CustomCategoryBar } from "../../categories/components/CustomCategoryBar"
 import { useHouseholdCategories } from "../../categories/hooks/useHouseholdCategories"
 import { selectionToken } from "../../../navigation/selectionToken"
 import type { AppStackParamList, CategorySelection } from "../../../navigation/types"
@@ -41,6 +42,12 @@ export function CategoryPickerScreen({ navigation, route }: CategoryPickerScreen
 
   return (
     <SheetScaffold onClose={() => navigation.goBack()} title={`Categoría: ${params.householdName}`}>
+      <CustomCategoryBar
+        categories={categoriesQuery.data}
+        householdId={params.householdId}
+        onCreated={selectCategory}
+        type={params.entryType}
+      />
       <View style={styles.categoriesWrap}>
         {categoriesQuery.isLoading ? (
           <AppText tone="muted" variant="body">Cargando categorías...</AppText>

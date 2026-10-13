@@ -706,7 +706,9 @@ function isValidDay(value: number) {
 }
 
 const styles = StyleSheet.create({
-  container: {},
+  container: {
+    gap: layout.titleContentGap,
+  },
   fieldsStack: { gap: layout.titleContentGap },
   targetsSection: { gap: layout.titleContentGap },
   dayInput: {
