@@ -1,8 +1,9 @@
 import type { ReactNode } from "react"
-import { StyleSheet, Text, View } from "react-native"
+import { StyleSheet, View } from "react-native"
 
 import { GlassButton } from "../buttons/GlassButton"
-import { colors, fonts } from "../../theme"
+import { AppText } from "../text/AppText"
+import { colors } from "../../theme"
 
 type SectionHeaderProps = {
   title: string
@@ -28,7 +29,6 @@ export function SectionHeader({
         fallbackStyle={styles.actionFallback}
         glassStyle={styles.actionGlass}
         label={actionLabel}
-        labelStyle={styles.actionLabel}
         onPress={onAction}
         style={styles.actionPressable}
       />
@@ -39,7 +39,7 @@ export function SectionHeader({
   return (
     <View style={styles.row}>
       {icon ? <View style={styles.icon}>{icon}</View> : null}
-      <Text style={styles.title}>{title}</Text>
+      <AppText style={styles.title} variant="title">{title}</AppText>
       {action ? <View style={styles.trailing}>{action}</View> : null}
     </View>
   )
@@ -55,13 +55,8 @@ const styles = StyleSheet.create({
     flexShrink: 0,
   },
   title: {
-    color: colors.foreground,
     flexGrow: 1,
     flexShrink: 1,
-    fontFamily: fonts.sansSemibold,
-    fontSize: 22,
-    letterSpacing: -0.4,
-    lineHeight: 26,
     minWidth: 0,
   },
   trailing: {
@@ -71,24 +66,12 @@ const styles = StyleSheet.create({
     flexShrink: 0,
   },
   actionFallback: {
-    alignItems: "center",
     backgroundColor: colors.transparent,
     borderColor: colors.borderStrong,
     borderWidth: 1,
-    justifyContent: "center",
-    minHeight: 44,
-    paddingHorizontal: 14,
+    flexShrink: 0,
   },
   actionPressable: {
-    alignItems: "center",
-    justifyContent: "center",
-    minHeight: 44,
-    paddingHorizontal: 14,
-  },
-  actionLabel: {
-    color: colors.foreground,
-    fontFamily: fonts.sansMedium,
-    fontSize: 12,
-    lineHeight: 14,
+    flexShrink: 0,
   },
 })

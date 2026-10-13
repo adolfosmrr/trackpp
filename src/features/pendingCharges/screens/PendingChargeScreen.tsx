@@ -11,6 +11,7 @@ import {
 import type { NativeStackScreenProps } from "@react-navigation/native-stack"
 import { Button } from "../../../components/buttons/Button"
 import { BackLink } from "../../../components/navigation/BackLink"
+import { AppText } from "../../../components/text/AppText"
 import { showUndo } from "../../../components/feedback/undo"
 import { colors, fonts, layout, radii } from "../../../theme"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
@@ -178,7 +179,7 @@ export function PendingChargeScreen({ navigation, route }: PendingChargeScreenPr
       <ScrollView
         contentContainerStyle={[
           styles.content,
-          { paddingTop: insets.top + 16, paddingBottom: insets.bottom + 32 },
+          { paddingTop: insets.top + layout.titleContentGap, paddingBottom: insets.bottom + layout.sheetPadding },
         ]}
       >
         <BackLink onPress={() => navigation.goBack()} />
@@ -187,48 +188,48 @@ export function PendingChargeScreen({ navigation, route }: PendingChargeScreenPr
           <ActivityIndicator color={colors.brand} style={styles.loader} />
         ) : chargeQuery.isError ? (
           <View style={styles.messageBlock}>
-            <Text style={styles.message}>No se pudo cargar este gasto.</Text>
+            <AppText tone="muted" variant="body">No se pudo cargar este gasto.</AppText>
             <Button label="Reintentar" onPress={() => void chargeQuery.refetch()} tone="brand" />
           </View>
         ) : !charge ? (
-          <Text style={styles.message}>No encontramos ese gasto.</Text>
+          <AppText tone="muted" variant="body">No encontramos ese gasto.</AppText>
         ) : (
           <>
             <View style={styles.summary}>
-              <Text style={styles.merchant}>{chargeTitle(charge)}</Text>
+              <AppText variant="title">{chargeTitle(charge)}</AppText>
               <Text style={styles.amount}>
                 {formatChargeAmount(charge.amount, charge.currency)}
               </Text>
-              <Text style={styles.meta}>
+              <AppText tone="muted" variant="body">
                 {chargeOrigin(charge)}
                 {formatChargeDate(charge.charged_at)
                   ? ` · ${formatChargeDate(charge.charged_at)}`
                   : ""}
-              </Text>
+              </AppText>
             </View>
 
             {charge.status === "assigned" ? (
-              <Text style={styles.message}>Este gasto ya está cargado en un espacio.</Text>
+              <AppText tone="muted" variant="body">Este gasto ya está cargado en un espacio.</AppText>
             ) : charge.status === "dismissed" ? (
-              <Text style={styles.message}>Descartaste este gasto.</Text>
+              <AppText tone="muted" variant="body">Descartaste este gasto.</AppText>
             ) : (
               <>
                 {charge.suggestedPeriodId && suggestionQuery.isLoading ? (
                   <ActivityIndicator color={colors.brand} />
                 ) : null}
                 {charge.suggestedPeriodId && suggestionQuery.isError ? (
-                  <Text style={styles.error}>
+                  <AppText tone="destructive" variant="caption">
                     No pudimos revisar si este gasto coincide con un débito automático.
-                  </Text>
+                  </AppText>
                 ) : null}
                 {suggestion ? (
                   <View style={styles.suggestion}>
-                    <Text style={styles.suggestionTitle}>Posible débito automático</Text>
-                    <Text style={styles.message}>
+                    <AppText variant="subtitle">Posible débito automático</AppText>
+                    <AppText tone="muted" variant="body">
                       {suggestion.name} · {formatPeriodLabel(suggestion.period)}. Esperado{" "}
                       {formatMoney(suggestion.expectedAmount, suggestionCurrency(memberships, suggestion.householdId))}, pendiente{" "}
-                      {formatMoney(suggestion.remaining, suggestionCurrency(memberships, suggestion.householdId))}. Confirmá para registrarlo como pago de ese gasto fijo.
-                    </Text>
+                      {formatMoney(suggestion.remaining, suggestionCurrency(memberships, suggestion.householdId))}.                       Confirmá para registrarlo como pago de ese gasto fijo.
+                    </AppText>
                     <Button
                       accessibilityLabel={`Vincular con ${suggestion.name}`}
                       disabled={isSaving}
@@ -250,11 +251,11 @@ export function PendingChargeScreen({ navigation, route }: PendingChargeScreenPr
                     })
                   }}
                 >
-                  <Text style={styles.fieldLabel}>Espacio</Text>
+                  <AppText variant="subtitle">Espacio</AppText>
                   <View style={styles.fieldValueGroup}>
-                    <Text numberOfLines={1} style={styles.fieldValue}>
+                    <AppText numberOfLines={1} style={styles.fieldValue} tone="muted" variant="subtitle">
                       {selectedMembership?.household.name ?? "Elegir"}
-                    </Text>
+                    </AppText>
                     <FieldChevronIcon />
                   </View>
                 </FieldRow>
@@ -274,26 +275,26 @@ export function PendingChargeScreen({ navigation, route }: PendingChargeScreenPr
                   }}
                   style={!householdId ? styles.fieldDisabled : undefined}
                 >
-                  <Text style={styles.fieldLabel}>Categoría</Text>
+                  <AppText variant="subtitle">Categoría</AppText>
                   <View style={styles.fieldValueGroup}>
-                    <Text numberOfLines={1} style={styles.fieldValue}>
+                    <AppText numberOfLines={1} style={styles.fieldValue} tone="muted" variant="subtitle">
                       {category ? `${category.icon ? `${category.icon} ` : ""}${category.name}` : "Elegir"}
-                    </Text>
+                    </AppText>
                     <FieldChevronIcon />
                   </View>
                 </FieldRow>
 
                 {memberships && memberships.length === 0 ? (
-                  <Text style={styles.error}>No tenés espacios para cargar este gasto.</Text>
+                  <AppText tone="destructive" variant="caption">No tenés espacios para cargar este gasto.</AppText>
                 ) : null}
                 {householdId && !currencyMatches ? (
-                  <Text style={styles.error}>
+                  <AppText tone="destructive" variant="caption">
                     La moneda del gasto ({charge.currency}) no coincide con la del espacio (
                     {selectedMembership?.household.currency ?? "ARS"}).
-                  </Text>
+                  </AppText>
                 ) : null}
                 {householdId && categoriesQuery.isSuccess && categoriesQuery.data.length === 0 ? (
-                  <Text style={styles.error}>Este espacio no tiene categorías de gasto.</Text>
+                  <AppText tone="destructive" variant="caption">Este espacio no tiene categorías de gasto.</AppText>
                 ) : null}
 
                 <Button
@@ -344,27 +345,14 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   content: {
-    gap: 14,
-    paddingHorizontal: layout.sectionInset,
-  },
-  back: {
-    color: colors.brand,
-    fontFamily: fonts.sansMedium,
-    fontSize: 16,
+    gap: layout.titleContentGap,
+    paddingHorizontal: layout.sheetPadding,
   },
   loader: {
-    marginTop: 32,
+    marginTop: layout.sheetPadding,
   },
   summary: {
-    gap: 6,
-    marginBottom: 8,
-  },
-  merchant: {
-    color: colors.foreground,
-    fontFamily: fonts.sansSemibold,
-    letterSpacing: -0.6,
-    fontSize: 28,
-    lineHeight: 36,
+    gap: layout.titleContentGap,
   },
   amount: {
     color: colors.foreground,
@@ -372,43 +360,19 @@ const styles = StyleSheet.create({
     fontSize: 24,
     lineHeight: 32,
   },
-  meta: {
-    color: colors.mutedForeground,
-    fontFamily: fonts.sans,
-    fontSize: 16,
-    lineHeight: 22,
-  },
   messageBlock: {
-    gap: 16,
-  },
-  message: {
-    color: colors.mutedForeground,
-    fontFamily: fonts.sans,
-    fontSize: 16,
-    lineHeight: 22,
+    gap: layout.titleContentGap,
   },
   suggestion: {
     backgroundColor: colors.card,
     borderColor: colors.border,
     borderRadius: radii.md,
     borderWidth: 1,
-    gap: 12,
-    padding: 16,
-  },
-  suggestionTitle: {
-    color: colors.foreground,
-    fontFamily: fonts.sansSemibold,
-    fontSize: 16,
-    lineHeight: 22,
+    gap: layout.titleContentGap,
+    padding: layout.sheetPadding,
   },
   fieldDisabled: {
     opacity: 0.45,
-  },
-  fieldLabel: {
-    color: colors.foreground,
-    fontFamily: fonts.sansMedium,
-    fontSize: 15,
-    lineHeight: 18,
   },
   fieldValueGroup: {
     alignItems: "center",
@@ -420,17 +384,7 @@ const styles = StyleSheet.create({
     minWidth: 0,
   },
   fieldValue: {
-    color: colors.mutedForeground,
     flexShrink: 1,
-    fontFamily: fonts.sansMedium,
-    fontSize: 15,
-    lineHeight: 18,
     textAlign: "right",
-  },
-  error: {
-    color: colors.destructive,
-    fontFamily: fonts.sans,
-    fontSize: 14,
-    lineHeight: 20,
   },
 })

@@ -1,5 +1,6 @@
 import { Pressable, StyleSheet, Text, View } from "react-native"
 
+import { AppText } from "../../../components/text/AppText"
 import { useFormatMoney } from "../../households/hooks/useFormatMoney"
 import { colors, fonts, radii } from "../../../theme"
 import type { Transaction, TransactionCategory } from "../types"
@@ -43,7 +44,7 @@ export function TransactionCard({
       {showActor ? (
         <>
           <View style={styles.headerRow}>
-            <Text style={styles.actor}>{actorText}</Text>
+            <AppText style={styles.actor} tone="brand" variant="caption">{actorText}</AppText>
             {context === "transactions" ? (
               <TransactionAction
                 canDelete={canDelete}
@@ -59,9 +60,9 @@ export function TransactionCard({
 
       <View style={styles.content}>
         <View style={styles.titleRow}>
-          <Text style={styles.title} numberOfLines={2}>
+          <AppText numberOfLines={2} style={styles.title} variant="subtitle">
             {transaction.title}
-          </Text>
+          </AppText>
           <Text
             style={[
               styles.amount,
@@ -75,11 +76,11 @@ export function TransactionCard({
 
         <View style={styles.categoryRow}>
           {transaction.category?.icon ? (
-            <Text style={styles.categoryIcon}>{transaction.category.icon}</Text>
+            <AppText variant="subtitle">{transaction.category.icon}</AppText>
           ) : null}
-          <Text style={styles.categoryName}>
+          <AppText tone="muted" variant="body">
             {transaction.category?.name ?? "Sin categoría"}
-          </Text>
+          </AppText>
         </View>
       </View>
 
@@ -119,7 +120,7 @@ function TransactionAction({
   onDelete?: () => void
 }) {
   if (fixedExpense) {
-    return <Text style={styles.cannotDelete}>No se puede eliminar</Text>
+    return <AppText tone="muted" variant="caption">No se puede eliminar</AppText>
   }
 
   if (!canDelete || !onDelete) return null
@@ -132,7 +133,7 @@ function TransactionAction({
       onPress={onDelete}
       style={styles.deleteHit}
     >
-      <Text style={styles.delete}>{deleting ? "Eliminando..." : "Eliminar"}</Text>
+      <AppText tone="destructive" variant="caption">{deleting ? "Eliminando..." : "Eliminar"}</AppText>
     </Pressable>
   )
 }
@@ -178,10 +179,6 @@ const styles = StyleSheet.create({
   },
   actor: {
     flex: 1,
-    color: colors.brand,
-    fontFamily: fonts.sansMedium,
-    fontSize: 12,
-    lineHeight: 16,
   },
   content: {
     gap: 10,
@@ -194,25 +191,11 @@ const styles = StyleSheet.create({
   },
   title: {
     flex: 1,
-    color: colors.foreground,
-    fontFamily: fonts.sansSemibold,
-    fontSize: 16,
-    lineHeight: 20,
   },
   categoryRow: {
     alignItems: "center",
     flexDirection: "row",
     gap: 6,
-  },
-  categoryIcon: {
-    fontSize: 16,
-    lineHeight: 16,
-  },
-  categoryName: {
-    color: colors.mutedForeground,
-    fontFamily: fonts.sans,
-    fontSize: 16,
-    lineHeight: 16,
   },
   amount: {
     flexShrink: 0,
@@ -250,17 +233,5 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     minHeight: 44,
     minWidth: 44,
-  },
-  delete: {
-    color: colors.destructive,
-    fontFamily: fonts.sansMedium,
-    fontSize: 12,
-    lineHeight: 12,
-  },
-  cannotDelete: {
-    color: colors.mutedForeground,
-    fontFamily: fonts.sans,
-    fontSize: 12,
-    lineHeight: 16,
   },
 })

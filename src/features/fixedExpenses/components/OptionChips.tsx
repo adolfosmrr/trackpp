@@ -1,6 +1,7 @@
-import { Pressable, StyleSheet, Text, View } from "react-native"
+import { Pressable, StyleSheet, View } from "react-native"
 
-import { colors, fonts, radii } from "../../../theme"
+import { AppText } from "../../../components/text/AppText"
+import { colors, radii } from "../../../theme"
 
 type OptionChip<T extends string> = {
   value: T
@@ -37,9 +38,9 @@ export function OptionChips<T extends string>({
             onPress={() => onChange(option.value)}
             style={[styles.chip, selected && styles.chipSelected]}
           >
-            <Text style={[styles.chipText, selected && styles.chipTextSelected]}>
+            <AppText tone={selected ? "onBrand" : "muted"} variant="caption">
               {option.label}
-            </Text>
+            </AppText>
           </Pressable>
         )
       })}
@@ -63,14 +64,5 @@ const styles = StyleSheet.create({
   },
   chipSelected: {
     backgroundColor: colors.brand,
-  },
-  chipText: {
-    color: colors.mutedForeground,
-    fontFamily: fonts.sansMedium,
-    fontSize: 13,
-    lineHeight: 16,
-  },
-  chipTextSelected: {
-    color: colors.brandForeground,
   },
 })

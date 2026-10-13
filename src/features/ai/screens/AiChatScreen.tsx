@@ -8,6 +8,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context"
 
 import { GlassButton } from "../../../components/buttons/GlassButton"
 import { EmptyState } from "../../../components/feedback/EmptyState"
+import { AppText } from "../../../components/text/AppText"
 import { showUndo } from "../../../components/feedback/undo"
 import { useHouseholdStore } from "../../../store/householdStore"
 import { ScreenContainer } from "../../../components/layout/ScreenContainer"
@@ -17,7 +18,7 @@ import { useAiConversationPreviews } from "../hooks/useAiConversationPreviews"
 import { useAiConversations } from "../hooks/useAiConversations"
 import { useDeleteAiConversation } from "../hooks/useDeleteAiConversation"
 import type { AiConversation } from "../types"
-import { colors, fonts, radii, refreshControlColors } from "../../../theme"
+import { colors, fonts, layout, radii, refreshControlColors } from "../../../theme"
 import type { AppStackParamList, MainTabsParamList } from "../../../navigation/types"
 
 type AiChatScreenProps = CompositeScreenProps<
@@ -93,28 +94,27 @@ export function AiChatScreen({ navigation }: AiChatScreenProps) {
         ItemSeparatorComponent={() => <View style={styles.conversationGap} />}
         ListHeaderComponent={(
           <View>
-            <Text style={styles.title}>AIsistente</Text>
+            <AppText variant="title">AIsistente</AppText>
             <GlassButton
               accessibilityLabel="Nueva conversación"
               fallbackStyle={styles.newConversationButton}
               glassStyle={styles.newConversationGlass}
               icon={(color) => <FieldChevronIcon color={color} />}
               label="Nueva conversación"
-              labelStyle={styles.newConversationText}
               onPress={handleNewConversation}
               style={styles.newConversationContent}
               tone="brand"
             />
-            <Text style={styles.recentConversationsTitle}>
+            <AppText style={styles.recentConversationsTitle} tone="muted" variant="title">
               Conversaciones{"\n"}recientes
-            </Text>
+            </AppText>
           </View>
         )}
         ListEmptyComponent={
           conversationsQuery.isLoading ? (
-            <Text style={styles.loadingText}>Cargando conversaciones...</Text>
+            <AppText tone="muted" variant="body">Cargando conversaciones...</AppText>
           ) : conversationsQuery.error ? (
-            <Text style={styles.errorText}>No se pudieron cargar las conversaciones.</Text>
+            <AppText tone="destructive" variant="body">No se pudieron cargar las conversaciones.</AppText>
           ) : (
             <EmptyState
               title="Todavía no hablaste con el asistente"
@@ -157,9 +157,9 @@ function ConversationCard({
   return (
     <Pressable style={styles.conversationCard} onPress={onPress}>
       <View style={styles.conversationHeader}>
-        <Text style={styles.preview} numberOfLines={1}>
+        <AppText numberOfLines={1} style={styles.preview} variant="subtitle">
           {getConversationPreview(preview)}
-        </Text>
+        </AppText>
         <FieldChevronIcon />
       </View>
 
@@ -175,7 +175,7 @@ function ConversationCard({
           hitSlop={8}
           style={styles.deleteHit}
         >
-          <Text style={styles.deleteText}>{isDeleting ? "Eliminando..." : "Eliminar"}</Text>
+          <AppText tone="destructive" variant="caption">{isDeleting ? "Eliminando..." : "Eliminar"}</AppText>
         </Pressable>
       </View>
     </Pressable>
@@ -213,48 +213,30 @@ const styles = StyleSheet.create({
   },
   listContent: { flexGrow: 1 },
   listFooter: { height: 20 },
-  title: {
-    color: colors.foreground,
-    fontFamily: fonts.sansSemibold,
-    fontSize: 28,
-    letterSpacing: -0.6,
-    lineHeight: 32,
-  },
   newConversationButton: {
     alignItems: "center",
     backgroundColor: colors.brand,
     flexDirection: "row",
+    height: layout.headerPill,
     justifyContent: "space-between",
-    marginTop: 20,
-    paddingHorizontal: 20,
-    paddingVertical: 15,
+    marginTop: layout.titleContentGap,
+    paddingHorizontal: layout.sheetPadding,
     width: "100%",
   },
   newConversationGlass: {
-    marginTop: 20,
+    marginTop: layout.titleContentGap,
     width: "100%",
   },
   newConversationContent: {
     alignItems: "center",
     flexDirection: "row",
+    height: layout.headerPill,
     justifyContent: "space-between",
-    paddingHorizontal: 20,
-    paddingVertical: 15,
+    paddingHorizontal: layout.sheetPadding,
     width: "100%",
   },
-  newConversationText: {
-    fontFamily: fonts.sansSemibold,
-    fontSize: 18,
-    lineHeight: 18,
-  },
   recentConversationsTitle: {
-    color: colors.mutedForeground,
-    fontFamily: fonts.sansSemibold,
-    fontSize: 22,
-    letterSpacing: -0.3,
-    lineHeight: 26,
-    marginBottom: 20,
-    marginTop: 40,
+    marginTop: layout.titleContentGap,
   },
   conversationGap: { height: 10 },
   conversationCard: {
@@ -273,12 +255,8 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
   },
   preview: {
-    color: colors.foreground,
     flex: 1,
     flexShrink: 1,
-    fontFamily: fonts.sans,
-    fontSize: 18,
-    lineHeight: 18,
   },
   separator: {
     backgroundColor: colors.border,
@@ -305,12 +283,4 @@ const styles = StyleSheet.create({
     minHeight: 44,
     minWidth: 44,
   },
-  deleteText: {
-    color: colors.destructive,
-    fontFamily: fonts.sans,
-    fontSize: 12,
-    lineHeight: 12,
-  },
-  loadingText: { color: colors.mutedForeground, fontFamily: fonts.sans, marginTop: 20 },
-  errorText: { color: colors.destructive, fontFamily: fonts.sans, marginTop: 20 },
 })

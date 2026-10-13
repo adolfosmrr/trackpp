@@ -13,8 +13,10 @@ import {
   LayoutChangeEvent,
   RefreshControl,
 } from "react-native"
-import { colors, fonts, radii, refreshControlColors } from "../../../theme"
+import { colors, fonts, layout, radii, refreshControlColors } from "../../../theme"
 import { Button } from "../../../components/buttons/Button"
+import { GlassButton } from "../../../components/buttons/GlassButton"
+import { AppText } from "../../../components/text/AppText"
 import { CircleAddButton } from "../../../components/buttons/CircleAddButton"
 import { useFormatMoney } from "../../households/hooks/useFormatMoney"
 import { EmptyState } from "../../../components/feedback/EmptyState"
@@ -157,9 +159,9 @@ export function BudgetsScreen({ navigation }: BudgetsScreenProps) {
   if (budgetsError || profileError || dashboardError) {
     return (
       <View style={styles.center}>
-        <Text style={styles.empty}>
+        <AppText tone="muted" variant="body">
           No se pudieron cargar los presupuestos.
-        </Text>
+        </AppText>
       </View>
     )
   }
@@ -209,7 +211,7 @@ export function BudgetsScreen({ navigation }: BudgetsScreenProps) {
                       budgets.map((budget) => (
                         <View key={budget.id} style={styles.card}>
                           <View style={styles.cardHeader}>
-                            <Text style={styles.cardTitle}>{budget.name}</Text>
+                            <AppText variant="subtitle">{budget.name}</AppText>
                             <Text style={styles.cardPercentage}>
                               {formatPercentage(budget.percentage)}
                             </Text>
@@ -254,16 +256,14 @@ export function BudgetsScreen({ navigation }: BudgetsScreenProps) {
                           <View style={styles.cardSeparator} />
 
                           <View style={styles.actions}>
-                            <Button
+                            <GlassButton
+                              accessibilityLabel="Editar"
                               label="Editar"
-                              labelStyle={styles.editText}
                               onPress={() => openEditBudget(budget)}
-                              tone="outline"
                             />
 
                             <Button
                               label="Eliminar"
-                              labelStyle={styles.deleteText}
                               onPress={() => handleDeleteBudget(budget.id)}
                               tone="destructive"
                             />
@@ -356,7 +356,7 @@ const styles =
     },
 
     budgetContent: {
-      gap: 18,
+      gap: layout.titleContentGap,
     },
 
     center: {
@@ -368,7 +368,6 @@ const styles =
 
     list: {
       gap: 14,
-      marginTop: 6,
     },
 
     card: {
@@ -383,13 +382,6 @@ const styles =
     cardHeader: {
       flexDirection: "row",
       justifyContent: "space-between",
-    },
-
-    cardTitle: {
-      color: colors.foreground,
-      fontFamily: fonts.sansSemibold,
-      fontSize: 16,
-      lineHeight: 24,
     },
 
     cardPercentage: {
@@ -447,25 +439,5 @@ const styles =
       flexWrap: "wrap",
     },
 
-    editText: {
-      color: colors.foreground,
-      fontFamily: fonts.sansMedium,
-      fontSize: 12,
-      lineHeight: 12,
-    },
-
-    deleteText: {
-      color: colors.destructive,
-      fontFamily: fonts.sansMedium,
-      fontSize: 12,
-      lineHeight: 12,
-    },
-
-    empty: {
-      textAlign: "center",
-      color: colors.mutedForeground,
-      fontFamily: fonts.sans,
-      paddingVertical: 30,
-    },
 
   })

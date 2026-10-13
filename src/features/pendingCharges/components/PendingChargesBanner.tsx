@@ -1,6 +1,8 @@
 import { Pressable, StyleSheet, Text, View } from "react-native"
 import { colors, fonts, radii } from "../../../theme"
 
+import { AppText } from "../../../components/text/AppText"
+
 import { ListSection } from "../../../components/layout/ListSection"
 
 import { usePendingCharges } from "../hooks/usePendingCharges"
@@ -33,8 +35,8 @@ export function PendingChargesBanner({ onPress }: PendingChargesBannerProps) {
         <Text style={styles.badgeText}>{count}</Text>
       </View>
       <View style={styles.copy}>
-        <Text style={styles.title}>{title}</Text>
-        <Text style={styles.subtitle}>Elegí el espacio y la categoría</Text>
+        <AppText variant="subtitle">{title}</AppText>
+        <AppText tone="muted" variant="caption">Elegí el espacio y la categoría</AppText>
       </View>
     </Pressable>
     </ListSection>
@@ -70,17 +72,5 @@ const styles = StyleSheet.create({
   copy: {
     flex: 1,
     gap: 4,
-  },
-  title: {
-    color: colors.foreground,
-    fontFamily: fonts.sansSemibold,
-    fontSize: 16,
-    lineHeight: 20,
-  },
-  subtitle: {
-    color: colors.mutedForeground,
-    fontFamily: fonts.sans,
-    fontSize: 14,
-    lineHeight: 18,
   },
 })

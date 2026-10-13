@@ -13,6 +13,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context"
 import { Button } from "../../../components/buttons/Button"
 import { TextField } from "../../../components/inputs/TextField"
 import { BackLink } from "../../../components/navigation/BackLink"
+import { AppText } from "../../../components/text/AppText"
 import { colors, fonts, layout, radii } from "../../../theme"
 import { useFormatMoney } from "../../households/hooks/useFormatMoney"
 import type { AppStackParamList } from "../../../navigation/types"
@@ -76,7 +77,7 @@ export function FixedExpenseHistoryScreen({
     <ScrollView
       contentContainerStyle={[
         styles.content,
-        { paddingTop: insets.top + 16, paddingBottom: insets.bottom + 32 },
+        { paddingTop: insets.top + layout.titleContentGap, paddingBottom: insets.bottom + layout.sheetPadding },
       ]}
       style={styles.screen}
     >
@@ -86,35 +87,35 @@ export function FixedExpenseHistoryScreen({
         <ActivityIndicator color={colors.brand} style={styles.loader} />
       ) : historyQuery.isError || !history ? (
         <View style={styles.block}>
-          <Text style={styles.message}>No se pudo cargar el historial.</Text>
+          <AppText tone="muted" variant="body">No se pudo cargar el historial.</AppText>
           <Button label="Reintentar" onPress={() => void historyQuery.refetch()} tone="brand" />
         </View>
       ) : (
         <>
           <View style={styles.header}>
-            <Text style={styles.title}>
+            <AppText variant="title">
               {history.expense.category?.icon ? `${history.expense.category.icon} ` : ""}
               {history.expense.name}
-            </Text>
-            <Text style={styles.meta}>
+            </AppText>
+            <AppText tone="muted" variant="caption">
               {frequencyLabel(history.expense.frequency)}
               {" · cobra el "}
               {String(history.expense.charge_day).padStart(2, "0")}
               {" · vence el "}
               {String(history.expense.due_day).padStart(2, "0")}
-            </Text>
+            </AppText>
             {history.expense.auto_debit && history.expense.auto_debit_source ? (
-              <Text style={styles.meta}>
+              <AppText tone="muted" variant="caption">
                 Débito automático · {autoDebitSourceLabel(history.expense.auto_debit_source)}
-              </Text>
+              </AppText>
             ) : null}
           </View>
 
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Ajustar monto</Text>
-            <Text style={styles.message}>
+            <AppText variant="sectionTitle">Ajustar monto</AppText>
+            <AppText tone="muted" variant="body">
               El monto nuevo rige desde el período que elijas. Los anteriores conservan el esperado que tenían.
-            </Text>
+            </AppText>
             <TextField
               accessibilityLabel="Nuevo monto"
               keyboardType="decimal-pad"
@@ -142,13 +143,13 @@ export function FixedExpenseHistoryScreen({
           </View>
 
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Cambios de monto</Text>
+            <AppText variant="sectionTitle">Cambios de monto</AppText>
             {history.amountChanges.length === 0 ? (
-              <Text style={styles.message}>Todavía no hay cambios de monto.</Text>
+              <AppText tone="muted" variant="body">Todavía no hay cambios de monto.</AppText>
             ) : (
               history.amountChanges.map((change) => (
                 <View key={change.id} style={styles.row}>
-                  <Text style={styles.rowTitle}>{formatPeriodLabel(change.effectivePeriod)}</Text>
+                  <AppText style={styles.rowTitle} variant="subtitle">{formatPeriodLabel(change.effectivePeriod)}</AppText>
                   <Text style={styles.rowAmount}>{format(change.amount)}</Text>
                 </View>
               ))
@@ -156,17 +157,17 @@ export function FixedExpenseHistoryScreen({
           </View>
 
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Períodos</Text>
+            <AppText variant="sectionTitle">Períodos</AppText>
             {history.periods.length === 0 ? (
-              <Text style={styles.message}>Todavía no hay períodos registrados.</Text>
+              <AppText tone="muted" variant="body">Todavía no hay períodos registrados.</AppText>
             ) : (
               history.periods.map((periodItem) => (
                 <View key={periodItem.id} style={styles.periodCard}>
                   <View style={styles.row}>
-                    <Text style={styles.rowTitle}>{formatPeriodLabel(periodItem.period)}</Text>
-                    <Text style={styles.status}>{fixedExpenseStatusLabel(periodItem.status)}</Text>
+                    <AppText style={styles.rowTitle} variant="subtitle">{formatPeriodLabel(periodItem.period)}</AppText>
+                    <AppText tone="muted" variant="caption">{fixedExpenseStatusLabel(periodItem.status)}</AppText>
                   </View>
-                  <Text style={styles.meta}>
+                  <Text style={styles.rowAmount}>
                     Esperado {format(periodItem.expectedAmount)}
                     {" · pagado "}
                     {format(periodItem.totalPaid)}
@@ -187,45 +188,20 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   content: {
-    gap: 18,
-    paddingHorizontal: layout.sectionInset,
+    gap: layout.titleContentGap,
+    paddingHorizontal: layout.sheetPadding,
   },
   loader: {
-    marginTop: 32,
+    marginTop: layout.titleContentGap,
   },
   block: {
-    gap: 16,
+    gap: layout.titleContentGap,
   },
   header: {
-    gap: 6,
-  },
-  title: {
-    color: colors.foreground,
-    fontFamily: fonts.sansSemibold,
-    fontSize: 28,
-    letterSpacing: -0.6,
-    lineHeight: 34,
+    gap: layout.titleContentGap,
   },
   section: {
-    gap: 10,
-  },
-  sectionTitle: {
-    color: colors.foreground,
-    fontFamily: fonts.sansSemibold,
-    fontSize: 18,
-    lineHeight: 24,
-  },
-  message: {
-    color: colors.mutedForeground,
-    fontFamily: fonts.sans,
-    fontSize: 15,
-    lineHeight: 21,
-  },
-  meta: {
-    color: colors.mutedForeground,
-    fontFamily: fonts.sans,
-    fontSize: 14,
-    lineHeight: 20,
+    gap: layout.titleContentGap,
   },
   row: {
     alignItems: "center",
@@ -234,11 +210,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
   },
   rowTitle: {
-    color: colors.foreground,
     flex: 1,
-    fontFamily: fonts.sansMedium,
-    fontSize: 15,
-    lineHeight: 20,
   },
   rowAmount: {
     color: colors.foreground,
@@ -252,10 +224,5 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     gap: 6,
     padding: 14,
-  },
-  status: {
-    color: colors.mutedForeground,
-    fontFamily: fonts.sansMedium,
-    fontSize: 13,
   },
 })

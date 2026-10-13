@@ -1,8 +1,10 @@
 import { useSyncExternalStore } from "react"
-import { Pressable, StyleSheet, Text, View } from "react-native"
+import { Pressable, StyleSheet, View } from "react-native"
+
+import { AppText } from "../text/AppText"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 
-import { colors, fonts, radii } from "../../theme"
+import { colors, radii } from "../../theme"
 import { getUndoEntry, runUndoAction, subscribeUndo } from "./undo"
 
 export function UndoSnackbar() {
@@ -14,7 +16,7 @@ export function UndoSnackbar() {
   return (
     <View pointerEvents="box-none" style={styles.host}>
       <View style={[styles.bar, { bottom: insets.bottom + 88 }]}>
-        <Text style={styles.message}>{entry.message}</Text>
+        <AppText style={styles.message} variant="body">{entry.message}</AppText>
         {entry.actionLabel ? (
           <Pressable
             accessibilityRole="button"
@@ -22,7 +24,7 @@ export function UndoSnackbar() {
             onPress={runUndoAction}
             style={styles.action}
           >
-            <Text style={styles.actionText}>{entry.actionLabel}</Text>
+            <AppText tone="brand" variant="subtitle">{entry.actionLabel}</AppText>
           </Pressable>
         ) : null}
       </View>
@@ -51,11 +53,7 @@ const styles = StyleSheet.create({
     right: 16,
   },
   message: {
-    color: colors.foreground,
     flex: 1,
-    fontFamily: fonts.sans,
-    fontSize: 15,
-    lineHeight: 20,
   },
   action: {
     alignItems: "center",
@@ -63,10 +61,5 @@ const styles = StyleSheet.create({
     minHeight: 44,
     minWidth: 44,
     paddingHorizontal: 8,
-  },
-  actionText: {
-    color: colors.brand,
-    fontFamily: fonts.sansSemibold,
-    fontSize: 15,
   },
 })

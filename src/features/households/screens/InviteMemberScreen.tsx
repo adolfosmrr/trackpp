@@ -2,17 +2,17 @@ import { useState } from "react"
 
 import {
   View,
-  Text,
   StyleSheet,
   Alert,
 } from "react-native"
 import type { NativeStackScreenProps } from "@react-navigation/native-stack"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
-import { colors, fonts } from "../../../theme"
+import { colors, layout } from "../../../theme"
 
 import { Button } from "../../../components/buttons/Button"
 import { TextField } from "../../../components/inputs/TextField"
 import { BackLink } from "../../../components/navigation/BackLink"
+import { AppText } from "../../../components/text/AppText"
 
 import { useCreateInvitation } from "../hooks/useCreateInvitation"
 import type { AppStackParamList } from "../../../navigation/types"
@@ -66,17 +66,17 @@ export function InviteMemberScreen({
   }
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top + 16 }]}>
+    <View style={[styles.container, { paddingTop: insets.top + layout.titleContentGap }]}>
       <BackLink onPress={() => navigation.goBack()} />
-      <Text style={styles.title}>
+      <AppText variant="title">
         Invitar pareja
-      </Text>
+      </AppText>
 
-      <Text style={styles.description}>
+      <AppText tone="muted" variant="body">
         Ingresa el correo de la persona
         que quieres agregar al espacio
         compartido.
-      </Text>
+      </AppText>
 
       <TextField
         placeholder="correo@ejemplo.com"
@@ -120,22 +120,7 @@ const styles =
     container: {
       flex: 1,
       backgroundColor: colors.background,
-      padding: 24,
-      gap: 18,
+      padding: layout.sheetPadding,
+      gap: layout.titleContentGap,
     },
-
-    title: {
-      fontSize: 26,
-      fontWeight: "600",
-      color: colors.foreground,
-      fontFamily: fonts.sansSemibold,
-    },
-
-    description: {
-      fontSize: 15,
-      color: colors.mutedForeground,
-      fontFamily: fonts.sans,
-      lineHeight: 22,
-    },
-
   })

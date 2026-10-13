@@ -8,11 +8,12 @@ import {
 } from "react-native"
 import type { NativeStackScreenProps } from "@react-navigation/native-stack"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
-import { colors, fonts } from "../../../theme"
+import { colors, fonts, layout } from "../../../theme"
 
 import { Button } from "../../../components/buttons/Button"
 import { TextField } from "../../../components/inputs/TextField"
 import { BackLink } from "../../../components/navigation/BackLink"
+import { AppText } from "../../../components/text/AppText"
 import { useFormatMoney } from "../../households/hooks/useFormatMoney"
 
 import { useFixedExpensePeriods } from "../hooks/useFixedExpensePeriods"
@@ -38,7 +39,7 @@ export function PayFixedExpensePeriodScreen({
 
   if (isLoading) {
     return (
-      <View style={[styles.container, { paddingTop: insets.top + 16 }]}>
+      <View style={[styles.container, { paddingTop: insets.top + layout.titleContentGap }]}>
         <BackLink onPress={() => navigation.goBack()} />
         <ActivityIndicator color={colors.brand} />
       </View>
@@ -47,9 +48,9 @@ export function PayFixedExpensePeriodScreen({
 
   if (!period) {
     return (
-      <View style={[styles.container, { paddingTop: insets.top + 16 }]}>
+      <View style={[styles.container, { paddingTop: insets.top + layout.titleContentGap }]}>
         <BackLink onPress={() => navigation.goBack()} />
-        <Text style={styles.meta}>No se encontró la obligación mensual.</Text>
+        <AppText tone="muted" variant="body">No se encontró la obligación mensual.</AppText>
       </View>
     )
   }
@@ -87,9 +88,9 @@ export function PayFixedExpensePeriodScreen({
   }
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top + 16 }]}>
+    <View style={[styles.container, { paddingTop: insets.top + layout.titleContentGap }]}>
       <BackLink onPress={() => navigation.goBack()} />
-      <Text style={styles.title}>{period.name}</Text>
+      <AppText variant="title">{period.name}</AppText>
       <Text style={styles.meta}>Total: {format(period.expectedAmount)}</Text>
       <Text style={styles.meta}>Pagado: {format(period.totalPaid)}</Text>
       <Text style={styles.meta}>Pendiente: {format(period.remaining)}</Text>
@@ -117,8 +118,11 @@ export function PayFixedExpensePeriodScreen({
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.background, padding: 24, gap: 16 },
-  center: { flex: 1, backgroundColor: colors.background, alignItems: "center", justifyContent: "center", padding: 24 },
-  title: { color: colors.foreground, fontFamily: fonts.sansSemibold, fontSize: 22, fontWeight: "600" },
+  container: {
+    flex: 1,
+    backgroundColor: colors.background,
+    padding: layout.sheetPadding,
+    gap: layout.titleContentGap,
+  },
   meta: { color: colors.mutedForeground, fontFamily: fonts.mono, fontSize: 14 },
 })

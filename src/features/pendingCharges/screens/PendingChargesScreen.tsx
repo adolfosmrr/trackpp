@@ -15,6 +15,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context"
 
 import { BackLink } from "../../../components/navigation/BackLink"
 import { EmptyState } from "../../../components/feedback/EmptyState"
+import { AppText } from "../../../components/text/AppText"
 import { showUndo } from "../../../components/feedback/undo"
 import { useHouseholds } from "../../households/hooks/useHouseholds"
 import { useHouseholdStore } from "../../../store/householdStore"
@@ -121,17 +122,17 @@ export function PendingChargesScreen({ navigation }: PendingChargesScreenProps) 
       style={styles.screen}
       contentContainerStyle={[
         styles.content,
-        { paddingTop: insets.top + 16, paddingBottom: insets.bottom + 32 },
+        { paddingTop: insets.top + layout.titleContentGap, paddingBottom: insets.bottom + layout.sheetPadding },
       ]}
       refreshControl={
         <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
       }
     >
       <BackLink onPress={() => navigation.goBack()} />
-      <Text style={styles.title}>Gastos de tarjeta</Text>
-      <Text style={styles.lead}>
+      <AppText variant="title">Gastos de tarjeta</AppText>
+      <AppText tone="muted" variant="body">
         Deslizá a la derecha para cargarlo en Personal, o a la izquierda para descartarlo.
-      </Text>
+      </AppText>
 
       {chargesQuery.isLoading ? (
         <ActivityIndicator color={colors.brand} style={styles.loader} />
@@ -195,12 +196,12 @@ function PendingChargeRow({
       overshootRight={false}
       renderLeftActions={charge.suggestedPeriodId ? undefined : () => (
         <View style={[styles.action, styles.assignAction]}>
-          <Text style={styles.actionText}>A Personal</Text>
+          <AppText tone="onBrand" variant="caption">A Personal</AppText>
         </View>
       )}
       renderRightActions={() => (
         <View style={[styles.action, styles.dismissAction]}>
-          <Text style={styles.actionText}>Descartar</Text>
+          <AppText tone="onBrand" variant="caption">Descartar</AppText>
         </View>
       )}
       onSwipeableOpen={(direction) => {
@@ -228,16 +229,16 @@ function PendingChargeRow({
         style={styles.card}
       >
         <View style={styles.cardHeader}>
-          <Text style={styles.merchant}>{chargeTitle(charge)}</Text>
+          <AppText style={styles.merchant} variant="subtitle">{chargeTitle(charge)}</AppText>
           <Text style={styles.amount}>
             {formatChargeAmount(charge.amount, charge.currency)}
           </Text>
         </View>
-        <Text style={styles.meta}>
+        <AppText tone="muted" variant="caption">
           {chargeOrigin(charge)}
           {date ? ` · ${date}` : ""}
           {charge.suggestedPeriodId ? " · Posible débito automático" : ""}
-        </Text>
+        </AppText>
       </Pressable>
     </Swipeable>
   )
@@ -249,24 +250,11 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   content: {
-    gap: 16,
-    paddingHorizontal: layout.sectionInset,
-  },
-  title: {
-    color: colors.foreground,
-    fontFamily: fonts.sansSemibold,
-    letterSpacing: -0.6,
-    fontSize: 28,
-    lineHeight: 36,
-  },
-  lead: {
-    color: colors.mutedForeground,
-    fontFamily: fonts.sans,
-    fontSize: 16,
-    lineHeight: 22,
+    gap: layout.titleContentGap,
+    paddingHorizontal: layout.sheetPadding,
   },
   loader: {
-    marginTop: 24,
+    marginTop: layout.sheetPadding,
   },
   list: {
     gap: 12,
@@ -288,23 +276,13 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
   },
   merchant: {
-    color: colors.foreground,
     flex: 1,
-    fontFamily: fonts.sansSemibold,
-    fontSize: 18,
-    lineHeight: 22,
   },
   amount: {
     color: colors.foreground,
     fontFamily: fonts.monoSemibold,
     fontSize: 16,
     lineHeight: 22,
-  },
-  meta: {
-    color: colors.mutedForeground,
-    fontFamily: fonts.sans,
-    fontSize: 14,
-    lineHeight: 20,
   },
   action: {
     alignItems: "center",
@@ -321,10 +299,5 @@ const styles = StyleSheet.create({
   dismissAction: {
     backgroundColor: colors.destructive,
     marginLeft: 8,
-  },
-  actionText: {
-    color: colors.brandForeground,
-    fontFamily: fonts.sansSemibold,
-    fontSize: 14,
   },
 })

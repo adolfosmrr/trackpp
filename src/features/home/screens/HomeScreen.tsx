@@ -9,7 +9,6 @@ import {
   LayoutChangeEvent,
   RefreshControl,
   View,
-  Text,
   StyleSheet,
   ActivityIndicator,
 } from "react-native"
@@ -50,6 +49,7 @@ import { useActivity } from "../../activity/hooks/useActivity"
 import { useUnreadActivity } from "../../activity/hooks/useUnreadActivity"
 import { ListSection } from "../../../components/layout/ListSection"
 import { ScreenContainer } from "../../../components/layout/ScreenContainer"
+import { AppText } from "../../../components/text/AppText"
 import { SectionHeader } from "../../../components/layout/SectionHeader"
 import { TopSection } from "../../../components/layout/TopSection"
 import { TopSectionHeader } from "../../../components/layout/TopSectionHeader"
@@ -597,9 +597,9 @@ export function HomeScreen({ navigation }: HomeScreenProps) {
   ) {
     return (
       <View style={styles.center}>
-        <Text style={styles.activityStatus}>
+        <AppText tone="muted" variant="body">
           No se pudieron cargar los datos.
-        </Text>
+        </AppText>
       </View>
     )
   }
@@ -653,18 +653,18 @@ export function HomeScreen({ navigation }: HomeScreenProps) {
             trailing={
               unreadCount > 0 ? (
                 <View style={styles.activityBadge}>
-                  <Text style={styles.activityBadgeText}>
+                  <AppText tone="brand" variant="caption">
                     {unreadCount} nuevas
-                  </Text>
+                  </AppText>
                 </View>
               ) : null
             }
           />
 
           {activityLoading ? (
-            <Text style={styles.activityStatus}>
+            <AppText tone="muted" variant="body">
               Cargando actividad...
-            </Text>
+            </AppText>
           ) : activity?.length ? (
             <View style={styles.activityList}>
               {activity.map((item) => (
@@ -676,9 +676,9 @@ export function HomeScreen({ navigation }: HomeScreenProps) {
               ))}
             </View>
           ) : (
-            <Text style={styles.empty}>
+            <AppText style={styles.empty} tone="muted" variant="body">
               Todavía no hay actividad compartida.
-            </Text>
+            </AppText>
           )}
         </View>
         </ListSection>
@@ -748,7 +748,7 @@ const styles =
       alignItems: "center",
       justifyContent: "center",
       gap: 20,
-      padding: 24,
+      padding: layout.sheetPadding,
       backgroundColor: colors.background,
     },
 
@@ -773,16 +773,11 @@ const styles =
     },
 
     activitySection: {
-      gap: 12,
+      gap: layout.titleContentGap,
     },
 
     activityList: {
       gap: 10,
-    },
-
-    activityStatus: {
-      color: colors.mutedForeground,
-      fontFamily: fonts.sans,
     },
 
     activityBadge: {
@@ -794,17 +789,9 @@ const styles =
       paddingVertical: 4,
     },
 
-    activityBadgeText: {
-      color: colors.brand,
-      fontFamily: fonts.sansMedium,
-      fontSize: 12,
-    },
-
     empty: {
-      color: colors.mutedForeground,
-      fontFamily: fonts.sans,
       textAlign: "center",
-      paddingVertical: 24,
+      paddingVertical: layout.sheetPadding,
     },
 
   })

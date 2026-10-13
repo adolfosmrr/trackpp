@@ -32,8 +32,10 @@ import { GradientBackground } from "../../../components/visual/GradientBackgroun
 import { THINKING_PLACEHOLDER, useFinancialChat } from "../hooks/useFinancialChat"
 import { useReduceMotion, useTypewriter } from "../hooks/useTypewriter"
 import type { AiMessage } from "../types"
+import { GlassButton } from "../../../components/buttons/GlassButton"
 import { BackLink } from "../../../components/navigation/BackLink"
-import { colors, fonts, layout, radii } from "../../../theme"
+import { AppText } from "../../../components/text/AppText"
+import { colors, fonts, layout, radii, typography } from "../../../theme"
 
 const FIELD_FADE_MS = 400
 
@@ -71,7 +73,7 @@ function ThinkingLabel() {
   const animatedStyle = useAnimatedStyle(() => ({ opacity: opacity.value }))
 
   return (
-    <Animated.Text style={[styles.messageContent, animatedStyle]}>
+    <Animated.Text style={[typography.body, styles.messageInk, animatedStyle]}>
       {THINKING_PLACEHOLDER}
     </Animated.Text>
   )
@@ -128,11 +130,11 @@ function MessageBubble({
 
   return (
     <View style={[styles.message, isUser ? styles.userMessage : styles.assistantMessage]}>
-      <Text style={styles.messageRole}>{isUser ? "Tú" : "IA"}</Text>
+      <AppText tone="muted" variant="caption">{isUser ? "Tú" : "IA"}</AppText>
       {message.pending ? (
         <ThinkingLabel />
       ) : (
-        <Text style={isUser ? styles.userMessageContent : styles.messageContent}>{content}</Text>
+        <AppText variant="body">{content}</AppText>
       )}
     </View>
   )
@@ -171,7 +173,7 @@ export function AiConversationScreen({ route, navigation }: AiConversationScreen
         style={styles.container}
         behavior={Platform.OS === "ios" ? "padding" : "height"}
       >
-        <View style={[styles.header, { paddingTop: insets.top + 16 }]}>
+        <View style={[styles.header, { paddingTop: insets.top + layout.titleContentGap }]}>
           <BackLink onPress={() => navigation.goBack()} />
         </View>
         <ScrollView
@@ -183,9 +185,9 @@ export function AiConversationScreen({ route, navigation }: AiConversationScreen
         >
           {!conversationId && !messages.length ? (
             <View style={styles.emptyState}>
-              <Text style={styles.subtitle}>
+              <AppText variant="subtitle">
                 Pregunta sobre los movimientos y presupuestos del espacio seleccionado.
-              </Text>
+              </AppText>
               <View style={styles.suggestions}>
                 {suggestions.map((suggestion) => (
                   <Pressable
@@ -194,7 +196,7 @@ export function AiConversationScreen({ route, navigation }: AiConversationScreen
                     onPress={() => handleSend(suggestion)}
                     disabled={isPending || !householdId}
                   >
-                    <Text style={styles.suggestionText}>{suggestion}</Text>
+                    <AppText variant="subtitle">{suggestion}</AppText>
                   </Pressable>
                 ))}
               </View>
@@ -214,16 +216,12 @@ export function AiConversationScreen({ route, navigation }: AiConversationScreen
 
           {!isPending && error ? (
             <View style={styles.errorRow}>
-              <Text style={styles.error}>{errorMessage}</Text>
-              <Pressable
+              <AppText tone="destructive" variant="body">{errorMessage}</AppText>
+              <GlassButton
                 accessibilityLabel="Reintentar"
-                accessibilityRole="button"
-                disabled={isPending}
+                label="Reintentar"
                 onPress={retry}
-                style={styles.retry}
-              >
-                <Text style={styles.retryText}>Reintentar</Text>
-              </Pressable>
+              />
             </View>
           ) : null}
         </ScrollView>
@@ -264,15 +262,9 @@ const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.background },
   container: { flex: 1 },
   messages: { flex: 1 },
-  header: { paddingHorizontal: layout.sectionInset, paddingBottom: 8 },
-  messagesContent: { gap: 12, padding: layout.sectionInset, paddingTop: 12 },
-  emptyState: { gap: 16 },
-  subtitle: {
-    color: colors.foreground,
-    fontFamily: fonts.sansSemibold,
-    fontSize: 20,
-    lineHeight: 20,
-  },
+  header: { paddingHorizontal: layout.sheetPadding, paddingBottom: layout.titleContentGap },
+  messagesContent: { gap: layout.titleContentGap, padding: layout.sheetPadding, paddingTop: layout.titleContentGap },
+  emptyState: { gap: layout.titleContentGap },
   suggestions: { gap: 10 },
   suggestion: {
     backgroundColor: colors.card,
@@ -282,32 +274,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 10,
   },
-  suggestionText: {
-    color: colors.foreground,
-    fontFamily: fonts.sansMedium,
-    fontSize: 16,
-    lineHeight: 16,
-  },
   message: { borderRadius: radii.md, borderWidth: 1, borderColor: colors.border, gap: 4, maxWidth: "88%", padding: 12 },
   userMessage: { alignSelf: "flex-end", backgroundColor: colors.brandMuted, borderColor: colors.brandBorder },
   assistantMessage: { alignSelf: "flex-start", backgroundColor: colors.card },
-  messageRole: { color: colors.mutedForeground, fontFamily: fonts.sansMedium, fontSize: 12, fontWeight: "600" },
-  messageContent: { color: colors.foreground, fontFamily: fonts.sans, lineHeight: 21 },
-  userMessageContent: { color: colors.foreground, fontFamily: fonts.sans, lineHeight: 21 },
+  messageInk: { color: colors.foreground },
   errorRow: { alignItems: "flex-start", gap: 8 },
-  error: { color: colors.destructive, fontFamily: fonts.sans },
-  retry: {
-    alignItems: "center",
-    justifyContent: "center",
-    minHeight: 44,
-    minWidth: 44,
-    paddingHorizontal: 8,
-  },
-  retryText: {
-    color: colors.brand,
-    fontFamily: fonts.sansMedium,
-    fontSize: 15,
-  },
   composerWrapper: {
     paddingHorizontal: layout.sectionInset,
     width: "100%",

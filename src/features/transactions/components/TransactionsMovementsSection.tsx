@@ -1,5 +1,5 @@
 import { StyleSheet, Text, View } from "react-native"
-import { colors, fonts } from "../../../theme"
+import { colors, fonts, layout } from "../../../theme"
 import { useMemo } from "react"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 
@@ -111,10 +111,10 @@ const styles = StyleSheet.create({
     borderTopColor: colors.border,
     borderTopWidth: 1,
     marginHorizontal: 0,
-    paddingTop: 16,
+    paddingTop: layout.titleContentGap,
   },
   transactionGroups: {
-    marginTop: 40,
+    marginTop: layout.titleContentGap,
   },
   transactionGroupSpacing: {
     marginBottom: 40,

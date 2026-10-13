@@ -52,11 +52,22 @@ export const spacing = {
   xxl: 24,
 } as const
 
+const HEADER_PILL = 40
+const SHEET_HEADER_TOP = 28
+
 export const layout = {
   /** Horizontal inset for list sections. Home's recent movements is the reference. */
   sectionInset: spacing.xl,
-  /** Height of the header pills: the space menu and + Movimiento. */
-  headerPill: 40,
+  /** Height of secondary pills: space menu, glass actions, and the green + Movimiento pill. */
+  headerPill: HEADER_PILL,
+  /** Inner padding of every form sheet. */
+  sheetPadding: spacing.xl,
+  /** Space between a title and the content it introduces. */
+  titleContentGap: spacing.lg,
+  /** Space from a form sheet's top edge to the title row, clear of the grabber. */
+  sheetHeaderTop: SHEET_HEADER_TOP,
+  /** Title row plus the gaps above and below it. Content starts under this. */
+  sheetHeaderHeight: SHEET_HEADER_TOP + HEADER_PILL + spacing.lg,
   /**
    * Height of the native tab bar's glass pill.
    * Native tabs render `UITabBar` and do not publish `BottomTabBarHeightContext`.
@@ -86,6 +97,38 @@ export const fonts = {
   mono: "SourceCodePro-Regular",
   monoMedium: "SourceCodePro-Medium",
   monoSemibold: "SourceCodePro-Semibold",
+} as const
+
+/**
+ * Roles for screen copy. Numeric display (balances, hero greetings) stays
+ * outside this scale because those sizes are part of the motion layout.
+ */
+export const typography = {
+  title: {
+    fontFamily: fonts.sansSemibold,
+    fontSize: 22,
+    lineHeight: 28,
+  },
+  subtitle: {
+    fontFamily: fonts.sansMedium,
+    fontSize: 16,
+    lineHeight: 22,
+  },
+  sectionTitle: {
+    fontFamily: fonts.sansSemibold,
+    fontSize: 15,
+    lineHeight: 20,
+  },
+  body: {
+    fontFamily: fonts.sans,
+    fontSize: 16,
+    lineHeight: 22,
+  },
+  caption: {
+    fontFamily: fonts.sans,
+    fontSize: 13,
+    lineHeight: 18,
+  },
 } as const
 
 export const meshColors = {

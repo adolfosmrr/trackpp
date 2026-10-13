@@ -6,7 +6,6 @@ import {
   RefreshControl,
   ScrollView,
   StyleSheet,
-  Text,
   View,
 } from "react-native"
 import type { CompositeScreenProps } from "@react-navigation/native"
@@ -14,8 +13,10 @@ import type { NativeBottomTabScreenProps } from "@react-navigation/bottom-tabs/u
 import type { NativeStackScreenProps } from "@react-navigation/native-stack"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import { useQueryClient } from "@tanstack/react-query"
-import { colors, fonts, refreshControlColors } from "../../../theme"
+import { colors, layout, refreshControlColors } from "../../../theme"
 import { Button } from "../../../components/buttons/Button"
+import { GlassButton } from "../../../components/buttons/GlassButton"
+import { AppText } from "../../../components/text/AppText"
 import { CircleAddButton } from "../../../components/buttons/CircleAddButton"
 import { ListSection } from "../../../components/layout/ListSection"
 import { useFormatMoney } from "../../households/hooks/useFormatMoney"
@@ -190,9 +191,9 @@ export function FixedExpensesScreen({ navigation }: FixedExpensesScreenProps) {
 
     return (
       <View style={styles.center}>
-        <Text style={styles.empty}>No se pudieron cargar los gastos fijos.</Text>
+        <AppText tone="muted" variant="body">No se pudieron cargar los gastos fijos.</AppText>
         {__DEV__ && loadError instanceof Error ? (
-          <Text style={styles.errorDetail}>{loadError.message}</Text>
+          <AppText tone="destructive" variant="caption">{loadError.message}</AppText>
         ) : null}
       </View>
     )
@@ -247,21 +248,19 @@ export function FixedExpensesScreen({ navigation }: FixedExpensesScreenProps) {
               const lastPayment = period?.lastPayment
               return (
                 <View style={styles.actions}>
-                  <Button
+                  <GlassButton
+                    accessibilityLabel="Editar"
                     label="Editar"
-                    labelStyle={styles.actionButtonText}
                     onPress={() => {
                       navigation.navigate("CreateMovement", editFixedExpenseParams(expense, currentPeriod))
                     }}
-                    tone="outline"
                   />
 
-                  <Button
+                  <GlassButton
+                    accessibilityLabel={deletingId === expense.id ? "Eliminando..." : "Eliminar"}
                     disabled={deletingId !== null}
                     label={deletingId === expense.id ? "Eliminando..." : "Eliminar"}
-                    labelStyle={styles.actionButtonText}
                     onPress={() => confirmDelete(expense)}
-                    tone="outline"
                   />
 
                   {period && period.remaining > 0 ? (
@@ -270,30 +269,25 @@ export function FixedExpensesScreen({ navigation }: FixedExpensesScreenProps) {
                         accessibilityLabel="Pago completado"
                         disabled={processingPeriodId !== null}
                         label={processingPeriodId === period.id ? "Procesando..." : "Pago Completo"}
-                        labelStyle={styles.completeActionButtonText}
                         onPress={() => confirmComplete(period)}
                         tone="brand"
                       />
 
-                      <Button
+                      <GlassButton
                         accessibilityLabel="Pago parcial"
                         disabled={processingPeriodId !== null}
                         label="Pago Parcial"
-                        labelStyle={styles.actionButtonText}
                         onPress={() => navigation.navigate("PayFixedExpensePeriod", { periodId: period.id })}
-                        tone="outline"
                       />
                     </>
                   ) : null}
 
                   {lastPayment ? (
-                    <Button
+                    <GlassButton
                       accessibilityLabel="Corregir último pago"
                       disabled={processingPeriodId !== null}
                       label="Corregir Último Pago"
-                      labelStyle={styles.actionButtonText}
                       onPress={() => navigation.navigate("CorrectFixedExpensePayment", { paymentId: lastPayment.id })}
-                      tone="outline"
                     />
                   ) : null}
                 </View>
@@ -339,24 +333,12 @@ const styles = StyleSheet.create({
     zIndex: 10,
   },
   hiddenList: { opacity: 0 },
-  center: { flex: 1, backgroundColor: colors.background, alignItems: "center", justifyContent: "center", padding: 24 },
-  list: { gap: 12, paddingTop: 8 },
+  center: { flex: 1, backgroundColor: colors.background, alignItems: "center", justifyContent: "center", padding: layout.sheetPadding },
+  list: { gap: layout.titleContentGap, paddingTop: 8 },
   actions: {
     flexDirection: "row",
     flexWrap: "wrap",
     gap: 10,
     marginTop: 15,
   },
-  actionButtonText: {
-    fontFamily: fonts.sansMedium,
-    fontSize: 12,
-    lineHeight: 12,
-  },
-  completeActionButtonText: {
-    fontFamily: fonts.sansMedium,
-    fontSize: 12,
-    lineHeight: 12,
-  },
-  empty: { color: colors.mutedForeground, fontFamily: fonts.sans, textAlign: "center", padding: 24 },
-  errorDetail: { color: colors.destructive, fontFamily: fonts.sans, textAlign: "center" },
 })

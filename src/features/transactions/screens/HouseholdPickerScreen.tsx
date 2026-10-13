@@ -1,18 +1,18 @@
 import { useState } from "react"
-import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native"
+import { Pressable, StyleSheet, View } from "react-native"
 import type { NativeStackScreenProps } from "@react-navigation/native-stack"
-import { useSafeAreaInsets } from "react-native-safe-area-context"
 
 import { Button } from "../../../components/buttons/Button"
+import { SheetScaffold } from "../../../components/layout/SheetScaffold"
+import { AppText } from "../../../components/text/AppText"
 import { useHouseholds } from "../../households/hooks/useHouseholds"
 import { selectionToken } from "../../../navigation/selectionToken"
 import type { AppStackParamList, HouseholdSelection } from "../../../navigation/types"
-import { colors, fonts, radii } from "../../../theme"
+import { colors, radii } from "../../../theme"
 
 type HouseholdPickerScreenProps = NativeStackScreenProps<AppStackParamList, "HouseholdPicker">
 
 export function HouseholdPickerScreen({ navigation, route }: HouseholdPickerScreenProps) {
-  const insets = useSafeAreaInsets()
   const params = route.params
   const { data: memberships } = useHouseholds()
   const [selectedHouseholdIds, setSelectedHouseholdIds] = useState(params.selectedHouseholdIds)
@@ -52,11 +52,7 @@ export function HouseholdPickerScreen({ navigation, route }: HouseholdPickerScre
   }
 
   return (
-    <ScrollView
-      contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 16 }]}
-      keyboardShouldPersistTaps="handled"
-    >
-      <Text style={styles.title}>{params.title}</Text>
+    <SheetScaffold onClose={() => navigation.goBack()} title={params.title}>
       <View style={styles.householdsWrap}>
         {memberships?.map((membership) => {
           const household = membership.household
@@ -71,38 +67,26 @@ export function HouseholdPickerScreen({ navigation, route }: HouseholdPickerScre
               onPress={() => toggleHousehold(household.id)}
               style={[styles.option, selected && styles.optionSelected]}
             >
-              <Text style={[styles.optionText, selected && styles.optionTextSelected]}>
+              <AppText tone={selected ? "onBrand" : "default"} variant="subtitle">
                 {household.name}
-              </Text>
-              <Text style={[styles.optionType, selected && styles.optionTypeSelected]}>
+              </AppText>
+              <AppText tone={selected ? "onBrand" : "muted"} variant="caption">
                 {household.type === "couple" ? "Compartido" : "Personal"}
-              </Text>
+              </AppText>
             </Pressable>
           )
         })}
       </View>
       <Button label="Listo" onPress={commit} tone="brand" />
-    </ScrollView>
+    </SheetScaffold>
   )
 }
 
 const styles = StyleSheet.create({
-  content: {
-    gap: 12,
-    paddingHorizontal: 20,
-    paddingTop: 8,
-  },
   householdsWrap: {
     flexDirection: "row",
     flexWrap: "wrap",
     gap: 10,
-  },
-  title: {
-    color: colors.foreground,
-    fontFamily: fonts.sansSemibold,
-    fontSize: 16,
-    fontWeight: "600",
-    paddingBottom: 4,
   },
   option: {
     alignItems: "center",
@@ -117,22 +101,5 @@ const styles = StyleSheet.create({
   },
   optionSelected: {
     backgroundColor: colors.brand,
-  },
-  optionText: {
-    color: colors.foreground,
-    fontFamily: fonts.sansMedium,
-    fontSize: 15,
-    lineHeight: 16,
-  },
-  optionTextSelected: {
-    color: colors.brandForeground,
-  },
-  optionType: {
-    color: colors.mutedForeground,
-    fontFamily: fonts.sans,
-    fontSize: 13,
-  },
-  optionTypeSelected: {
-    color: colors.brandForeground,
   },
 })

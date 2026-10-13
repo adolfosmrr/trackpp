@@ -1,6 +1,7 @@
 import { useRef, useState } from "react"
-import { Alert, Pressable, StyleSheet, Text, View } from "react-native"
-import { colors, fonts, meshColors } from "../../../theme"
+import { Alert, Pressable, StyleSheet, View } from "react-native"
+import { colors, fonts, layout, meshColors } from "../../../theme"
+import { AppText } from "../../../components/text/AppText"
 
 import { GridBackground } from "../../../components/layout/GridBackground"
 import AnimatedText from "../../../components/text/AnimatedText"
@@ -106,7 +107,7 @@ export function AuthScreen() {
         <View style={styles.googleSection}>
           <View style={styles.separator}>
             <View style={styles.line} />
-            <Text style={styles.separatorText}>O puedes</Text>
+            <AppText tone="muted" variant="caption">O puedes</AppText>
             <View style={styles.line} />
           </View>
           <GoogleAuthButton
@@ -121,11 +122,11 @@ export function AuthScreen() {
           <Pressable
             onPress={() => setMode(mode === "login" ? "register" : "login")}
           >
-            <Text style={styles.link}>
+            <AppText style={styles.link} tone="brand" variant="body">
               {mode === "login"
                 ? "¿No tienes cuenta? Regístrate"
                 : "¿Ya tienes cuenta? Inicia sesión"}
-            </Text>
+            </AppText>
           </Pressable>
         </View>
       </View>
@@ -141,7 +142,7 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
-    padding: 24,
+    padding: layout.sheetPadding,
     gap: 16,
     zIndex: 1,
     justifyContent: 'center',
@@ -187,16 +188,8 @@ const styles = StyleSheet.create({
     height: 0.5,
     backgroundColor: colors.border,
   },
-  separatorText: {
-    color: colors.mutedForeground,
-    fontFamily: fonts.sansMedium,
-    fontSize: 16,
-    lineHeight: 16,
-  },
   link: {
     textAlign: "center",
-    marginTop: 20,
-    fontFamily: fonts.sansMedium,
-    color: colors.brand,
+    marginTop: layout.titleContentGap,
   },
 })

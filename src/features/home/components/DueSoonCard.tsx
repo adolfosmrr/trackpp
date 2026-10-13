@@ -1,8 +1,10 @@
-import { Pressable, StyleSheet, Text } from "react-native"
+import { Pressable, StyleSheet, View } from "react-native"
 
+import { GlassButton } from "../../../components/buttons/GlassButton"
 import { ListSection } from "../../../components/layout/ListSection"
+import { AppText } from "../../../components/text/AppText"
 import { useFormatMoney } from "../../households/hooks/useFormatMoney"
-import { colors, fonts, radii } from "../../../theme"
+import { colors, radii } from "../../../theme"
 import {
   getCurrentFixedExpensePeriod,
   useFixedExpensePeriods,
@@ -29,15 +31,22 @@ export function DueSoonCard({ onPress }: DueSoonCardProps) {
 
   return (
     <ListSection>
-    <Pressable accessibilityRole="button" onPress={onPress} style={styles.card}>
-      <Text style={styles.kicker}>Por vencer</Text>
-      <Text style={styles.title}>{countLabel}</Text>
-      <Text style={styles.detail}>
-        {next.category?.icon ? `${next.category.icon} ` : ""}
-        {next.name} · {format(next.remaining)} · vence {formatDueDate(next.dueDate)}
-      </Text>
-      <Text style={styles.link}>Ver todos</Text>
-    </Pressable>
+    <View style={styles.card}>
+      <Pressable accessibilityRole="button" onPress={onPress} style={styles.copy}>
+        <AppText tone="brand" variant="caption">Por vencer</AppText>
+        <AppText variant="subtitle">{countLabel}</AppText>
+        <AppText tone="muted" variant="body">
+          {next.category?.icon ? `${next.category.icon} ` : ""}
+          {next.name} · {format(next.remaining)} · vence {formatDueDate(next.dueDate)}
+        </AppText>
+      </Pressable>
+      <GlassButton
+        accessibilityLabel="Ver todos"
+        fallbackStyle={styles.linkFallback}
+        label="Ver todos"
+        onPress={onPress}
+      />
+    </View>
     </ListSection>
   )
 }
@@ -67,33 +76,17 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
     borderRadius: radii.md,
     borderWidth: 1,
-    gap: 6,
+    gap: 12,
     paddingHorizontal: 16,
     paddingVertical: 16,
   },
-  kicker: {
-    color: colors.brand,
-    fontFamily: fonts.sansMedium,
-    fontSize: 13,
-    lineHeight: 18,
+  copy: {
+    gap: 6,
   },
-  title: {
-    color: colors.foreground,
-    fontFamily: fonts.sansSemibold,
-    fontSize: 16,
-    lineHeight: 22,
-  },
-  detail: {
-    color: colors.mutedForeground,
-    fontFamily: fonts.sans,
-    fontSize: 14,
-    lineHeight: 20,
-  },
-  link: {
-    color: colors.brand,
-    fontFamily: fonts.sansMedium,
-    fontSize: 14,
-    lineHeight: 20,
-    marginTop: 4,
+  linkFallback: {
+    alignSelf: "flex-start",
+    backgroundColor: colors.transparent,
+    borderColor: colors.borderStrong,
+    borderWidth: 1,
   },
 })

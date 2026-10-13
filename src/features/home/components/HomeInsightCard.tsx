@@ -1,5 +1,7 @@
 import { Fragment, useEffect, useState } from "react"
-import { StyleSheet, Text, View } from "react-native"
+import { StyleSheet, View } from "react-native"
+
+import { AppText } from "../../../components/text/AppText"
 
 import type {
   HomeAiInsight,
@@ -9,7 +11,7 @@ import {
   InsightActionPopover,
   type InsightActionDetail,
 } from "./InsightActionPopover"
-import { colors, fonts, radii } from "../../../theme"
+import { colors, radii } from "../../../theme"
 import { HomeInsightGroup } from "./HomeInsightGroup"
 
 export type HomeInsightCardProps = {
@@ -33,13 +35,16 @@ export function HomeInsightCard({
 
   return (
     <View style={[styles.card, variant === "plain" && styles.plainCard]}>
-      <Text
-        style={[styles.messageText, variant === "plain" && styles.plainMessage]}
+      <AppText
+        tone={variant === "plain" ? "muted" : "default"}
+        variant={variant === "plain" ? "title" : "body"}
       >
         {insight.intro.trim()}
         {insight.groups.map((group, index) => (
           <Fragment key={group.id}>
-            <Text>{getGroupSeparator(insight.groups.length, index)}</Text>
+            <AppText variant={variant === "plain" ? "title" : "body"}>
+              {getGroupSeparator(insight.groups.length, index)}
+            </AppText>
             <HomeInsightGroup
               actions={insight.actions}
               group={group}
@@ -48,7 +53,7 @@ export function HomeInsightCard({
             />
           </Fragment>
         ))}
-      </Text>
+      </AppText>
 
       {selectedAction ? (
         <InsightActionPopover
@@ -81,17 +86,5 @@ const styles = StyleSheet.create({
     borderRadius: 0,
     padding: 0,
     position: "relative",
-  },
-  messageText: {
-    color: colors.foreground,
-    fontFamily: fonts.sans,
-    fontSize: 14,
-    lineHeight: 20,
-  },
-  plainMessage: {
-    color: colors.mutedForeground,
-    fontFamily: fonts.sansMedium,
-    fontSize: 22,
-    lineHeight: 28,
   },
 })

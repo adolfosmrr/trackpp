@@ -1,5 +1,6 @@
-import { StyleSheet, Text, type ViewStyle } from "react-native"
-import { colors, fonts } from "../../theme"
+import { StyleSheet, type ViewStyle } from "react-native"
+import { AppText } from "../text/AppText"
+import { colors } from "../../theme"
 import Animated, { type AnimatedStyle } from "react-native-reanimated"
 
 type ProfileAvatarProps = {
@@ -17,7 +18,7 @@ export function ProfileAvatar({ name, uri, style }: ProfileAvatarProps) {
     <Animated.Image accessibilityLabel="Avatar del perfil" source={{ uri }} style={[styles.avatar, style]} />
   ) : (
     <Animated.View accessibilityLabel="Avatar del perfil" style={[styles.avatar, style]}>
-      <Text style={styles.initials}>{initials}</Text>
+      <AppText variant="subtitle">{initials}</AppText>
     </Animated.View>
   )
 }
@@ -32,10 +33,5 @@ const styles = StyleSheet.create({
     height: 40,
     justifyContent: "center",
     width: 40,
-  },
-  initials: {
-    color: colors.foreground,
-    fontFamily: fonts.sansSemibold,
-    fontSize: 16,
   },
 })

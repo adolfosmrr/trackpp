@@ -3,6 +3,7 @@ import {
   Text,
   StyleSheet,
 } from "react-native"
+import { AppText } from "../../../components/text/AppText"
 import { useFormatMoney } from "../../households/hooks/useFormatMoney"
 import { colors, fonts, radii } from "../../../theme"
 
@@ -42,17 +43,17 @@ export function ActivityItem({
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.action}>
+        <AppText style={styles.action} variant="subtitle">
           {getActivityMessage(item, currentUserId, format)}
-        </Text>
+        </AppText>
 
-        <Text style={styles.time}>
+        <AppText tone="muted" variant="caption">
           {formatRelativeTime(item.created_at)}
-        </Text>
+        </AppText>
       </View>
 
       <View style={styles.detail}>
-        <Text style={styles.title}>
+        <AppText style={styles.title} tone="muted" variant="body">
           {getString(metadata.categoryIcon)
             ? `${getString(metadata.categoryIcon)} `
             : ""}
@@ -60,7 +61,7 @@ export function ActivityItem({
             getString(metadata.name) ??
             getString(metadata.categoryName) ??
             "Actividad"}
-        </Text>
+        </AppText>
 
         {getAmount(item) !== null && (
           <Text style={styles.amount}>
@@ -235,15 +236,6 @@ const styles = StyleSheet.create({
 
   action: {
     flex: 1,
-    fontWeight: "600",
-    color: colors.foreground,
-    fontFamily: fonts.sansMedium,
-  },
-
-  time: {
-    color: colors.mutedForeground,
-    fontFamily: fonts.sans,
-    fontSize: 12,
   },
 
   detail: {
@@ -255,8 +247,6 @@ const styles = StyleSheet.create({
 
   title: {
     flex: 1,
-    color: colors.mutedForeground,
-    fontFamily: fonts.sans,
   },
 
   amount: {

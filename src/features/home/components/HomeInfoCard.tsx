@@ -11,7 +11,8 @@ import {
   View,
 } from "react-native"
 
-import { colors, fonts, radii } from "../../../theme"
+import { AppText } from "../../../components/text/AppText"
+import { colors, radii } from "../../../theme"
 
 export type HomeInfoCardVariant = "darkGradientText" | "light" | "gradient" | "dark"
 
@@ -55,19 +56,20 @@ export function HomeInfoCard({
           {icon ? <Text style={styles.icon}>{icon}</Text> : null}
           {isDarkText ? (
             <View style={styles.gradientTextWrapper}>
-              <Text
-                style={[styles.message, styles.gradientTextMeasure]}
+              <AppText
                 pointerEvents="none"
+                style={[styles.message, styles.gradientTextMeasure]}
+                variant="subtitle"
               >
                 {message}
-              </Text>
+              </AppText>
               <MaskedView
                 style={StyleSheet.absoluteFill}
                 pointerEvents="none"
                 maskElement={
-                  <Text style={[styles.message, styles.maskText]}>
+                  <AppText style={[styles.message, styles.maskText]} variant="subtitle">
                     {message}
-                  </Text>
+                  </AppText>
                 }
               >
                 <Svg
@@ -91,7 +93,7 @@ export function HomeInfoCard({
               </MaskedView>
             </View>
           ) : (
-            <Text
+            <AppText
               style={[
                 styles.message,
                 variant === "gradient"
@@ -100,9 +102,10 @@ export function HomeInfoCard({
                     ? styles.darkMessage
                     : styles.lightMessage,
               ]}
+              variant="subtitle"
             >
               {message}
-            </Text>
+            </AppText>
           )}
         </View>
       </View>
@@ -151,9 +154,6 @@ const styles = StyleSheet.create({
   message: {
     flex: 1,
     minWidth: 0,
-    fontSize: 16,
-    lineHeight: 16,
-    fontFamily: fonts.sansMedium,
   },
   maskText: {
     color: colors.foreground,

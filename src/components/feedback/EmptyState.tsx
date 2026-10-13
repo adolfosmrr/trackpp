@@ -1,7 +1,8 @@
-import { StyleSheet, Text, View } from "react-native"
+import { StyleSheet, View } from "react-native"
 
-import { colors, fonts } from "../../theme"
-import { Button } from "../buttons/Button"
+import { GlassButton } from "../buttons/GlassButton"
+import { AppText } from "../text/AppText"
+import { colors } from "../../theme"
 
 type EmptyStateProps = {
   title: string
@@ -13,9 +14,14 @@ type EmptyStateProps = {
 export function EmptyState({ title, body, actionLabel, onAction }: EmptyStateProps) {
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>{title}</Text>
-      <Text style={styles.body}>{body}</Text>
-      <Button label={actionLabel} onPress={onAction} style={styles.button} tone="brand" />
+      <AppText style={styles.center} variant="subtitle">{title}</AppText>
+      <AppText style={styles.center} tone="muted" variant="body">{body}</AppText>
+      <GlassButton
+        accessibilityLabel={actionLabel}
+        fallbackStyle={styles.actionFallback}
+        label={actionLabel}
+        onPress={onAction}
+      />
     </View>
   )
 }
@@ -27,21 +33,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     paddingVertical: 28,
   },
-  title: {
-    color: colors.foreground,
-    fontFamily: fonts.sansSemibold,
-    fontSize: 16,
-    lineHeight: 22,
+  center: {
     textAlign: "center",
   },
-  body: {
-    color: colors.mutedForeground,
-    fontFamily: fonts.sans,
-    fontSize: 15,
-    lineHeight: 21,
-    textAlign: "center",
-  },
-  button: {
+  actionFallback: {
+    backgroundColor: colors.transparent,
+    borderColor: colors.borderStrong,
+    borderWidth: 1,
     marginTop: 8,
   },
 })

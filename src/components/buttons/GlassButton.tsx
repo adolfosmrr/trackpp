@@ -10,7 +10,7 @@ import {
 } from "react-native"
 import { GlassView, isGlassEffectAPIAvailable, isLiquidGlassAvailable } from "expo-glass-effect"
 
-import { colors, radii } from "../../theme"
+import { colors, fonts, layout, radii } from "../../theme"
 
 const liquidGlassEnabled = isLiquidGlassAvailable() && isGlassEffectAPIAvailable()
 
@@ -28,6 +28,7 @@ type GlassButtonProps = {
    * `neutral` leaves child colors alone.
    */
   tone?: GlassButtonTone
+  disabled?: boolean
   onPress: () => void
   /** Frame around the clear glass. Used only when liquid glass is available. */
   glassStyle?: StyleProp<ViewStyle>
@@ -45,6 +46,7 @@ export function GlassButton({
   labelStyle,
   icon,
   tone = "neutral",
+  disabled = false,
   onPress,
   glassStyle,
   style,
@@ -55,7 +57,7 @@ export function GlassButton({
   const content = (
     <>
       {label ? (
-        <Text style={[labelStyle, tone === "brand" ? { color } : null]}>{label}</Text>
+        <Text style={[styles.label, labelStyle, tone === "brand" ? { color } : null]}>{label}</Text>
       ) : null}
       {icon ? icon(tone === "brand" ? color : colors.foreground) : null}
       {children}
@@ -67,9 +69,11 @@ export function GlassButton({
       <Pressable
         accessibilityLabel={accessibilityLabel}
         accessibilityRole="button"
+        accessibilityState={{ disabled }}
+        disabled={disabled}
         hitSlop={hitSlop}
         onPress={onPress}
-        style={[fallbackStyle, styles.shape]}
+        style={[styles.control, fallbackStyle, styles.shape, disabled ? styles.disabled : null]}
       >
         {content}
       </Pressable>
@@ -77,13 +81,15 @@ export function GlassButton({
   }
 
   return (
-    <GlassView glassEffectStyle="clear" style={[glassStyle, styles.shape]}>
+    <GlassView glassEffectStyle="clear" style={[styles.control, glassStyle, styles.shape]}>
       <Pressable
         accessibilityLabel={accessibilityLabel}
         accessibilityRole="button"
+        accessibilityState={{ disabled }}
+        disabled={disabled}
         hitSlop={hitSlop}
         onPress={onPress}
-        style={[styles.pressable, style]}
+        style={[styles.control, styles.pressable, style, disabled ? styles.disabled : null]}
       >
         {content}
       </Pressable>
@@ -92,11 +98,26 @@ export function GlassButton({
 }
 
 const styles = StyleSheet.create({
+  control: {
+    alignItems: "center",
+    height: layout.headerPill,
+    justifyContent: "center",
+    paddingHorizontal: 14,
+  },
   pressable: {
     backgroundColor: "transparent",
+  },
+  disabled: {
+    opacity: 0.55,
   },
   shape: {
     borderRadius: radii.pill,
     overflow: "hidden",
+  },
+  label: {
+    color: colors.foreground,
+    fontFamily: fonts.sansSemibold,
+    fontSize: 16,
+    lineHeight: 20,
   },
 })

@@ -2,6 +2,7 @@ import type { ReactNode } from "react"
 import { Pressable, StyleSheet, Text, View } from "react-native"
 
 import { EmptyState } from "../../../components/feedback/EmptyState"
+import { AppText } from "../../../components/text/AppText"
 import { useFormatMoney } from "../../households/hooks/useFormatMoney"
 import { colors, fonts, radii } from "../../../theme"
 import {
@@ -38,11 +39,11 @@ export function FixedExpenseList({
   const periodsQuery = useFixedExpensePeriods(expenses.length > 0, period)
 
   if (expensesQuery.isLoading || (expenses.length > 0 && periodsQuery.isLoading)) {
-    return <Text style={styles.status}>Cargando gastos fijos...</Text>
+    return <AppText tone="muted" variant="body">Cargando gastos fijos...</AppText>
   }
 
   if (expensesQuery.isError) {
-    return <Text style={styles.status}>No se pudieron cargar los gastos fijos.</Text>
+    return <AppText tone="muted" variant="body">No se pudieron cargar los gastos fijos.</AppText>
   }
 
   if (expenses.length === 0) {
@@ -71,12 +72,12 @@ export function FixedExpenseList({
               onPress={() => onOpenHistory(expense)}
             >
               <View style={styles.cardHeader}>
-                <Text numberOfLines={1} style={styles.detailName}>
+                <AppText numberOfLines={1} style={styles.detailName} variant="subtitle">
                   {expensePeriod?.category?.icon ?? expense.category?.icon
                     ? `${expensePeriod?.category?.icon ?? expense.category?.icon} `
                     : ""}
                   {expensePeriod?.name ?? expense.name}
-                </Text>
+                </AppText>
                 <Text numberOfLines={1} style={styles.detailAmount}>
                   {format(expensePeriod?.expectedAmount ?? expense.amount)}
                 </Text>
@@ -86,33 +87,33 @@ export function FixedExpenseList({
 
               <View style={styles.infoGrid}>
                 <View style={styles.infoColumn}>
-                  <Text style={styles.infoText}>
+                  <AppText tone="muted" variant="caption">
                     {frequencyLabel(expense.frequency)}
-                  </Text>
-                  <Text style={styles.infoText}>
+                  </AppText>
+                  <AppText tone="muted" variant="caption">
                     Cobra: {String(expense.charge_day).padStart(2, "0")}
-                  </Text>
-                  <Text style={styles.infoText}>
+                  </AppText>
+                  <AppText tone="muted" variant="caption">
                     Vence: {String(expense.due_day).padStart(2, "0")}
-                  </Text>
+                  </AppText>
                 </View>
                 <View style={styles.infoColumn}>
                   {expense.auto_debit && expense.auto_debit_source ? (
-                    <Text style={styles.infoText}>
+                    <AppText tone="muted" variant="caption">
                       Débito · {autoDebitSourceLabel(expense.auto_debit_source)}
-                    </Text>
+                    </AppText>
                   ) : null}
                   {expensePeriod ? (
                     <>
-                      <Text style={styles.infoText}>
+                      <AppText tone="muted" variant="caption">
                         Pagado: {format(expensePeriod.totalPaid)}
-                      </Text>
-                      <Text style={styles.infoText}>
+                      </AppText>
+                      <AppText tone="muted" variant="caption">
                         Pendiente: {format(expensePeriod.remaining)}
-                      </Text>
+                      </AppText>
                     </>
                   ) : (
-                    <Text style={styles.infoText}>Sin período este mes</Text>
+                    <AppText tone="muted" variant="caption">Sin período este mes</AppText>
                   )}
                 </View>
               </View>
@@ -121,9 +122,9 @@ export function FixedExpenseList({
 
               {expensePeriod ? (
                 <View style={styles.statusProgress}>
-                  <Text style={styles.periodStatus}>
+                  <AppText tone="muted" variant="caption">
                     {fixedExpenseStatusLabel(expensePeriod.status)}
-                  </Text>
+                  </AppText>
                   <PaymentProgress period={expensePeriod} />
                 </View>
               ) : null}
@@ -145,7 +146,7 @@ function PaymentProgress({ period }: { period: FixedExpensePeriod }) {
 
   return (
     <View accessible accessibilityLabel={`${visiblePercentage}% pagado`} style={styles.progressSection}>
-      <Text style={styles.progressLabel}>{visiblePercentage}% pagado</Text>
+      <AppText tone="muted" variant="caption">{visiblePercentage}% pagado</AppText>
       <View style={styles.progressTrack}>
         <View style={[styles.progressFill, { width: `${progressPercentage}%` }]} />
       </View>
@@ -154,11 +155,6 @@ function PaymentProgress({ period }: { period: FixedExpensePeriod }) {
 }
 
 const styles = StyleSheet.create({
-  status: {
-    color: colors.mutedForeground,
-    fontFamily: fonts.sans,
-    fontSize: 15,
-  },
   list: {
     gap: 12,
   },
@@ -177,11 +173,8 @@ const styles = StyleSheet.create({
     marginBottom: 15,
   },
   detailName: {
-    color: colors.foreground,
     flex: 1,
     flexShrink: 1,
-    fontFamily: fonts.sansSemibold,
-    fontSize: 16,
   },
   detailAmount: {
     color: colors.foreground,
@@ -205,30 +198,12 @@ const styles = StyleSheet.create({
     gap: 8,
     width: "50%",
   },
-  infoText: {
-    color: colors.mutedForeground,
-    fontFamily: fonts.sans,
-    fontSize: 12,
-    lineHeight: 16,
-  },
   statusProgress: {
     gap: 8,
     marginTop: 15,
   },
-  periodStatus: {
-    color: colors.mutedForeground,
-    fontFamily: fonts.sans,
-    fontSize: 16,
-    lineHeight: 16,
-  },
   progressSection: {
     gap: 6,
-  },
-  progressLabel: {
-    color: colors.mutedForeground,
-    fontFamily: fonts.sans,
-    fontSize: 12,
-    lineHeight: 12,
   },
   progressTrack: {
     backgroundColor: colors.control,

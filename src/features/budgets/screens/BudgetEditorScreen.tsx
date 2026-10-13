@@ -1,23 +1,22 @@
 import { useEffect, useState } from "react"
-import { Alert, ScrollView, StyleSheet, Text, View } from "react-native"
+import { Alert, StyleSheet, View } from "react-native"
 import type { NativeStackScreenProps } from "@react-navigation/native-stack"
-import { useSafeAreaInsets } from "react-native-safe-area-context"
 
 import { Button } from "../../../components/buttons/Button"
 import { FieldChevronIcon } from "../../../components/icons/FieldChevronIcon"
 import { FieldRow, TextField } from "../../../components/inputs/TextField"
+import { SheetScaffold } from "../../../components/layout/SheetScaffold"
+import { AppText } from "../../../components/text/AppText"
 import { useCategories } from "../../categories/hooks/useCategories"
 import { useHouseholds } from "../../households/hooks/useHouseholds"
 import { useHouseholdStore } from "../../../store/householdStore"
 import type { AppStackParamList } from "../../../navigation/types"
-import { colors, fonts } from "../../../theme"
 import { useCreateBudget } from "../hooks/useCreateBudget"
 import { useUpdateBudget } from "../hooks/useUpdateBudget"
 
 type BudgetEditorScreenProps = NativeStackScreenProps<AppStackParamList, "BudgetEditor">
 
 export function BudgetEditorScreen({ navigation, route }: BudgetEditorScreenProps) {
-  const insets = useSafeAreaInsets()
   const request = route.params?.request
   const selectedHouseholdId = useHouseholdStore((state) => state.selectedHouseholdId)
   const { data: memberships } = useHouseholds()
@@ -107,13 +106,10 @@ export function BudgetEditorScreen({ navigation, route }: BudgetEditorScreenProp
   }
 
   return (
-    <ScrollView
-      contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 16 }]}
-      keyboardShouldPersistTaps="handled"
+    <SheetScaffold
+      onClose={() => navigation.goBack()}
+      title={isCreate ? "Crear presupuesto" : "Editar presupuesto"}
     >
-      <Text style={styles.title}>
-        {isCreate ? "Crear presupuesto" : "Editar presupuesto"}
-      </Text>
       <View style={styles.fieldsStack}>
         <TextField
           placeholder="Nombre del presupuesto"
@@ -125,13 +121,13 @@ export function BudgetEditorScreen({ navigation, route }: BudgetEditorScreenProp
           disabled={!isCreate}
           onPress={openCategorySelector}
         >
-          <Text style={styles.fieldLabel}>Categoría</Text>
+          <AppText style={styles.fieldLabel} variant="subtitle">Categoría</AppText>
           <View style={styles.fieldValueGroup}>
-            <Text numberOfLines={1} ellipsizeMode="tail" style={styles.fieldValue}>
+            <AppText numberOfLines={1} ellipsizeMode="tail" style={styles.fieldValue} tone="muted" variant="subtitle">
               {request.kind === "edit"
                 ? request.budget.category.name
                 : selectedCategory?.name ?? "Seleccionar categoría"}
-            </Text>
+            </AppText>
             <FieldChevronIcon />
           </View>
         </FieldRow>
@@ -152,30 +148,16 @@ export function BudgetEditorScreen({ navigation, route }: BudgetEditorScreenProp
           tone="brand"
         />
       </View>
-    </ScrollView>
+    </SheetScaffold>
   )
 }
 
 const styles = StyleSheet.create({
-  content: {
-    padding: 24,
-  },
   fieldsStack: {
     gap: 11,
-    marginTop: 40,
-  },
-  title: {
-    color: colors.foreground,
-    fontFamily: fonts.sansSemibold,
-    fontSize: 20,
-    fontWeight: "600",
   },
   fieldLabel: {
-    color: colors.foreground,
     flexShrink: 0,
-    fontFamily: fonts.sansMedium,
-    fontSize: 16,
-    lineHeight: 16,
   },
   fieldValueGroup: {
     alignItems: "center",
@@ -187,12 +169,8 @@ const styles = StyleSheet.create({
     minWidth: 0,
   },
   fieldValue: {
-    color: colors.mutedForeground,
     flex: 1,
     flexShrink: 1,
-    fontFamily: fonts.sansMedium,
-    fontSize: 15,
-    lineHeight: 18,
     textAlign: "right",
   },
 })

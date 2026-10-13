@@ -1,6 +1,5 @@
 import {
   View,
-  Text,
   FlatList,
   LayoutChangeEvent,
   StyleSheet,
@@ -11,7 +10,8 @@ import { useQueryClient } from "@tanstack/react-query"
 import type { CompositeScreenProps } from "@react-navigation/native"
 import type { NativeBottomTabScreenProps } from "@react-navigation/bottom-tabs/unstable"
 import type { NativeStackScreenProps } from "@react-navigation/native-stack"
-import { colors, fonts, refreshControlColors } from "../../../theme"
+import { colors, layout, refreshControlColors } from "../../../theme"
+import { AppText } from "../../../components/text/AppText"
   import { useEffect, useState } from "react"
 
   import { useAuth } from "../../auth/context/AuthContext"
@@ -171,7 +171,7 @@ type TransactionsScreenProps = CompositeScreenProps<
     if (error || profileError || dashboardError) {
       return (
         <View style={styles.center}>
-          <Text style={styles.empty}>No se pudieron cargar los movimientos.</Text>
+          <AppText tone="muted" variant="body">No se pudieron cargar los movimientos.</AppText>
         </View>
       )
     }
@@ -288,14 +288,8 @@ type TransactionsScreenProps = CompositeScreenProps<
     },
   
     list: {
-      paddingTop: 20,
+      paddingTop: layout.sheetPadding,
       gap: 12,
     },
   
-    empty: {
-      textAlign: "center",
-      marginTop: 40,
-      color: colors.mutedForeground,
-      fontFamily: fonts.sans,
-    },
   })

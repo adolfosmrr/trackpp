@@ -1,16 +1,16 @@
-import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native"
+import { Pressable, StyleSheet, View } from "react-native"
 import type { NativeStackScreenProps } from "@react-navigation/native-stack"
-import { useSafeAreaInsets } from "react-native-safe-area-context"
 
+import { SheetScaffold } from "../../../components/layout/SheetScaffold"
+import { AppText } from "../../../components/text/AppText"
 import { useHouseholdCategories } from "../../categories/hooks/useHouseholdCategories"
 import { selectionToken } from "../../../navigation/selectionToken"
 import type { AppStackParamList, CategorySelection } from "../../../navigation/types"
-import { colors, fonts, radii } from "../../../theme"
+import { colors, radii } from "../../../theme"
 
 type CategoryPickerScreenProps = NativeStackScreenProps<AppStackParamList, "CategoryPicker">
 
 export function CategoryPickerScreen({ navigation, route }: CategoryPickerScreenProps) {
-  const insets = useSafeAreaInsets()
   const params = route.params
   const categoriesQuery = useHouseholdCategories(params.householdId, params.entryType)
 
@@ -40,16 +40,12 @@ export function CategoryPickerScreen({ navigation, route }: CategoryPickerScreen
   }
 
   return (
-    <ScrollView
-      contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 16 }]}
-      keyboardShouldPersistTaps="handled"
-    >
-      <Text style={styles.title}>Categoría: {params.householdName}</Text>
+    <SheetScaffold onClose={() => navigation.goBack()} title={`Categoría: ${params.householdName}`}>
       <View style={styles.categoriesWrap}>
         {categoriesQuery.isLoading ? (
-          <Text style={styles.status}>Cargando categorías...</Text>
+          <AppText tone="muted" variant="body">Cargando categorías...</AppText>
         ) : categoriesQuery.isError ? (
-          <Text style={styles.status}>No se pudieron cargar las categorías.</Text>
+          <AppText tone="muted" variant="body">No se pudieron cargar las categorías.</AppText>
         ) : categoriesQuery.data?.length ? (
           categoriesQuery.data.map((category) => {
             const selected = category.id === params.selectedCategoryId
@@ -61,38 +57,30 @@ export function CategoryPickerScreen({ navigation, route }: CategoryPickerScreen
                 onPress={() => selectCategory(category)}
                 style={[styles.option, selected && styles.optionSelected]}
               >
-                <Text>{category.icon ?? ""}</Text>
-                <Text style={[styles.categoryName, selected && styles.categoryNameSelected]}>
+                <AppText variant="subtitle">{category.icon ?? ""}</AppText>
+                <AppText
+                  style={styles.categoryName}
+                  tone={selected ? "onBrand" : "default"}
+                  variant="subtitle"
+                >
                   {category.name}
-                </Text>
+                </AppText>
               </Pressable>
             )
           })
         ) : (
-          <Text style={styles.status}>No hay categorías disponibles.</Text>
+          <AppText tone="muted" variant="body">No hay categorías disponibles.</AppText>
         )}
       </View>
-    </ScrollView>
+    </SheetScaffold>
   )
 }
 
 const styles = StyleSheet.create({
-  content: {
-    gap: 12,
-    paddingHorizontal: 20,
-    paddingTop: 8,
-  },
   categoriesWrap: {
     flexDirection: "row",
     flexWrap: "wrap",
     gap: 10,
-  },
-  title: {
-    color: colors.foreground,
-    fontFamily: fonts.sansSemibold,
-    fontSize: 16,
-    fontWeight: "600",
-    paddingBottom: 4,
   },
   option: {
     alignItems: "center",
@@ -109,16 +97,6 @@ const styles = StyleSheet.create({
     backgroundColor: colors.brand,
   },
   categoryName: {
-    color: colors.foreground,
-    fontFamily: fonts.sansMedium,
-    fontSize: 15,
-    lineHeight: 16,
-  },
-  categoryNameSelected: {
-    color: colors.brandForeground,
-  },
-  status: {
-    color: colors.mutedForeground,
-    fontFamily: fonts.sans,
+    flexShrink: 1,
   },
 })

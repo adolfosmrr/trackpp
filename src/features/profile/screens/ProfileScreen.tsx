@@ -1,16 +1,16 @@
 import {
   View,
-  Text,
   StyleSheet,
   ActivityIndicator,
-  ScrollView,
 } from "react-native"
 import { useNavigation } from "@react-navigation/native"
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack"
-import { useSafeAreaInsets } from "react-native-safe-area-context"
 
 import { Button } from "../../../components/buttons/Button"
-import { colors, fonts, radii } from "../../../theme"
+import { GlassButton } from "../../../components/buttons/GlassButton"
+import { SheetScaffold } from "../../../components/layout/SheetScaffold"
+import { AppText } from "../../../components/text/AppText"
+import { colors, radii } from "../../../theme"
 import type { AppStackParamList } from "../../../navigation/types"
 
 import { supabase } from "../../../services/supabase"
@@ -24,7 +24,6 @@ import { useHouseholdStore } from "../../../store/householdStore"
 
 export function ProfileScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<AppStackParamList>>()
-  const insets = useSafeAreaInsets()
   const { user } = useAuth()
 
   const selectedHouseholdId = useHouseholdStore(
@@ -65,15 +64,21 @@ export function ProfileScreen() {
     await supabase.auth.signOut()
   }
 
+  function close() {
+    navigation.goBack()
+  }
+
   if (
     profileLoading ||
     householdsLoading ||
     backendUserLoading
   ) {
     return (
-      <View style={styles.center}>
-        <ActivityIndicator color={colors.brand} size="large" />
-      </View>
+      <SheetScaffold onClose={close} title="Perfil">
+        <View style={styles.center}>
+          <ActivityIndicator color={colors.brand} size="large" />
+        </View>
+      </SheetScaffold>
     )
   }
 
@@ -90,146 +95,142 @@ export function ProfileScreen() {
     backendUserError
   ) {
     return (
-      <View style={styles.center}>
-        <Text style={styles.email}>
-          No se pudo cargar el perfil.
-        </Text>
+      <SheetScaffold onClose={close} title="Perfil">
+        <View style={styles.center}>
+          <AppText tone="muted" variant="body">
+            No se pudo cargar el perfil.
+          </AppText>
 
-        <Button label="Cerrar sesión" onPress={handleLogout} tone="destructive" />
-      </View>
+          <Button label="Cerrar sesión" onPress={handleLogout} tone="destructive" />
+        </View>
+      </SheetScaffold>
     )
   }
 
   return (
-    <ScrollView
-      style={styles.container}
-      contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 32 }]}
-      showsVerticalScrollIndicator={false}
-    >
+    <SheetScaffold onClose={close} title="Perfil">
       <View style={styles.header}>
         <View style={styles.avatar}>
-          <Text style={styles.avatarText}>
+          <AppText variant="title">
             {getInitials(profile?.name)}
-          </Text>
+          </AppText>
         </View>
 
-        <Text style={styles.name}>
+        <AppText variant="title">
           {profile?.name ?? "Usuario"}
-        </Text>
+        </AppText>
 
-        <Text style={styles.email}>
+        <AppText tone="muted" variant="caption">
           {user?.email ?? ""}
-        </Text>
+        </AppText>
       </View>
 
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>
+        <AppText variant="sectionTitle">
           Preferencias
-        </Text>
+        </AppText>
 
         <View style={styles.row}>
-          <Text style={styles.label}>
+          <AppText tone="muted" variant="body">
             Moneda
-          </Text>
+          </AppText>
 
-          <Text style={styles.value}>
+          <AppText style={styles.value} variant="subtitle">
             {profile?.currency ?? "-"}
-          </Text>
+          </AppText>
         </View>
 
         <View style={styles.separator} />
 
         <View style={styles.row}>
-          <Text style={styles.label}>
+          <AppText tone="muted" variant="body">
             Zona horaria
-          </Text>
+          </AppText>
 
-          <Text style={styles.value}>
+          <AppText style={styles.value} variant="subtitle">
             {profile?.timezone ?? "-"}
-          </Text>
+          </AppText>
         </View>
       </View>
 
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>
+        <AppText variant="sectionTitle">
           Espacio financiero
-        </Text>
+        </AppText>
 
-        <Button
+        <GlassButton
+          accessibilityLabel="Invitar pareja"
           label="Invitar pareja"
           onPress={() => openScreen("InviteMember")}
-          style={styles.spacedButton}
-          tone="outline"
         />
 
-        <Button
+        <GlassButton
+          accessibilityLabel="Crear espacio"
           label="Crear espacio"
           onPress={() => openScreen("CreateHousehold")}
-          style={styles.spacedButton}
-          tone="outline"
         />
 
         <View style={styles.row}>
-          <Text style={styles.label}>
+          <AppText tone="muted" variant="body">
             Espacio activo
-          </Text>
+          </AppText>
 
-          <Text style={styles.value}>
+          <AppText style={styles.value} variant="subtitle">
             {currentHousehold?.name ?? "Sin espacio"}
-          </Text>
+          </AppText>
         </View>
 
         <View style={styles.separator} />
 
         <View style={styles.row}>
-          <Text style={styles.label}>
+          <AppText tone="muted" variant="body">
             Tipo
-          </Text>
+          </AppText>
 
-          <Text style={styles.value}>
+          <AppText style={styles.value} variant="subtitle">
             {formatHouseholdType(
               currentHousehold?.type
             )}
-          </Text>
+          </AppText>
         </View>
       </View>
 
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>
+        <AppText variant="sectionTitle">
           Backend
-        </Text>
+        </AppText>
 
         <View style={styles.row}>
-          <Text style={styles.label}>
+          <AppText tone="muted" variant="body">
             ID
-          </Text>
+          </AppText>
 
-          <Text style={styles.value}>
+          <AppText style={styles.value} variant="subtitle">
             {backendUser?.id ?? "-"}
-          </Text>
+          </AppText>
         </View>
 
         <View style={styles.separator} />
 
         <View style={styles.row}>
-          <Text style={styles.label}>
+          <AppText tone="muted" variant="body">
             Email
-          </Text>
+          </AppText>
 
-          <Text style={styles.value}>
+          <AppText style={styles.value} variant="subtitle">
             {backendUser?.email ?? "-"}
-          </Text>
+          </AppText>
         </View>
       </View>
 
-      <Button
+      <GlassButton
+        accessibilityLabel="Ver invitaciones"
         label="Ver invitaciones"
         onPress={() => openScreen("Invitations")}
-        tone="outline"
       />
 
       <Button label="Cerrar sesión" onPress={handleLogout} tone="destructive" />
-    </ScrollView>
+    </SheetScaffold>
   )
 }
 
@@ -264,27 +265,17 @@ function formatHouseholdType(
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-
-  content: {
-    padding: 24,
-    gap: 24,
-    paddingBottom: 32,
-  },
   center: {
-    flex: 1,
     alignItems: "center",
-    justifyContent: "center",
     gap: 20,
-    padding: 24,
+    justifyContent: "center",
+    minHeight: 160,
   },
 
   header: {
     alignItems: "center",
     gap: 8,
-    paddingVertical: 20,
+    paddingVertical: 8,
   },
 
   avatar: {
@@ -299,26 +290,6 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
 
-  avatarText: {
-    color: colors.foreground,
-    fontFamily: fonts.sansSemibold,
-    fontSize: 24,
-    fontWeight: "700",
-  },
-
-  name: {
-    color: colors.foreground,
-    fontFamily: fonts.sansSemibold,
-    fontSize: 24,
-    fontWeight: "600",
-  },
-
-  email: {
-    fontSize: 14,
-    color: colors.mutedForeground,
-    fontFamily: fonts.sans,
-  },
-
   section: {
     borderWidth: 1,
     backgroundColor: colors.card,
@@ -328,38 +299,19 @@ const styles = StyleSheet.create({
     gap: 14,
   },
 
-  sectionTitle: {
-    color: colors.foreground,
-    fontFamily: fonts.sansSemibold,
-    fontSize: 15,
-    fontWeight: "600",
-  },
-
   row: {
     flexDirection: "row",
     justifyContent: "space-between",
     gap: 16,
   },
 
-  label: {
-    color: colors.mutedForeground,
-    fontFamily: fonts.sans,
-  },
-
   value: {
     flex: 1,
     textAlign: "right",
-    fontWeight: "600",
-    color: colors.foreground,
-    fontFamily: fonts.sansMedium,
   },
 
   separator: {
     height: 1,
     backgroundColor: colors.border,
-  },
-
-  spacedButton: {
-    marginTop: 8,
   },
 })

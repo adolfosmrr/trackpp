@@ -1,15 +1,16 @@
 import { useState } from "react"
-import { Alert, ScrollView, StyleSheet, Text, View } from "react-native"
+import { Alert, StyleSheet, View } from "react-native"
 import type { NativeStackScreenProps } from "@react-navigation/native-stack"
-import { useSafeAreaInsets } from "react-native-safe-area-context"
 
 import { Button } from "../../../components/buttons/Button"
 import { SegmentedToggle } from "../../../components/inputs/SegmentedToggle"
 import { TextField } from "../../../components/inputs/TextField"
+import { SheetScaffold } from "../../../components/layout/SheetScaffold"
+import { AppText } from "../../../components/text/AppText"
 import { OptionChips } from "../../fixedExpenses/components/OptionChips"
 import type { AppStackParamList } from "../../../navigation/types"
 import { useHouseholdStore } from "../../../store/householdStore"
-import { colors, fonts, layout } from "../../../theme"
+import { layout } from "../../../theme"
 import { useCreateHousehold } from "../hooks/useCreateHousehold"
 import { createHouseholdInvitation } from "../services/invitationService"
 import type { HouseholdKind } from "../services/householdService"
@@ -28,7 +29,6 @@ type SpaceCurrency = (typeof SPACE_CURRENCIES)[number]["value"]
 type CreateHouseholdScreenProps = NativeStackScreenProps<AppStackParamList, "CreateHousehold">
 
 export function CreateHouseholdScreen({ navigation }: CreateHouseholdScreenProps) {
-  const insets = useSafeAreaInsets()
   const setSelectedHouseholdId = useHouseholdStore((state) => state.setSelectedHouseholdId)
   const createHouseholdMutation = useCreateHousehold()
   const [kind, setKind] = useState<HouseholdKind>("personal")
@@ -82,11 +82,7 @@ export function CreateHouseholdScreen({ navigation }: CreateHouseholdScreenProps
   }
 
   return (
-    <ScrollView
-      contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 16 }]}
-      keyboardShouldPersistTaps="handled"
-    >
-      <Text style={styles.title}>Crear Espacio</Text>
+    <SheetScaffold onClose={() => navigation.goBack()} title="Crear Espacio">
       <SegmentedToggle
         onChange={setKind}
         options={[
@@ -103,7 +99,7 @@ export function CreateHouseholdScreen({ navigation }: CreateHouseholdScreenProps
           value={name}
         />
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Moneda</Text>
+          <AppText variant="sectionTitle">Moneda</AppText>
           <OptionChips
             accessibilityLabel="Moneda del espacio"
             onChange={setCurrency}
@@ -113,10 +109,10 @@ export function CreateHouseholdScreen({ navigation }: CreateHouseholdScreenProps
         </View>
         {kind === "couple" ? (
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Invitar ahora</Text>
-            <Text style={styles.helper}>
+            <AppText variant="sectionTitle">Invitar ahora</AppText>
+            <AppText tone="muted" variant="caption">
               Opcional. Si lo dejás vacío, podés invitar más tarde.
-            </Text>
+            </AppText>
             <TextField
               autoCapitalize="none"
               autoCorrect={false}
@@ -136,38 +132,15 @@ export function CreateHouseholdScreen({ navigation }: CreateHouseholdScreenProps
           tone="brand"
         />
       </View>
-    </ScrollView>
+    </SheetScaffold>
   )
 }
 
 const styles = StyleSheet.create({
-  content: {
-    gap: 20,
-    paddingHorizontal: layout.sectionInset,
-    paddingTop: 8,
-  },
-  title: {
-    color: colors.foreground,
-    fontFamily: fonts.sansSemibold,
-    fontSize: 20,
-    fontWeight: "600",
-  },
   fields: {
-    gap: 16,
+    gap: layout.titleContentGap,
   },
   section: {
     gap: 8,
-  },
-  sectionTitle: {
-    color: colors.foreground,
-    fontFamily: fonts.sansMedium,
-    fontSize: 16,
-    lineHeight: 20,
-  },
-  helper: {
-    color: colors.mutedForeground,
-    fontFamily: fonts.sans,
-    fontSize: 14,
-    lineHeight: 20,
   },
 })

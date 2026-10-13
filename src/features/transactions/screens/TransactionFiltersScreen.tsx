@@ -1,17 +1,17 @@
 import { useMemo, useState, type ReactNode } from "react"
-import { Platform, Pressable, ScrollView, StyleSheet, Text, View, type LayoutChangeEvent } from "react-native"
+import { Pressable, StyleSheet, View } from "react-native"
 import type { NativeStackScreenProps } from "@react-navigation/native-stack"
-import { useSafeAreaInsets } from "react-native-safe-area-context"
 
 import { Button } from "../../../components/buttons/Button"
 import { GlassButton } from "../../../components/buttons/GlassButton"
 import { FilterChevronIcon } from "../../../components/icons/FilterChevronIcon"
 import { TextField } from "../../../components/inputs/TextField"
-import { SheetHeader } from "../../../components/layout/SheetHeader"
+import { SheetScaffold } from "../../../components/layout/SheetScaffold"
+import { AppText } from "../../../components/text/AppText"
 import { useHouseholds } from "../../households/hooks/useHouseholds"
 import { useHouseholdStore } from "../../../store/householdStore"
 import type { AppStackParamList } from "../../../navigation/types"
-import { colors, fonts, radii } from "../../../theme"
+import { colors, layout, radii } from "../../../theme"
 import { useTransactions } from "../hooks/useTransactions"
 import {
   defaultTransactionFilters,
@@ -25,9 +25,7 @@ import { getTransactionCategories, getTransactionCreators } from "../utils/trans
 type TransactionFiltersScreenProps = NativeStackScreenProps<AppStackParamList, "TransactionFilters">
 
 export function TransactionFiltersScreen({ navigation, route }: TransactionFiltersScreenProps) {
-  const insets = useSafeAreaInsets()
   const [filters, setFilters] = useState<TransactionFilters>(route.params.filters)
-  const [footerHeight, setFooterHeight] = useState(0)
   const selectedHouseholdId = useHouseholdStore((state) => state.selectedHouseholdId)
   const { data: memberships } = useHouseholds()
   const { data: transactions } = useTransactions()
@@ -72,31 +70,25 @@ export function TransactionFiltersScreen({ navigation, route }: TransactionFilte
     })
   }
 
-  function handleFooterLayout(event: LayoutChangeEvent) {
-    const next = event.nativeEvent.layout.height
-    setFooterHeight((current) => (current === next ? current : next))
-  }
-
   return (
-    <>
-      <SheetHeader
-        closeAccessibilityLabel="Cerrar filtros"
-        onClose={() => navigation.goBack()}
-        title="Filtrar movimientos"
-      />
-      <ScrollView
-        contentContainerStyle={[
-          styles.content,
-          {
-            // iOS sizes this scroll view to the sheet minus the header and
-            // draws it underneath the footer. The extra inset lets the last
-            // row scroll clear of that bar.
-            paddingBottom: Platform.OS === "ios" ? footerHeight + insets.bottom : 12,
-          },
-        ]}
-        keyboardShouldPersistTaps="handled"
-        style={styles.scroll}
-      >
+    <SheetScaffold
+      closeAccessibilityLabel="Cerrar filtros"
+      footer={(
+        <View style={styles.footerRow}>
+          <GlassButton
+            accessibilityLabel="Limpiar filtros"
+            fallbackStyle={styles.clearFallback}
+            glassStyle={styles.actionSlot}
+            label="Limpiar"
+            onPress={() => setFilters(defaultTransactionFilters)}
+            style={styles.actionSlot}
+          />
+          <Button label="Aplicar" onPress={apply} style={styles.actionSlot} tone="brand" />
+        </View>
+      )}
+      onClose={() => navigation.goBack()}
+      title="Filtrar movimientos"
+    >
         <FilterGroup title="Tipo">
           <OptionRow>
             <Option label="Todos" grid selected={filters.type === "all"} onPress={() => setType("all")} />
@@ -203,31 +195,14 @@ export function TransactionFiltersScreen({ navigation, route }: TransactionFilte
             </OptionGrid>
           </FilterGroup>
         ) : null}
-      </ScrollView>
-      <View
-        collapsable={false}
-        onLayout={handleFooterLayout}
-        style={[styles.actions, { paddingBottom: Math.max(insets.bottom, 16) }]}
-      >
-        <GlassButton
-          accessibilityLabel="Limpiar filtros"
-          fallbackStyle={styles.clearFallback}
-          glassStyle={styles.actionSlot}
-          label="Limpiar"
-          labelStyle={styles.clearLabel}
-          onPress={() => setFilters(defaultTransactionFilters)}
-          style={styles.clearPressable}
-        />
-        <Button label="Aplicar" onPress={apply} style={styles.actionSlot} tone="brand" />
-      </View>
-    </>
+    </SheetScaffold>
   )
 }
 
 function FilterGroup({ title, children }: { title: string; children: ReactNode }) {
   return (
     <View style={styles.group}>
-      <Text style={styles.groupTitle}>{title}</Text>
+      <AppText variant="sectionTitle">{title}</AppText>
       <View style={styles.options}>{children}</View>
     </View>
   )
@@ -265,7 +240,7 @@ function Option({
       style={[styles.option, grid && styles.gridOption, selected && styles.selectedOption]}
       onPress={onPress}
     >
-      <Text style={[styles.optionText, selected && styles.selectedOptionText]}>{label}</Text>
+      <AppText tone={selected ? "onBrand" : "default"} variant="subtitle">{label}</AppText>
       <FilterChevronIcon color={selected ? colors.brandForeground : colors.foreground} />
     </Pressable>
   )
@@ -292,21 +267,8 @@ function DateInput({
 }
 
 const styles = StyleSheet.create({
-  scroll: {
-    flex: 1,
-  },
-  content: {
-    gap: 30,
-    padding: 20,
-  },
   group: {
-    gap: 10,
-  },
-  groupTitle: {
-    color: colors.foreground,
-    fontFamily: fonts.sansSemibold,
-    fontSize: 15,
-    lineHeight: 20,
+    gap: layout.titleContentGap,
   },
   options: {
     gap: 10,
@@ -334,49 +296,20 @@ const styles = StyleSheet.create({
     backgroundColor: colors.brand,
     borderColor: colors.brand,
   },
-  optionText: {
-    color: colors.foreground,
-    flexShrink: 1,
-    fontFamily: fonts.sansMedium,
-    fontSize: 16,
-    lineHeight: 16,
-  },
-  selectedOptionText: {
-    color: colors.brandForeground,
-  },
   rangeInputs: {
     gap: 8,
   },
-  actions: {
-    backgroundColor: colors.background,
+  footerRow: {
     flexDirection: "row",
     gap: 10,
-    paddingHorizontal: 20,
-    paddingTop: 12,
-    zIndex: 1,
   },
   actionSlot: {
     flex: 1,
   },
   clearFallback: {
-    alignItems: "center",
     backgroundColor: colors.transparent,
     borderColor: colors.borderStrong,
     borderWidth: 1,
     flex: 1,
-    justifyContent: "center",
-    minHeight: 44,
-  },
-  clearPressable: {
-    alignItems: "center",
-    flex: 1,
-    justifyContent: "center",
-    minHeight: 44,
-  },
-  clearLabel: {
-    color: colors.foreground,
-    fontFamily: fonts.sansSemibold,
-    fontSize: 15,
-    lineHeight: 20,
   },
 })

@@ -3,7 +3,7 @@ import type { Transaction } from "../../transactions/types"
 import { EmptyState } from "../../../components/feedback/EmptyState"
 import { ListSection } from "../../../components/layout/ListSection"
 import { SectionHeader } from "../../../components/layout/SectionHeader"
-import { colors, fonts } from "../../../theme"
+import { colors, fonts, layout } from "../../../theme"
 import { MovementItem } from "./MovementItem"
 
 type MovementsSectionProps = {
@@ -113,7 +113,7 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   transactionGroups: {
-    marginTop: 40,
+    marginTop: layout.titleContentGap,
   },
   transactionGroupSpacing: {
     marginBottom: 40,

@@ -3,14 +3,14 @@ import {
   Alert,
   StyleSheet,
   Switch,
-  Text,
   TextInput,
   View,
 } from "react-native"
 import type { NativeStackScreenProps } from "@react-navigation/native-stack"
 import { Button } from "../../../components/buttons/Button"
 import { FieldRow, TextField, fieldStyles } from "../../../components/inputs/TextField"
-import { colors, fonts } from "../../../theme"
+import { AppText } from "../../../components/text/AppText"
+import { colors, fonts, layout } from "../../../theme"
 import { Gesture, GestureDetector } from "react-native-gesture-handler"
 import { runOnJS, useSharedValue } from "react-native-reanimated"
 
@@ -507,18 +507,20 @@ export function CreateTransactionForm({
         key={target.householdId}
         onPress={() => openCategorySelector(target.householdId)}
       >
-        <Text style={styles.fieldLabel}>
+        <AppText style={styles.fieldLabel} variant="subtitle">
           Categoría {household?.name ?? target.householdId}
-        </Text>
+        </AppText>
         <View style={styles.fieldValueGroup}>
           {category ? (
-            <Text
-              numberOfLines={1}
+            <AppText
               ellipsizeMode="tail"
+              numberOfLines={1}
               style={styles.fieldValue}
+              tone="muted"
+              variant="subtitle"
             >
               {category.name}
-            </Text>
+            </AppText>
           ) : null}
           <FieldChevronIcon />
         </View>
@@ -531,15 +533,17 @@ export function CreateTransactionForm({
       <FieldRow
         onPress={openFixedCategorySelector}
       >
-        <Text style={styles.fieldLabel}>Categoría</Text>
+        <AppText style={styles.fieldLabel} variant="subtitle">Categoría</AppText>
         <View style={styles.fieldValueGroup}>
-          <Text
-            numberOfLines={1}
+          <AppText
             ellipsizeMode="tail"
+            numberOfLines={1}
             style={styles.fieldValue}
+            tone="muted"
+            variant="subtitle"
           >
             {selectedFixedCategory?.name ?? "Seleccionar categoría"}
-          </Text>
+          </AppText>
           <FieldChevronIcon />
         </View>
       </FieldRow>
@@ -582,7 +586,7 @@ export function CreateTransactionForm({
         <>
           {renderFixedCategoryField()}
           <View style={[fieldStyles.surface, fieldStyles.row, fieldStyles.pill]}>
-            <Text style={styles.dayFieldLabel}>Día de cobro</Text>
+            <AppText tone="muted" variant="subtitle">Día de cobro</AppText>
             <TextInput
               style={styles.dayInput}
               keyboardType="number-pad"
@@ -592,7 +596,7 @@ export function CreateTransactionForm({
             />
           </View>
           <View style={[fieldStyles.surface, fieldStyles.row, fieldStyles.pill]}>
-            <Text style={styles.dayFieldLabel}>Día de vencimiento</Text>
+            <AppText tone="muted" variant="subtitle">Día de vencimiento</AppText>
             <TextInput
               style={styles.dayInput}
               keyboardType="number-pad"
@@ -602,7 +606,7 @@ export function CreateTransactionForm({
             />
           </View>
           <View style={styles.optionBlock}>
-            <Text style={styles.fieldLabel}>Frecuencia</Text>
+            <AppText variant="sectionTitle">Frecuencia</AppText>
             <OptionChips
               accessibilityLabel="Frecuencia del gasto fijo"
               onChange={setFrequency}
@@ -611,7 +615,7 @@ export function CreateTransactionForm({
             />
           </View>
           <View style={[fieldStyles.surface, fieldStyles.row, fieldStyles.pill]}>
-            <Text style={styles.dayFieldLabel}>Débito automático</Text>
+            <AppText tone="muted" variant="subtitle">Débito automático</AppText>
             <Switch
               accessibilityLabel="Débito automático"
               onValueChange={(enabled) => {
@@ -625,7 +629,7 @@ export function CreateTransactionForm({
           </View>
           {autoDebit ? (
             <View style={styles.optionBlock}>
-              <Text style={styles.fieldLabel}>Tarjeta</Text>
+              <AppText variant="sectionTitle">Tarjeta</AppText>
               <OptionChips
                 accessibilityLabel="Tarjeta del débito automático"
                 onChange={setAutoDebitSource}
@@ -635,9 +639,9 @@ export function CreateTransactionForm({
             </View>
           ) : null}
           {isEditingFixedExpense ? (
-            <Text style={styles.helperText}>
+            <AppText tone="muted" variant="caption">
               Si cambiás el monto, el nuevo rige desde este período. Los anteriores quedan igual.
-            </Text>
+            </AppText>
           ) : null}
         </>
       ) : (
@@ -647,12 +651,14 @@ export function CreateTransactionForm({
           <FieldRow
             onPress={openHouseholdSelector}
           >
-            <Text style={styles.fieldLabel}>Añadir a Espacio</Text>
+            <AppText style={styles.fieldLabel} variant="subtitle">Añadir a Espacio</AppText>
             <View style={styles.fieldValueGroup}>
-              <Text
-                numberOfLines={1}
+              <AppText
                 ellipsizeMode="tail"
+                numberOfLines={1}
                 style={styles.fieldValue}
+                tone="muted"
+                variant="subtitle"
               >
                 {targets
                   .map(
@@ -662,7 +668,7 @@ export function CreateTransactionForm({
                       )?.household.name ?? target.householdId
                   )
                   .join(", ")}
-              </Text>
+              </AppText>
               <FieldChevronIcon />
             </View>
           </FieldRow>
@@ -700,15 +706,9 @@ function isValidDay(value: number) {
 }
 
 const styles = StyleSheet.create({
-  container: { padding: 24 },
-  fieldsStack: { gap: 11, marginTop: 40 },
-  targetsSection: { gap: 11 },
-  dayFieldLabel: {
-    color: colors.mutedForeground,
-    fontFamily: fonts.sansMedium,
-    fontSize: 16,
-    lineHeight: 16,
-  },
+  container: {},
+  fieldsStack: { gap: layout.titleContentGap },
+  targetsSection: { gap: layout.titleContentGap },
   dayInput: {
     color: colors.foreground,
     fontFamily: fonts.monoMedium,
@@ -719,11 +719,7 @@ const styles = StyleSheet.create({
     textAlign: "right",
   },
   fieldLabel: {
-    color: colors.foreground,
-    fontFamily: fonts.sansMedium,
     flexShrink: 0,
-    fontSize: 16,
-    lineHeight: 16,
   },
   fieldValueGroup: {
     alignItems: "center",
@@ -735,14 +731,9 @@ const styles = StyleSheet.create({
     minWidth: 0,
   },
   fieldValue: {
-    color: colors.mutedForeground,
     flex: 1,
     flexShrink: 1,
-    fontFamily: fonts.sansMedium,
-    fontSize: 15,
-    lineHeight: 18,
     textAlign: "right",
   },
-  optionBlock: { gap: 8 },
-  helperText: { color: colors.mutedForeground, fontFamily: fonts.sans },
+  optionBlock: { gap: layout.titleContentGap },
 })
