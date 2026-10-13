@@ -34,10 +34,10 @@ type MeshGradientProps = {
 }
 
 const DEFAULT_COLORS: [string, string, string, string] = [
-  "#0E7490",
-  "#F59E0B",
-  "#D9F99D",
-  "#164E63",
+  "#0C1210",
+  "#16382A",
+  "#3ECF8E",
+  "#101614",
 ]
 
 const MESH_GRADIENT_SHADER = Skia.RuntimeEffect.Make(`

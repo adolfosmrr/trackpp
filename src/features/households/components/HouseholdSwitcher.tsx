@@ -1,261 +1,65 @@
-import {
-    View,
-    Text,
-    Pressable,
-    StyleSheet,
-    Modal,
-  } from "react-native"
-  import { useState } from "react"
-  import Animated, { interpolate, useAnimatedStyle, type SharedValue } from "react-native-reanimated"
-  
-  import { useHouseholds } from "../hooks/useHouseholds"
-  import { useHouseholdStore } from "../../../store/householdStore"
+import { StyleSheet, Text } from "react-native"
+import { useNavigation, type NavigationProp, type ParamListBase } from "@react-navigation/native"
+import type { NativeStackNavigationProp } from "@react-navigation/native-stack"
 
-  import { ChevronDownIcon } from "../../../components/icons/ChevronDownIcon"
+import type { AppStackParamList } from "../../../navigation/types"
+import { colors, fonts, layout } from "../../../theme"
+import { useHouseholdStore } from "../../../store/householdStore"
+import { useHouseholds } from "../hooks/useHouseholds"
+import { SpaceMenu } from "./SpaceMenu"
+import { spaceSubtitle } from "./spaceMenu"
 
-  const AnimatedPressable = Animated.createAnimatedComponent(Pressable)
-  
-  export function HouseholdSwitcher({ compact = false, collapseProgress }: { compact?: boolean; collapseProgress?: SharedValue<number> }) {
-    const [open, setOpen] = useState(false)
-    const compactAnimatedStyle = useCompactAnimatedStyle(collapseProgress)
-  
-    const selectedHouseholdId = useHouseholdStore(
-      (state) => state.selectedHouseholdId
-    )
-  
-    const setSelectedHouseholdId = useHouseholdStore(
-      (state) => state.setSelectedHouseholdId
-    )
-  
-    const {
-      data: memberships,
-      isLoading,
-    } = useHouseholds()
-  
-    const currentHousehold = memberships?.find(
-      (membership) =>
-        membership.household.id === selectedHouseholdId
-    )?.household
-  
-    if (isLoading) {
-      return (
-        compact ? (
-          <Animated.Text style={[styles.compactLoading, compactAnimatedStyle]}>
-            Cargando...
-          </Animated.Text>
-        ) : (
-          <Text style={styles.loading}>Cargando...</Text>
-        )
-      )
+export function HouseholdSwitcher({ compact = false }: { compact?: boolean }) {
+  const navigation = useNavigation<NavigationProp<ParamListBase>>()
+  const selectedHouseholdId = useHouseholdStore((state) => state.selectedHouseholdId)
+  const setSelectedHouseholdId = useHouseholdStore((state) => state.setSelectedHouseholdId)
+  const { data: memberships, isLoading } = useHouseholds()
+  const currentHousehold = memberships?.find(
+    (membership) => membership.household.id === selectedHouseholdId,
+  )?.household
+
+  function openCreateSpace() {
+    const parent = navigation.getParent<NativeStackNavigationProp<AppStackParamList>>()
+    if (parent?.getState().routeNames.includes("CreateHousehold")) {
+      parent.navigate("CreateHousehold")
+      return
     }
-  
+    navigation.navigate("CreateHousehold")
+  }
+
+  if (isLoading) {
     return (
-      <>
-        <AnimatedPressable
-          accessibilityLabel="Cambiar cuenta"
-          accessibilityRole="button"
-          style={[styles.trigger, compact && styles.compactTrigger, compact && compactAnimatedStyle]}
-          onPress={() => setOpen(true)}
-        >
-          <Text style={[styles.triggerText, compact && styles.compactTriggerText]}>
-            {currentHousehold?.name ?? "Seleccionar espacio"}
-          </Text>
-  
-          {compact ? <ChevronDownIcon /> : <Text style={styles.chevron}>▼</Text>}
-        </AnimatedPressable>
-  
-        <Modal
-          visible={open}
-          transparent
-          animationType="fade"
-          onRequestClose={() => setOpen(false)}
-        >
-          <Pressable
-            style={styles.overlay}
-            onPress={() => setOpen(false)}
-          >
-            <Pressable
-              style={styles.modal}
-              onPress={() => {}}
-            >
-              <Text style={styles.title}>
-                Espacios
-              </Text>
-  
-              {memberships?.map((membership) => {
-                const household =
-                  membership.household
-  
-                const selected =
-                  household.id ===
-                  selectedHouseholdId
-  
-                return (
-                  <Pressable
-                    key={household.id}
-                    style={[
-                      styles.option,
-                      selected &&
-                        styles.optionSelected,
-                    ]}
-                    onPress={() => {
-                      setSelectedHouseholdId(
-                        household.id
-                      )
-  
-                      setOpen(false)
-                    }}
-                  >
-                    <View>
-                      <Text
-                        style={[
-                          styles.optionName,
-                          selected &&
-                            styles.optionNameSelected,
-                        ]}
-                      >
-                        {household.name}
-                      </Text>
-  
-                      <Text
-                        style={[
-                          styles.optionType,
-                          selected &&
-                            styles.optionTypeSelected,
-                        ]}
-                      >
-                        {household.type === "personal"
-                          ? "Personal"
-                          : "Compartido"}
-                      </Text>
-                    </View>
-  
-                    {selected && (
-                      <Text
-                        style={styles.check}
-                      >
-                        ✓
-                      </Text>
-                    )}
-                  </Pressable>
-                )
-              })}
-            </Pressable>
-          </Pressable>
-        </Modal>
-      </>
+      <Text style={compact ? styles.compactLoading : styles.loading}>
+        Cargando...
+      </Text>
     )
   }
 
-  function useCompactAnimatedStyle(collapseProgress?: SharedValue<number>) {
-    return useAnimatedStyle(() => ({
-      height: interpolate(collapseProgress?.value ?? 0, [0, 1], [40, 24]),
-      paddingHorizontal: interpolate(collapseProgress?.value ?? 0, [0, 1], [20, 12]),
-    }))
-  }
-  
-  const styles = StyleSheet.create({
-    loading: {
-      color: "#777",
-    },
+  return (
+    <SpaceMenu
+      compact={compact}
+      items={(memberships ?? []).map((membership) => ({
+        id: membership.household.id,
+        name: membership.household.name,
+        subtitle: spaceSubtitle(membership.household.type, membership.household.currency),
+        selected: membership.household.id === selectedHouseholdId,
+      }))}
+      label={currentHousehold?.name ?? "Seleccionar espacio"}
+      onCreate={openCreateSpace}
+      onSelect={setSelectedHouseholdId}
+    />
+  )
+}
 
-    compactLoading: {
-      height: 40,
-      justifyContent: "center",
-      marginLeft: 15,
-    },
-  
-    trigger: {
-      flexDirection: "row",
-      alignItems: "center",
-      gap: 6,
-    },
-  
-    triggerText: {
-      fontSize: 15,
-      fontWeight: "600",
-    },
-
-    compactTrigger: {
-      alignItems: "center",
-      backgroundColor: "#FFFFFF",
-      borderRadius: 9999,
-      gap: 8,
-      height: 40,
-      marginLeft: 15,
-      paddingHorizontal: 20,
-    },
-
-    compactTriggerText: {
-      color: "#1C1C1C",
-      fontFamily: "FamiljenGrotesk-Bold",
-      fontSize: 16,
-      lineHeight: 16,
-      fontWeight: undefined,
-    },
-  
-    chevron: {
-      fontSize: 10,
-      color: "#777",
-    },
-  
-    overlay: {
-      flex: 1,
-      backgroundColor: "rgba(0, 0, 0, 0.35)",
-      justifyContent: "center",
-      padding: 24,
-    },
-  
-    modal: {
-      backgroundColor: "#fff",
-      borderRadius: 18,
-      padding: 20,
-      gap: 12,
-    },
-  
-    title: {
-      fontSize: 20,
-      fontWeight: "700",
-      marginBottom: 4,
-    },
-  
-    option: {
-      padding: 14,
-      borderWidth: 1,
-      borderColor: "#ddd",
-      borderRadius: 12,
-      flexDirection: "row",
-      alignItems: "center",
-      justifyContent: "space-between",
-    },
-  
-    optionSelected: {
-      backgroundColor: "#111",
-      borderColor: "#111",
-    },
-  
-    optionName: {
-      fontSize: 16,
-      fontWeight: "600",
-    },
-  
-    optionNameSelected: {
-      color: "#fff",
-    },
-  
-    optionType: {
-      marginTop: 3,
-      color: "#777",
-      fontSize: 13,
-    },
-  
-    optionTypeSelected: {
-      color: "#ccc",
-    },
-  
-    check: {
-      color: "#fff",
-      fontSize: 18,
-      fontWeight: "700",
-    },
-  })
+const styles = StyleSheet.create({
+  loading: {
+    color: colors.mutedForeground,
+    fontFamily: fonts.sans,
+  },
+  compactLoading: {
+    color: colors.mutedForeground,
+    fontFamily: fonts.sans,
+    height: layout.headerPill,
+    marginLeft: 15,
+  },
+})

@@ -1,14 +1,18 @@
 import {
   View,
-  Text,
   FlatList,
   LayoutChangeEvent,
   StyleSheet,
   ActivityIndicator,
-  Alert,
   RefreshControl,
 } from "react-native"
-  import { useMemo, useState } from "react"
+import { useQueryClient } from "@tanstack/react-query"
+import type { CompositeScreenProps } from "@react-navigation/native"
+import type { NativeBottomTabScreenProps } from "@react-navigation/bottom-tabs/unstable"
+import type { NativeStackScreenProps } from "@react-navigation/native-stack"
+import { colors, layout, refreshControlColors } from "../../../theme"
+import { AppText } from "../../../components/text/AppText"
+  import { useEffect, useState } from "react"
 
   import { useAuth } from "../../auth/context/AuthContext"
   import { useProfile } from "../../profile/hooks/useProfile"
@@ -21,31 +25,31 @@ import {
   import { HomeBalance } from "../../home/components/HomeBalance"
   import { HomeGreeting } from "../../home/components/HomeGreeting"
   import { HomeIncomeExpenseSummary } from "../../home/components/HomeIncomeExpenseSummary"
-  import { FixedExpenseActions } from "../components/FixedExpenseActions"
-  import { TransactionsMovementsSection } from "../components/TransactionsMovementsSection"
-import { TransactionFiltersModal } from "../components/TransactionFiltersModal"
-import { useCreateTransactionSheet } from "../components/CreateTransactionSheetProvider"
+import { TransactionsMovementsSection } from "../components/TransactionsMovementsSection"
+import { showUndo } from "../../../components/feedback/undo"
+import { createMovementParams } from "../openCreateMovement"
   import { useTransactions } from "../hooks/useTransactions"
-  import { useDeleteTransaction } from "../hooks/useDeleteTransaction"
+  import { useCreateLinkedTransactions } from "../hooks/useCreateLinkedTransactions"
+import { useDeleteTransaction } from "../hooks/useDeleteTransaction"
   import {
     defaultTransactionFilters,
     type Transaction,
     type TransactionFilters,
   } from "../types"
-  import {
-    getTransactionCategories,
-    getTransactionCreators,
-  } from "../utils/transactionFilters"
+import type { AppStackParamList, MainTabsParamList } from "../../../navigation/types"
 
-  export function TransactionsScreen({ navigation }: any) {
-    const [deletingId, setDeletingId] = useState<string | null>(null)
+type TransactionsScreenProps = CompositeScreenProps<
+  NativeBottomTabScreenProps<MainTabsParamList, "Transactions">,
+  NativeStackScreenProps<AppStackParamList>
+>
+
+  export function TransactionsScreen({ navigation, route }: TransactionsScreenProps) {
+    const queryClient = useQueryClient()
     const [topSectionHeight, setTopSectionHeight] = useState(0)
     const [appliedFilters, setAppliedFilters] = useState(defaultTransactionFilters)
-    const [draftFilters, setDraftFilters] = useState(defaultTransactionFilters)
-    const [filtersVisible, setFiltersVisible] = useState(false)
     const [refreshing, setRefreshing] = useState(false)
     const deleteMutation = useDeleteTransaction()
-    const { openCreateTransaction } = useCreateTransactionSheet()
+    const restoreMutation = useCreateLinkedTransactions()
 
     function handleTopSectionLayout(event: LayoutChangeEvent) {
       const height = event.nativeEvent.layout.height
@@ -80,17 +84,18 @@ import { useCreateTransactionSheet } from "../components/CreateTransactionSheetP
       isLoading,
       error,
     } = transactionsQuery
-    const transactionList = transactions ?? []
     const householdType = currentHousehold?.type === "couple" ? "couple" : "personal"
-    const categories = useMemo(
-      () => getTransactionCategories(transactionList),
-      [transactionList]
-    )
-    const creators = useMemo(
-      () => getTransactionCreators(transactionList),
-      [transactionList]
-    )
     const activeFilterCount = getActiveFilterCount(appliedFilters, householdType)
+
+    useEffect(() => {
+      const next = route.params?.appliedFilters
+      if (!next) return
+      setAppliedFilters({
+        ...next,
+        creatorId: householdType === "couple" ? next.creatorId : null,
+      })
+      navigation.setParams({ appliedFilters: undefined })
+    }, [householdType, navigation, route.params?.appliedFilters])
 
     async function handleRefresh() {
       setRefreshing(true)
@@ -107,69 +112,58 @@ import { useCreateTransactionSheet } from "../components/CreateTransactionSheetP
     }
 
     function openFilters() {
-      setDraftFilters(appliedFilters)
-      setFiltersVisible(true)
-    }
-
-    function applyFilters() {
-      setAppliedFilters({
-        ...draftFilters,
-        creatorId: householdType === "couple" ? draftFilters.creatorId : null,
+      navigation.navigate("TransactionFilters", {
+        filters: householdType === "couple"
+          ? appliedFilters
+          : { ...appliedFilters, creatorId: null },
       })
-      setFiltersVisible(false)
     }
 
-    function confirmDelete(transaction: Transaction) {
-      Alert.alert(
-        "¿Eliminar movimiento?",
-        `Esta acción eliminará "${transaction.title}".`,
-        [
-          {
-            text: "Cancelar",
-            style: "cancel",
-          },
-          {
-            text: "Eliminar",
-            style: "destructive",
-            onPress: () => {
-              void handleDelete(transaction.id)
-            },
-          },
-        ]
+    async function requestDelete(transaction: Transaction) {
+      const queryKey = ["transactions", selectedHouseholdId] as const
+      const previous = queryClient.getQueryData<Transaction[]>(queryKey)
+      queryClient.setQueryData<Transaction[]>(
+        queryKey,
+        (current) => current?.filter((item) => item.id !== transaction.id),
       )
-    }
 
-    async function handleDelete(transactionId: string) {
-      if (deletingId) {
+      try {
+        await deleteMutation.mutateAsync(transaction.id)
+      } catch (error) {
+        queryClient.setQueryData(queryKey, previous)
+        showUndo({
+          message: isFixedExpenseDeleteError(error)
+            ? "Ese movimiento es de un gasto fijo. Gestionarlo desde Fijos."
+            : "No se pudo eliminar el movimiento.",
+        })
         return
       }
 
-      setDeletingId(transactionId)
-
-      try {
-        await deleteMutation.mutateAsync(transactionId)
-      } catch (error) {
-        if (__DEV__) {
-          console.error("Delete transaction error:", error)
-        }
-
-        Alert.alert(
-          "Error",
-          isFixedExpenseDeleteError(error)
-            ? "Este movimiento pertenece a un gasto fijo y debe gestionarse desde Gastos fijos."
-            : error instanceof Error
-              ? error.message
-              : "No se pudo eliminar el movimiento."
-        )
-      } finally {
-        setDeletingId(null)
-      }
+      showUndo({
+        message: "Eliminaste el movimiento",
+        actionLabel: "Deshacer",
+        onAction: () => {
+          void restoreMutation.mutateAsync({
+            type: transaction.type,
+            title: transaction.title,
+            description: transaction.description ?? undefined,
+            amount: Math.abs(transaction.amount),
+            transactionDate: transaction.transaction_date,
+            targets: [{
+              householdId: transaction.household_id,
+              categoryId: transaction.category_id,
+            }],
+          }).catch(() => {
+            showUndo({ message: "No se pudo deshacer el movimiento." })
+          })
+        },
+      })
     }
 
     if (isLoading || profileLoading || dashboardLoading) {
       return (
         <View style={styles.center}>
-          <ActivityIndicator size="large" />
+          <ActivityIndicator color={colors.brand} size="large" />
         </View>
       )
     }
@@ -177,7 +171,7 @@ import { useCreateTransactionSheet } from "../components/CreateTransactionSheetP
     if (error || profileError || dashboardError) {
       return (
         <View style={styles.center}>
-          <Text>No se pudieron cargar los movimientos.</Text>
+          <AppText tone="muted" variant="body">No se pudieron cargar los movimientos.</AppText>
         </View>
       )
     }
@@ -195,22 +189,12 @@ import { useCreateTransactionSheet } from "../components/CreateTransactionSheetP
               refreshing={refreshing}
               onRefresh={handleRefresh}
               progressViewOffset={topSectionHeight}
-              tintColor="#1C1C1C"
-              colors={["#1C1C1C"]}
-              progressBackgroundColor="#FFFFFF"
+              {...refreshControlColors}
             />
           }
           ListHeaderComponent={
             topSectionHeight > 0
-              ? (
-                <View>
-                  <View style={{ height: topSectionHeight }} />
-                  <FixedExpenseActions
-                    onCreatePress={() => openCreateTransaction("fixed")}
-                    onViewPress={() => navigation.navigate("FixedExpenses")}
-                  />
-                </View>
-              )
+              ? <View style={{ height: topSectionHeight }} />
               : null
           }
           renderItem={() => (
@@ -218,8 +202,15 @@ import { useCreateTransactionSheet } from "../components/CreateTransactionSheetP
               transactions={transactions ?? []}
               householdType={householdType}
               userId={user?.id}
-              deletingId={deletingId}
-              onDelete={confirmDelete}
+              onDelete={requestDelete}
+              onCreate={() => {
+                void createMovementParams().then((params) => {
+                  navigation.navigate("CreateMovement", params)
+                })
+              }}
+              onClearFilters={() => {
+                setAppliedFilters(defaultTransactionFilters)
+              }}
               filters={householdType === "couple"
                 ? appliedFilters
                 : { ...appliedFilters, creatorId: null }}
@@ -229,17 +220,6 @@ import { useCreateTransactionSheet } from "../components/CreateTransactionSheetP
           )}
          />
         </ScreenContainer>
-        <TransactionFiltersModal
-          visible={filtersVisible}
-          filters={draftFilters}
-          householdType={householdType}
-          categories={categories}
-          creators={creators}
-          onChange={setDraftFilters}
-          onClear={() => setDraftFilters(defaultTransactionFilters)}
-          onApply={applyFilters}
-          onCancel={() => setFiltersVisible(false)}
-        />
         <TopSection
           mode="collapsed"
           overlay
@@ -247,7 +227,7 @@ import { useCreateTransactionSheet } from "../components/CreateTransactionSheetP
           style={styles.topSectionOverlay}
           renderContent={(collapseProgress) => (
             <>
-              <TopSectionHeader collapseProgress={collapseProgress} profile={profile} />
+              <TopSectionHeader profile={profile} />
               <HomeGreeting displayName={profile?.name?.trim()} collapseProgress={collapseProgress} />
               <HomeBalance
                 balance={dashboard?.balance ?? 0}
@@ -285,6 +265,7 @@ import { useCreateTransactionSheet } from "../components/CreateTransactionSheetP
     screenWrapper: {
       flex: 1,
       position: "relative",
+      backgroundColor: colors.background,
     },
 
     topSectionOverlay: {
@@ -301,19 +282,13 @@ import { useCreateTransactionSheet } from "../components/CreateTransactionSheetP
 
     center: {
       flex: 1,
+      backgroundColor: colors.background,
       alignItems: "center",
       justifyContent: "center",
     },
   
     list: {
-      paddingHorizontal: 20,
-      paddingTop: 20,
-      gap: 12,
+      paddingTop: 0,
     },
   
-    empty: {
-      textAlign: "center",
-      marginTop: 40,
-      color: "#777",
-    },
   })

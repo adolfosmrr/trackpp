@@ -1,41 +1,56 @@
 import { useState } from "react"
+import { useQueryClient } from "@tanstack/react-query"
+import type { CompositeScreenProps } from "@react-navigation/native"
+import type { NativeBottomTabScreenProps } from "@react-navigation/bottom-tabs/unstable"
+import type { NativeStackScreenProps } from "@react-navigation/native-stack"
 
 import {
   View,
   Text,
-  Pressable,
   ScrollView,
   StyleSheet,
   ActivityIndicator,
-  Alert,
   LayoutChangeEvent,
   RefreshControl,
 } from "react-native"
+import { colors, fonts, layout, radii, refreshControlColors } from "../../../theme"
+import { Button } from "../../../components/buttons/Button"
+import { GlassButton } from "../../../components/buttons/GlassButton"
+import { AppText } from "../../../components/text/AppText"
+import { CircleAddButton } from "../../../components/buttons/CircleAddButton"
+import { useFormatMoney } from "../../households/hooks/useFormatMoney"
+import { EmptyState } from "../../../components/feedback/EmptyState"
+import { showUndo } from "../../../components/feedback/undo"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 
 import { useBudgets } from "../hooks/useBudgets"
 import { useDeleteBudget } from "../hooks/useDeleteBudget"
+import { createBudget } from "../services/budgetService"
 import { useProfile } from "../../profile/hooks/useProfile"
+import { useHouseholdStore } from "../../../store/householdStore"
 import { useDashboard } from "../../dashboard/hooks/useDashboard"
-import { useBudgetSheet } from "../components/BudgetSheetProvider"
-import { BudgetSheetProvider } from "../components/BudgetSheetProvider"
+import { getCurrentMonth } from "../hooks/useBudgets"
+import type { BudgetWithProgress } from "../types"
+import type { AppStackParamList, MainTabsParamList } from "../../../navigation/types"
+import { ListSection } from "../../../components/layout/ListSection"
 import { ScreenContainer } from "../../../components/layout/ScreenContainer"
 import { TopSection } from "../../../components/layout/TopSection"
+import { SectionHeader } from "../../../components/layout/SectionHeader"
 import { TopSectionHeader } from "../../../components/layout/TopSectionHeader"
 import { HomeBalance } from "../../home/components/HomeBalance"
 import { HomeGreeting } from "../../home/components/HomeGreeting"
 import { HomeIncomeExpenseSummary } from "../../home/components/HomeIncomeExpenseSummary"
 
-export function BudgetsScreen() {
-  return (
-    <BudgetSheetProvider>
-      <BudgetsScreenContent />
-    </BudgetSheetProvider>
-  )
-}
+type BudgetsScreenProps = CompositeScreenProps<
+  NativeBottomTabScreenProps<MainTabsParamList, "Budgets">,
+  NativeStackScreenProps<AppStackParamList>
+>
 
-function BudgetsScreenContent() {
+export function BudgetsScreen({ navigation }: BudgetsScreenProps) {
   const insets = useSafeAreaInsets()
+  const queryClient = useQueryClient()
+  const format = useFormatMoney()
+  const selectedHouseholdId = useHouseholdStore((state) => state.selectedHouseholdId)
   const [topSectionHeight, setTopSectionHeight] = useState(0)
   const [refreshing, setRefreshing] = useState(false)
   const profileQuery = useProfile()
@@ -50,7 +65,14 @@ function BudgetsScreenContent() {
   } = budgetsQuery
 
   const deleteBudgetMutation = useDeleteBudget()
-  const { openCreateBudget, openEditBudget } = useBudgetSheet()
+
+  function openCreateBudget() {
+    navigation.navigate("BudgetEditor", { request: { kind: "create" } })
+  }
+
+  function openEditBudget(budget: BudgetWithProgress) {
+    navigation.navigate("BudgetEditor", { request: { kind: "edit", budget } })
+  }
 
   function handleTopSectionLayout(event: LayoutChangeEvent) {
     const height = event.nativeEvent.layout.height
@@ -70,40 +92,56 @@ function BudgetsScreenContent() {
     }
   }
 
-  function handleDeleteBudget(
-    budgetId: string
-  ) {
-    Alert.alert(
-      "Eliminar presupuesto",
-      "¿Seguro que quieres eliminar este presupuesto?",
-      [
-        {
-          text: "Cancelar",
-          style: "cancel",
-        },
-        {
-          text: "Eliminar",
-          style: "destructive",
-          onPress: async () => {
-            try {
-              await deleteBudgetMutation.mutateAsync(
-                budgetId
-              )
-            } catch (error) {
-              const message =
-                error instanceof Error
-                  ? error.message
-                  : "No se pudo eliminar el presupuesto."
-
-              Alert.alert(
-                "Error",
-                message
-              )
-            }
-          },
-        },
-      ]
+  async function handleDeleteBudget(budgetId: string) {
+    const month = getCurrentMonth()
+    const queryKey = ["budgets", selectedHouseholdId, month] as const
+    const budget = queryClient
+      .getQueryData<BudgetWithProgress[]>(queryKey)
+      ?.find((item) => item.id === budgetId)
+    const previous = queryClient.getQueryData<BudgetWithProgress[]>(queryKey)
+    queryClient.setQueryData<BudgetWithProgress[]>(
+      queryKey,
+      (current) => current?.filter((item) => item.id !== budgetId),
     )
+
+    try {
+      await deleteBudgetMutation.mutateAsync(budgetId)
+    } catch (error) {
+      queryClient.setQueryData(queryKey, previous)
+      showUndo({
+        message: error instanceof Error
+          ? error.message
+          : "No se pudo eliminar el presupuesto.",
+      })
+      return
+    }
+
+    if (!budget) {
+      showUndo({ message: "Eliminaste el presupuesto" })
+      return
+    }
+
+    showUndo({
+      message: "Eliminaste el presupuesto",
+      actionLabel: "Deshacer",
+      onAction: () => {
+        void createBudget({
+          householdId: budget.household_id,
+          categoryId: budget.category_id,
+          userId: budget.created_by,
+          name: budget.name,
+          amount: budget.amount,
+          month: budget.month,
+        }).then(() => {
+          void queryClient.invalidateQueries({ queryKey: ["budgets", budget.household_id] })
+          void queryClient.invalidateQueries({ queryKey: ["dashboard", budget.household_id] })
+          void queryClient.invalidateQueries({ queryKey: ["dashboard-insights", budget.household_id] })
+          void queryClient.invalidateQueries({ queryKey: ["activity", budget.household_id] })
+        }).catch(() => {
+          showUndo({ message: "No se pudo deshacer el presupuesto." })
+        })
+      },
+    })
   }
 
   if (
@@ -113,7 +151,7 @@ function BudgetsScreenContent() {
   ) {
     return (
       <View style={styles.center}>
-        <ActivityIndicator size="large" />
+        <ActivityIndicator color={colors.brand} size="large" />
       </View>
     )
   }
@@ -121,9 +159,9 @@ function BudgetsScreenContent() {
   if (budgetsError || profileError || dashboardError) {
     return (
       <View style={styles.center}>
-        <Text>
+        <AppText tone="muted" variant="body">
           No se pudieron cargar los presupuestos.
-        </Text>
+        </AppText>
       </View>
     )
   }
@@ -132,22 +170,25 @@ function BudgetsScreenContent() {
     <View style={styles.screenWrapper}>
       <ScreenContainer paddingHorizontal={0}>
         <ScrollView
-          style={[styles.container, !topSectionHeight && styles.hiddenList]}
-          contentContainerStyle={styles.content}
+          style={[
+            styles.container,
+            !topSectionHeight && styles.hiddenList,
+          ]}
+          contentContainerStyle={[
+            styles.content,
+            { paddingTop: topSectionHeight },
+          ]}
           refreshControl={
             <RefreshControl
               refreshing={refreshing}
               onRefresh={handleRefresh}
               progressViewOffset={topSectionHeight}
-              tintColor="#1C1C1C"
-              colors={["#1C1C1C"]}
-              progressBackgroundColor="#FFFFFF"
+              {...refreshControlColors}
             />
           }
         >
-          <View style={{ height: topSectionHeight }} />
           <View style={styles.budgetSection}>
-            <View
+            <ListSection
               style={[
                 styles.budgetContent,
                 {
@@ -155,142 +196,90 @@ function BudgetsScreenContent() {
                 },
               ]}
             >
-        <Text style={styles.title}>
-          Presupuesto{'\n'}del mes
-        </Text>
-
-        <Pressable
-          style={styles.createBudgetButton}
-          onPress={openCreateBudget}
-        >
-          <Text style={styles.createBudgetButtonText}>
-            Crear presupuesto
-          </Text>
-        </Pressable>
-
-        <View style={styles.list}>
-          {budgets?.length ? (
-            budgets.map((budget) => (
-              <View
-                key={budget.id}
-                style={styles.card}
-              >
-                <View
-                  style={
-                    styles.cardHeader
-                  }
-                >
-                  <Text
-                    style={
-                      styles.cardTitle
+              <SectionHeader
+                    title="Presupuesto del mes"
+                    trailing={
+                      <CircleAddButton
+                        accessibilityLabel="Crear presupuesto"
+                        onPress={openCreateBudget}
+                      />
                     }
-                  >
-                    {budget.name}
-                  </Text>
-
-                  <Text
-                    style={
-                      styles.cardPercentage
-                    }
-                  >
-                    {formatPercentage(
-                      budget.percentage
-                    )}
-                  </Text>
-                </View>
-
-                <View
-                  style={
-                    styles.progressBackground
-                  }
-                >
-                  <View
-                    style={[
-                      styles.progress,
-                      {
-                        width:
-                          `${budget.progressPercentage}%`,
-                      },
-                    ]}
                   />
-                </View>
 
-                <View style={styles.cardSeparator} />
+                  <View style={styles.list}>
+                    {budgets?.length ? (
+                      budgets.map((budget) => (
+                        <View key={budget.id} style={styles.card}>
+                          <View style={styles.cardHeader}>
+                            <AppText variant="subtitle">{budget.name}</AppText>
+                            <Text style={styles.cardPercentage}>
+                              {formatPercentage(budget.percentage)}
+                            </Text>
+                          </View>
 
-                <View style={styles.statsRow}>
-                  <View style={styles.statsLeft}>
-                    <View style={styles.statItem}>
-                      <Text style={styles.statsText}>Gastado</Text>
-                      <Text style={styles.statsText}>
-                        {formatCurrency(budget.spent)}
-                      </Text>
-                    </View>
+                          <View style={styles.progressBackground}>
+                            <View
+                              style={[
+                                styles.progress,
+                                { width: `${budget.progressPercentage}%` },
+                              ]}
+                            />
+                          </View>
 
-                    <View style={styles.statItem}>
-                      <Text style={styles.statsText}>
-                        Restante
-                      </Text>
-                      <Text style={styles.statsText}>
-                        {formatCurrency(Math.abs(budget.remaining))}
-                      </Text>
-                    </View>
+                          <View style={styles.cardSeparator} />
+
+                          <View style={styles.statsRow}>
+                            <View style={styles.statsLeft}>
+                              <View style={styles.statItem}>
+                                <Text style={styles.statsText}>Gastado</Text>
+                                <Text style={styles.statsText}>
+                                  {format(budget.spent)}
+                                </Text>
+                              </View>
+
+                              <View style={styles.statItem}>
+                                <Text style={styles.statsText}>Restante</Text>
+                                <Text style={styles.statsText}>
+                                  {format(Math.abs(budget.remaining))}
+                                </Text>
+                              </View>
+                            </View>
+
+                            <View style={styles.statItem}>
+                              <Text style={styles.statsText}>De</Text>
+                              <Text style={styles.statsText}>
+                                {format(budget.amount)}
+                              </Text>
+                            </View>
+                          </View>
+
+                          <View style={styles.cardSeparator} />
+
+                          <View style={styles.actions}>
+                            <GlassButton
+                              accessibilityLabel="Editar"
+                              label="Editar"
+                              onPress={() => openEditBudget(budget)}
+                            />
+
+                            <Button
+                              label="Eliminar"
+                              onPress={() => handleDeleteBudget(budget.id)}
+                              tone="destructive"
+                            />
+                          </View>
+                        </View>
+                      ))
+                    ) : (
+                      <EmptyState
+                        title="Este mes no armaste presupuestos"
+                        body="Definí un tope por categoría para seguir el gasto."
+                        actionLabel="Crear presupuesto"
+                        onAction={openCreateBudget}
+                      />
+                    )}
                   </View>
-                  
-                  <View style={styles.statItem}>
-                    <Text style={styles.statsText}>De</Text>
-                    <Text style={styles.statsText}>
-                      {formatCurrency(budget.amount)}
-                    </Text>
-                  </View>
-                </View>
-
-                <View style={styles.cardSeparator} />
-
-                <View
-                  style={styles.actions}
-                >
-                    <Pressable
-                      style={styles.actionsButtons}
-                      onPress={() =>
-                        openEditBudget(budget)
-                      }
-                    >
-                      <Text
-                        style={
-                          styles.editText
-                        }
-                      >
-                        Editar
-                      </Text>
-                    </Pressable>
-
-                    <Pressable
-                      style={styles.actionsButtons}
-                      onPress={() =>
-                        handleDeleteBudget(
-                          budget.id
-                        )
-                      }
-                    >
-                      <Text
-                        style={
-                          styles.deleteText
-                        }
-                      >
-                        Eliminar
-                      </Text>
-                    </Pressable>
-                </View>
-              </View>
-            ))
-          ) : (
-            <Text style={styles.empty}>
-              Todavía no tienes
-              presupuestos este mes.
-            </Text>
-          )}
-        </View>
-            </View>
+            </ListSection>
           </View>
         </ScrollView>
       </ScreenContainer>
@@ -302,7 +291,7 @@ function BudgetsScreenContent() {
         style={styles.topSectionOverlay}
         renderContent={(collapseProgress) => (
           <>
-            <TopSectionHeader collapseProgress={collapseProgress} profile={profile} />
+            <TopSectionHeader profile={profile} />
             <HomeGreeting displayName={profile?.name?.trim()} collapseProgress={collapseProgress} />
             <HomeBalance
               balance={dashboard?.balance ?? 0}
@@ -321,18 +310,6 @@ function BudgetsScreenContent() {
   )
 }
 
-function formatCurrency(
-  amount: number
-) {
-  return new Intl.NumberFormat(
-    "es-AR",
-    {
-      style: "currency",
-      currency: "ARS",
-    }
-  ).format(amount)
-}
-
 function formatPercentage(
   percentage: number
 ) {
@@ -349,6 +326,7 @@ const styles =
     screenWrapper: {
       flex: 1,
       position: "relative",
+      backgroundColor: colors.background,
     },
 
     topSectionOverlay: {
@@ -365,7 +343,6 @@ const styles =
 
     container: {
       flex: 1,
-      marginTop: 30
     },
 
     content: {
@@ -373,65 +350,33 @@ const styles =
     },
 
     budgetSection: {
-      backgroundColor: "#E6E6E6",
-      borderTopLeftRadius: 60,
-      borderTopRightRadius: 60,
+      backgroundColor: colors.background,
       flexGrow: 1,
-      paddingTop: 50,
+      paddingTop: layout.belowTopSection,
     },
 
     budgetContent: {
-      paddingHorizontal: 20,
-      gap: 18,
+      gap: layout.titleContentGap,
     },
 
     center: {
       flex: 1,
+      backgroundColor: colors.background,
       justifyContent: "center",
       alignItems: "center",
-    },
-
-    title: {
-      fontSize: 40,
-      lineHeight: 40,
-      fontWeight: "700",
-    },
-
-    createBudgetButton: {
-      width: "100%",
-      backgroundColor: "#000000",
-      borderRadius: 999,
-      paddingHorizontal: 20,
-      paddingVertical: 15,
-      alignItems: "center",
-      justifyContent: "center",
-    },
-
-    createBudgetButtonText: {
-      color: "#FFFFFF",
-      fontFamily: "FamiljenGrotesk-Bold",
-      fontSize: 16,
-      lineHeight: 16,
     },
 
     list: {
       gap: 14,
-      marginTop: 6,
     },
 
     card: {
-      backgroundColor: "#FFFFFF",
-      borderRadius: 20,
-      elevation: 6,
+      backgroundColor: colors.card,
+      borderColor: colors.border,
+      borderRadius: radii.md,
+      borderWidth: 1,
       gap: 12,
-      padding: 20,
-      shadowColor: "#000",
-      shadowOffset: {
-        width: 0,
-        height: 4,
-      },
-      shadowOpacity: 0.25,
-      shadowRadius: 12,
+      padding: 14,
     },
 
     cardHeader: {
@@ -439,37 +384,29 @@ const styles =
       justifyContent: "space-between",
     },
 
-    cardTitle: {
-      color: "#1C1C1C",
-      fontFamily: "FamiljenGrotesk-Bold",
-      fontSize: 24,
-      lineHeight: 24,
-    },
-
     cardPercentage: {
-      color: "#1C1C1C",
-      fontFamily: "FamiljenGrotesk-Bold",
-      fontSize: 24,
+      color: colors.foreground,
+      fontFamily: fonts.monoSemibold,
+      fontSize: 16,
       lineHeight: 24,
     },
 
     progressBackground: {
-      height: 8,
-      backgroundColor: "#B6B6B6",
-      borderRadius: 999,
+      height: 6,
+      backgroundColor: colors.control,
+      borderRadius: radii.xs,
       overflow: "hidden",
     },
 
     progress: {
       height: "100%",
-      backgroundColor: "#000000",
+      backgroundColor: colors.brand,
     },
 
     cardSeparator: {
       width: "100%",
       height: 1,
-      backgroundColor: "#000000",
-      opacity: 0.5,
+      backgroundColor: colors.border,
       marginVertical: 15,
     },
 
@@ -489,11 +426,10 @@ const styles =
     },
 
     statsText: {
-      color: "#1C1C1C",
-      fontFamily: "Satoshi-Bold",
-      fontSize: 14,
-      lineHeight: 14,
-      opacity: 0.7,
+      color: colors.mutedForeground,
+      fontFamily: fonts.mono,
+      fontSize: 13,
+      lineHeight: 16,
     },
 
     actions: {
@@ -503,31 +439,5 @@ const styles =
       flexWrap: "wrap",
     },
 
-    actionsButtons: {
-      backgroundColor: "#000000",
-      borderRadius: 999,
-      paddingHorizontal: 20,
-      paddingVertical: 10,
-    },
-
-    editText: {
-      color: "#FFFFFF",
-      fontFamily: "FamiljenGrotesk-Bold",
-      fontSize: 12,
-      lineHeight: 12,
-    },
-
-    deleteText: {
-      color: "#FF2F2F",
-      fontFamily: "FamiljenGrotesk-Bold",
-      fontSize: 12,
-      lineHeight: 12,
-    },
-
-    empty: {
-      textAlign: "center",
-      color: "#777",
-      paddingVertical: 30,
-    },
 
   })

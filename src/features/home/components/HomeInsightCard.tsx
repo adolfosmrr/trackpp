@@ -1,5 +1,7 @@
 import { Fragment, useEffect, useState } from "react"
-import { StyleSheet, Text, View } from "react-native"
+import { StyleSheet, View } from "react-native"
+
+import { AppText } from "../../../components/text/AppText"
 
 import type {
   HomeAiInsight,
@@ -9,6 +11,7 @@ import {
   InsightActionPopover,
   type InsightActionDetail,
 } from "./InsightActionPopover"
+import { colors, radii } from "../../../theme"
 import { HomeInsightGroup } from "./HomeInsightGroup"
 
 export type HomeInsightCardProps = {
@@ -32,13 +35,16 @@ export function HomeInsightCard({
 
   return (
     <View style={[styles.card, variant === "plain" && styles.plainCard]}>
-      <Text
-        style={[styles.messageText, variant === "plain" && styles.plainMessage]}
+      <AppText
+        tone={variant === "plain" ? "muted" : "default"}
+        variant={variant === "plain" ? "title" : "body"}
       >
         {insight.intro.trim()}
         {insight.groups.map((group, index) => (
           <Fragment key={group.id}>
-            <Text>{getGroupSeparator(insight.groups.length, index)}</Text>
+            <AppText variant={variant === "plain" ? "title" : "body"}>
+              {getGroupSeparator(insight.groups.length, index)}
+            </AppText>
             <HomeInsightGroup
               actions={insight.actions}
               group={group}
@@ -47,7 +53,7 @@ export function HomeInsightCard({
             />
           </Fragment>
         ))}
-      </Text>
+      </AppText>
 
       {selectedAction ? (
         <InsightActionPopover
@@ -69,27 +75,16 @@ function getGroupSeparator(groupCount: number, groupIndex: number) {
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: "#F5F5F5",
-    borderRadius: 20,
-    padding: 16,
+    backgroundColor: colors.card,
+    borderColor: colors.border,
+    borderRadius: radii.md,
+    borderWidth: 1,
+    padding: 12,
   },
   plainCard: {
     backgroundColor: "transparent",
     borderRadius: 0,
     padding: 0,
     position: "relative",
-  },
-  messageText: {
-    color: "#1C1C1C",
-    fontFamily: "FamiljenGrotesk-Medium",
-    fontSize: 14,
-    lineHeight: 18,
-  },
-  plainMessage: {
-    color: "#FFFFFF",
-    fontFamily: "FamiljenGrotesk-Bold",
-    fontSize: 22,
-    lineHeight: 28,
-    opacity: 0.5,
   },
 })

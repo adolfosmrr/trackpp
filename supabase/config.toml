@@ -1,0 +1,5 @@
+# Declares the bank-charge ingest function. This file is not a full local
+# stack config: do not recreate the remote database from it.
+
+[functions.ingest-bank-charge]
+verify_jwt = false

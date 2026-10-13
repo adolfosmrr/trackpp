@@ -1,10 +1,12 @@
 import Svg, { Path } from "react-native-svg"
 
+import { colors } from "../../theme"
+
 type FieldChevronIconProps = {
   color?: string
 }
 
-export function FieldChevronIcon({ color = "#FFFFFF" }: FieldChevronIconProps) {
+export function FieldChevronIcon({ color = colors.mutedForeground }: FieldChevronIconProps) {
   return (
     <Svg width={7} height={12} viewBox="0 0 7 12" fill="none">
       <Path

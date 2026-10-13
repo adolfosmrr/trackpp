@@ -1,5 +1,7 @@
 import { useRef, useState } from "react"
-import { Alert, Pressable, StyleSheet, Text, View } from "react-native"
+import { Alert, Pressable, StyleSheet, View } from "react-native"
+import { colors, fonts, layout, meshColors } from "../../../theme"
+import { AppText } from "../../../components/text/AppText"
 
 import { GridBackground } from "../../../components/layout/GridBackground"
 import AnimatedText from "../../../components/text/AnimatedText"
@@ -46,11 +48,11 @@ export function AuthScreen() {
     <View style={styles.container}>
       {SHOW_MESH_GRADIENT ? (
         <MeshGradient
-          colors={["#FFF", "#4F3B97", "#14044B", "#FFF"]}
+          colors={meshColors.auth}
           speed={0.5}
           blur={0.5}
           noise={0.3}
-          intensity={1}
+          intensity={0.45}
           animated
           style={styles.meshBackground}
         />
@@ -105,7 +107,7 @@ export function AuthScreen() {
         <View style={styles.googleSection}>
           <View style={styles.separator}>
             <View style={styles.line} />
-            <Text style={styles.separatorText}>O puedes</Text>
+            <AppText tone="muted" variant="caption">O puedes</AppText>
             <View style={styles.line} />
           </View>
           <GoogleAuthButton
@@ -120,11 +122,11 @@ export function AuthScreen() {
           <Pressable
             onPress={() => setMode(mode === "login" ? "register" : "login")}
           >
-            <Text style={styles.link}>
+            <AppText style={styles.link} tone="brand" variant="body">
               {mode === "login"
                 ? "¿No tienes cuenta? Regístrate"
                 : "¿Ya tienes cuenta? Inicia sesión"}
-            </Text>
+            </AppText>
           </Pressable>
         </View>
       </View>
@@ -135,12 +137,12 @@ export function AuthScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.background,
     justifyContent: 'center',
   },
   content: {
     flex: 1,
-    padding: 24,
+    padding: layout.sheetPadding,
     gap: 16,
     zIndex: 1,
     justifyContent: 'center',
@@ -154,10 +156,11 @@ const styles = StyleSheet.create({
     left: 0,
   },
   authMessage: {
-    fontFamily: "FamiljenGrotesk-Bold",
-    fontSize: 45,
+    fontFamily: fonts.sansSemibold,
+    letterSpacing: -1,
+    fontSize: 40,
     lineHeight: 42,
-    color: "#FFF",
+    color: colors.foreground,
     opacity: 0.3
   },
   authMessageClip: {
@@ -183,17 +186,10 @@ const styles = StyleSheet.create({
   line: {
     flex: 1,
     height: 0.5,
-    backgroundColor: "#1c1c1c",
-  },
-  separatorText: {
-    color: "#1c1c1c",
-    fontFamily: "FamiljenGrotesk-Bold",
-    fontSize: 16,
-    lineHeight: 16,
+    backgroundColor: colors.border,
   },
   link: {
     textAlign: "center",
-    marginTop: 20,
-    fontFamily: "FamiljenGrotesk-Medium",
+    marginTop: layout.titleContentGap,
   },
 })

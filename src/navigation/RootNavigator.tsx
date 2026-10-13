@@ -1,9 +1,12 @@
 import { ActivityIndicator, View, StyleSheet } from "react-native"
 import { NavigationContainer } from "@react-navigation/native"
 
+import { colors, navigationTheme } from "../theme"
+
 import { AuthNavigator } from "./AuthNavigator"
 import { AppNavigator } from "./AppNavigator"
 import { useAuth } from "../features/auth/context/AuthContext"
+import { syncDevMenuToolsButton } from "./devMenuToolsButton"
 import { navigationRef } from "./navigationRef"
 import { flushPendingNotificationNavigation } from "../features/notifications/services/notificationNavigation"
 
@@ -13,7 +16,7 @@ export function RootNavigator() {
   if (loading) {
     return (
       <View style={styles.loading}>
-        <ActivityIndicator size="large" />
+        <ActivityIndicator color={colors.brand} size="large" />
       </View>
     )
   }
@@ -21,7 +24,12 @@ export function RootNavigator() {
   return (
     <NavigationContainer
       ref={navigationRef}
-      onReady={flushPendingNotificationNavigation}
+      theme={navigationTheme}
+      onReady={() => {
+        flushPendingNotificationNavigation()
+        syncDevMenuToolsButton(navigationRef.getRootState())
+      }}
+      onStateChange={syncDevMenuToolsButton}
     >
       {session ? <AppNavigator /> : <AuthNavigator />}
     </NavigationContainer>
@@ -33,5 +41,6 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
+    backgroundColor: colors.background,
   },
 })

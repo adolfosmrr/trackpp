@@ -1,6 +1,8 @@
 import { Platform } from "react-native"
 import * as Notifications from "expo-notifications"
 
+import { ensureBankChargeNotificationChannel } from "./notificationChannels"
+
 export async function getNotificationPermissionStatus() {
   const settings = await Notifications.getPermissionsAsync()
   return {
@@ -19,6 +21,7 @@ export async function requestNotificationPermission() {
         sound: "default",
       }
     )
+    await ensureBankChargeNotificationChannel()
   }
 
   const settings = await Notifications.requestPermissionsAsync({

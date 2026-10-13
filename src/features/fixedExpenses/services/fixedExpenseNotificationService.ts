@@ -1,6 +1,7 @@
 import * as Notifications from "expo-notifications"
 import { Platform } from "react-native"
 
+import { nextReminderPeriod } from "../utils/frequency"
 import { resolveMonthlyDay } from "../utils/monthlyDate"
 import type { FixedExpense, FixedExpensePeriod } from "../types"
 import {
@@ -112,7 +113,11 @@ export async function syncFixedExpenseNotifications({
 
   const candidates = [
     ...periods.map((period) => buildPeriodCandidates(householdId, period)),
-    ...buildNextMonthCandidates(householdId, fixedExpenses),
+    ...buildUpcomingOccurrenceCandidates(
+      householdId,
+      fixedExpenses,
+      new Set(periods.map((period) => period.fixedExpenseId)),
+    ),
   ].flat()
   const desired = new Map(candidates.map((candidate) => [candidate.logicalKey, candidate]))
   const stored = await loadScheduledFixedExpenseNotifications(userId)
@@ -239,33 +244,39 @@ function buildPeriodCandidates(
   )
 }
 
-function buildNextMonthCandidates(
+function buildUpcomingOccurrenceCandidates(
   householdId: string,
-  fixedExpenses: FixedExpense[]
+  fixedExpenses: FixedExpense[],
+  coveredExpenseIds: Set<string>,
 ) {
   const today = new Date()
   const year = today.getFullYear()
   const month = today.getMonth() + 1
-  const nextMonthDate = new Date(year, month, 1)
-  const nextYear = nextMonthDate.getFullYear()
-  const nextMonth = nextMonthDate.getMonth() + 1
-  const targetPeriod = `${nextYear}-${String(nextMonth).padStart(2, "0")}-01`
 
   return fixedExpenses
     .filter((expense) => expense.is_active)
     .flatMap((expense) => {
+      const next = nextReminderPeriod(
+        expense.created_at,
+        expense.frequency,
+        year,
+        month,
+        !coveredExpenseIds.has(expense.id),
+      )
+      if (!next) return []
+
       const chargeDate = toDateString(
-        resolveMonthlyDay(nextYear, nextMonth, expense.charge_day)
+        resolveMonthlyDay(next.year, next.month, expense.charge_day)
       )
       const dueDate = toDateString(
-        resolveMonthlyDay(nextYear, nextMonth, expense.due_day)
+        resolveMonthlyDay(next.year, next.month, expense.due_day)
       )
 
       return buildCandidates(
         householdId,
         undefined,
         expense.id,
-        targetPeriod,
+        next.period,
         chargeDate,
         dueDate,
         expense.name

@@ -7,7 +7,9 @@ import {
   type ViewStyle,
 } from "react-native"
 
+import { AppText } from "../../../components/text/AppText"
 import type { HomeAiInsightAction } from "../../dashboard/types/homeAiInsight"
+import { colors, fonts, radii } from "../../../theme"
 
 export type InsightActionDetail =
   | {
@@ -47,7 +49,7 @@ export function InsightActionPopover({
   return (
     <View style={[styles.container, style]}>
       <View style={styles.header}>
-        <Text style={styles.title}>{action.label}</Text>
+        <AppText style={styles.title} variant="subtitle">{action.label}</AppText>
         <Pressable
           accessibilityLabel="Cerrar detalle del insight"
           accessibilityRole="button"
@@ -60,9 +62,9 @@ export function InsightActionPopover({
       </View>
 
       {detail ? <DetailContent detail={detail} /> : (
-        <Text style={styles.fallback}>
+        <AppText style={styles.fallback} variant="body">
           Ver detalle relacionado con esta acción.
-        </Text>
+        </AppText>
       )}
     </View>
   )
@@ -72,10 +74,10 @@ function DetailContent({ detail }: { detail: InsightActionDetail }) {
   if (detail.type === "fixed_expense_period") {
     return (
       <View>
-        <Text style={styles.detail}>{detail.name}</Text>
-        <Text style={styles.meta}>Estado: {detail.status}</Text>
-        {detail.amount ? <Text style={styles.meta}>Monto: {detail.amount}</Text> : null}
-        {detail.dueDate ? <Text style={styles.meta}>Vence: {detail.dueDate}</Text> : null}
+        <AppText style={styles.detail} variant="subtitle">{detail.name}</AppText>
+        <AppText variant="caption">Estado: {detail.status}</AppText>
+        {detail.amount ? <AppText variant="caption">Monto: {detail.amount}</AppText> : null}
+        {detail.dueDate ? <AppText variant="caption">Vence: {detail.dueDate}</AppText> : null}
       </View>
     )
   }
@@ -83,32 +85,33 @@ function DetailContent({ detail }: { detail: InsightActionDetail }) {
   if (detail.type === "budget") {
     return (
       <View>
-        <Text style={styles.detail}>{detail.categoryName}</Text>
-        <Text style={styles.meta}>Uso: {detail.percentage}%</Text>
-        {detail.budgetAmount ? <Text style={styles.meta}>Presupuesto: {detail.budgetAmount}</Text> : null}
-        {detail.spent ? <Text style={styles.meta}>Gasto actual: {detail.spent}</Text> : null}
+        <AppText style={styles.detail} variant="subtitle">{detail.categoryName}</AppText>
+        <AppText variant="caption">Uso: {detail.percentage}%</AppText>
+        {detail.budgetAmount ? <AppText variant="caption">Presupuesto: {detail.budgetAmount}</AppText> : null}
+        {detail.spent ? <AppText variant="caption">Gasto actual: {detail.spent}</AppText> : null}
       </View>
     )
   }
 
   return (
     <View>
-      <Text style={styles.detail}>{detail.categoryName}</Text>
-      {detail.amount ? <Text style={styles.meta}>Gasto: {detail.amount}</Text> : null}
-      {detail.period ? <Text style={styles.meta}>Periodo: {detail.period}</Text> : null}
+      <AppText style={styles.detail} variant="subtitle">{detail.categoryName}</AppText>
+      {detail.amount ? <AppText variant="caption">Gasto: {detail.amount}</AppText> : null}
+      {detail.period ? <AppText variant="caption">Periodo: {detail.period}</AppText> : null}
     </View>
   )
 }
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 16,
+    backgroundColor: colors.popover,
+    borderColor: colors.border,
+    borderRadius: radii.md,
+    borderWidth: 1,
     padding: 12,
     marginTop: 12,
     width: "100%",
     zIndex: 2,
-    elevation: 2,
   },
   header: {
     alignItems: "center",
@@ -116,38 +119,20 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
   },
   title: {
-    color: "#1C1C1C",
     flex: 1,
-    fontFamily: "FamiljenGrotesk-Medium",
-    fontSize: 14,
-    lineHeight: 18,
   },
   closeButton: {
     marginLeft: 12,
   },
   closeText: {
-    color: "#1C1C1C",
-    fontFamily: "FamiljenGrotesk-Medium",
+    color: colors.mutedForeground,
+    fontFamily: fonts.sansMedium,
     fontSize: 16,
   },
   detail: {
-    color: "#1C1C1C",
-    fontFamily: "FamiljenGrotesk-Medium",
-    fontSize: 14,
-    lineHeight: 18,
     marginTop: 8,
   },
-  meta: {
-    color: "#1C1C1C",
-    fontFamily: "FamiljenGrotesk-Medium",
-    fontSize: 14,
-    lineHeight: 18,
-  },
   fallback: {
-    color: "#1C1C1C",
-    fontFamily: "FamiljenGrotesk-Medium",
-    fontSize: 14,
-    lineHeight: 18,
     marginTop: 8,
   },
 })

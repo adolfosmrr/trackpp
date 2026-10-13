@@ -2,27 +2,38 @@ import { useEffect, useState } from "react"
 import {
   ActivityIndicator,
   Alert,
-  Pressable,
   StyleSheet,
   Text,
-  TextInput,
   View,
 } from "react-native"
+import type { NativeStackScreenProps } from "@react-navigation/native-stack"
+import { useSafeAreaInsets } from "react-native-safe-area-context"
+import { colors, fonts, layout } from "../../../theme"
 
-import { useHouseholds } from "../../households/hooks/useHouseholds"
-import { useHouseholdStore } from "../../../store/householdStore"
+import { Button } from "../../../components/buttons/Button"
+import { TextField } from "../../../components/inputs/TextField"
+import { BackLink } from "../../../components/navigation/BackLink"
+import { AppText } from "../../../components/text/AppText"
+import { useFormatMoney } from "../../households/hooks/useFormatMoney"
+
 import { useFixedExpensePeriods } from "../hooks/useFixedExpensePeriods"
 import { useUpdateFixedExpensePayment } from "../hooks/useUpdateFixedExpensePayment"
+import type { AppStackParamList } from "../../../navigation/types"
 
-export function CorrectFixedExpensePaymentScreen({ route, navigation }: any) {
+type CorrectFixedExpensePaymentScreenProps = NativeStackScreenProps<
+  AppStackParamList,
+  "CorrectFixedExpensePayment"
+>
+
+export function CorrectFixedExpensePaymentScreen({
+  route,
+  navigation,
+}: CorrectFixedExpensePaymentScreenProps) {
+  const insets = useSafeAreaInsets()
+  const format = useFormatMoney()
   const periodsQuery = useFixedExpensePeriods()
   const { data: periods, isLoading } = periodsQuery
   const mutation = useUpdateFixedExpensePayment()
-  const { data: memberships } = useHouseholds()
-  const selectedHouseholdId = useHouseholdStore((state) => state.selectedHouseholdId)
-  const currency = memberships?.find(
-    (membership) => membership.household.id === selectedHouseholdId
-  )?.household.currency ?? "ARS"
   const period = periods?.find(
     (item) => item.lastPayment?.id === route.params.paymentId
   )
@@ -35,13 +46,19 @@ export function CorrectFixedExpensePaymentScreen({ route, navigation }: any) {
   }, [period?.lastPayment?.amount])
 
   if (isLoading) {
-    return <ActivityIndicator />
+    return (
+      <View style={[styles.container, { paddingTop: insets.top + layout.titleContentGap }]}>
+        <BackLink onPress={() => navigation.goBack()} />
+        <ActivityIndicator color={colors.brand} />
+      </View>
+    )
   }
 
   if (!period?.lastPayment) {
     return (
-      <View style={styles.center}>
-        <Text>No se encontró el último pago para corregir.</Text>
+      <View style={[styles.container, { paddingTop: insets.top + layout.titleContentGap }]}>
+        <BackLink onPress={() => navigation.goBack()} />
+        <AppText tone="muted" variant="body">No se encontró el último pago para corregir.</AppText>
       </View>
     )
   }
@@ -62,7 +79,7 @@ export function CorrectFixedExpensePaymentScreen({ route, navigation }: any) {
     if (parsedAmount > maximumAmount) {
       Alert.alert(
         "Error",
-        `El monto no puede superar ${formatCurrency(maximumAmount, currency)}.`
+        `El monto no puede superar ${format(maximumAmount)}.`
       )
       return
     }
@@ -85,13 +102,13 @@ export function CorrectFixedExpensePaymentScreen({ route, navigation }: any) {
   }
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Corregir pago</Text>
-      <Text style={styles.name}>{currentPeriod.name}</Text>
-      <Text>Último pago: {formatCurrency(lastPayment.amount, currency)}</Text>
+    <View style={[styles.container, { paddingTop: insets.top + layout.titleContentGap }]}>
+      <BackLink onPress={() => navigation.goBack()} />
+      <AppText variant="title">Corregir pago</AppText>
+      <AppText variant="subtitle">{currentPeriod.name}</AppText>
+      <Text style={styles.meta}>Último pago: {format(lastPayment.amount)}</Text>
 
-      <TextInput
-        style={styles.input}
+      <TextField
         placeholder="Nuevo monto"
         keyboardType="decimal-pad"
         value={amount}
@@ -99,35 +116,23 @@ export function CorrectFixedExpensePaymentScreen({ route, navigation }: any) {
         editable={!mutation.isPending}
       />
 
-      <Pressable
+      <Button
         accessibilityLabel="Guardar corrección"
-        style={[styles.button, mutation.isPending && styles.disabled]}
-        onPress={() => void handleSave()}
         disabled={mutation.isPending}
-      >
-        <Text style={styles.buttonText}>
-          {mutation.isPending ? "Guardando..." : "Guardar corrección"}
-        </Text>
-      </Pressable>
+        label={mutation.isPending ? "Guardando..." : "Guardar corrección"}
+        onPress={() => void handleSave()}
+        tone="brand"
+      />
     </View>
   )
 }
 
-function formatCurrency(amount: number, currency: string) {
-  return new Intl.NumberFormat("es-AR", {
-    style: "currency",
-    currency,
-    maximumFractionDigits: 2,
-  }).format(amount)
-}
-
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 24, gap: 16 },
-  center: { flex: 1, alignItems: "center", justifyContent: "center", padding: 24 },
-  title: { fontSize: 22, fontWeight: "700" },
-  name: { fontSize: 18, fontWeight: "600" },
-  input: { borderWidth: 1, borderColor: "#ccc", borderRadius: 10, padding: 14 },
-  button: { padding: 16, borderRadius: 10, backgroundColor: "#111", alignItems: "center" },
-  disabled: { opacity: 0.6 },
-  buttonText: { color: "#fff", fontWeight: "600" },
+  container: {
+    flex: 1,
+    backgroundColor: colors.background,
+    padding: layout.sheetPadding,
+    gap: layout.titleContentGap,
+  },
+  meta: { color: colors.mutedForeground, fontFamily: fonts.mono, fontSize: 14 },
 })

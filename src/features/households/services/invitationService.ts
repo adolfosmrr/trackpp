@@ -19,11 +19,19 @@ export async function createHouseholdInvitation(
   )
 }
 
+type InvitationsResponse = {
+  invitations: HouseholdInvitation[]
+}
+
+type AcceptInvitationResponse = {
+  householdId?: string
+}
+
 export async function getInvitations(): Promise<
   HouseholdInvitation[]
 > {
   const response =
-    await apiFetch(
+    await apiFetch<InvitationsResponse>(
       "/invitations"
     )
 
@@ -38,7 +46,7 @@ export async function acceptInvitation(
     invitationId
   )
 
-  return apiFetch(
+  return apiFetch<AcceptInvitationResponse>(
     `/invitations/${invitationId}/accept`,
     {
       method: "POST",

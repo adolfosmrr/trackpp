@@ -1,46 +1,24 @@
-import { Pressable, StyleSheet, Text, View } from "react-native"
-import { useSafeAreaInsets } from "react-native-safe-area-context"
-import Svg, { Defs, LinearGradient, Rect, Stop } from "react-native-svg"
+import { StyleSheet, Text, View } from "react-native"
 import type { Transaction } from "../../transactions/types"
+import { EmptyState } from "../../../components/feedback/EmptyState"
+import { ListSection } from "../../../components/layout/ListSection"
+import { SectionHeader } from "../../../components/layout/SectionHeader"
+import { colors, fonts, layout } from "../../../theme"
 import { MovementItem } from "./MovementItem"
 
 type MovementsSectionProps = {
   transactions: Transaction[]
   onViewAll: () => void
+  onCreate: () => void
 }
 
-export function MovementsSection({ transactions, onViewAll }: MovementsSectionProps) {
-  const insets = useSafeAreaInsets()
-  const bottomPadding = Math.max(insets.bottom, 0) + 66
+export function MovementsSection({ transactions, onViewAll, onCreate }: MovementsSectionProps) {
   const transactionsByDate = groupTransactionsByDate(transactions)
 
   return (
-    <View style={[styles.section, { paddingBottom: bottomPadding }]}>
-      <View pointerEvents="none" style={styles.backgroundLayer}>
-        <Svg width="100%" height="100%" style={StyleSheet.absoluteFill}>
-          <Defs>
-            <LinearGradient
-              id="movements-section-gradient"
-              x1="0%"
-              y1="0%"
-              x2="100%"
-              y2="100%"
-            >
-              <Stop offset="0" stopColor="#BFFFC7" />
-              <Stop offset="1" stopColor="#18A5A7" />
-            </LinearGradient>
-          </Defs>
-          <Rect width="100%" height="100%" fill="url(#movements-section-gradient)" />
-        </Svg>
-      </View>
-
-      <View style={styles.content}>
-        <View>
-          <Text style={styles.sectionTitle}>Movimientos{"\n"}Recientes</Text>
-          <Pressable style={styles.viewAllButton} onPress={onViewAll}>
-            <Text style={styles.viewAllText}>Ver todos</Text>
-          </Pressable>
-        </View>
+    <ListSection>
+      <View style={styles.section}>
+        <SectionHeader actionLabel="Ver todos" onAction={onViewAll} title={"Movimientos\nRecientes"} />
 
         <View style={styles.transactionGroups}>
           {transactionsByDate.length ? (
@@ -64,11 +42,16 @@ export function MovementsSection({ transactions, onViewAll }: MovementsSectionPr
               </View>
             ))
           ) : (
-            <Text style={styles.empty}>No hay movimientos recientes.</Text>
+            <EmptyState
+              title="Todavía no cargaste movimientos"
+              body="Anotá un gasto o un ingreso con el botón + Movimiento."
+              actionLabel="Agregar movimiento"
+              onAction={onCreate}
+            />
           )}
         </View>
       </View>
-    </View>
+    </ListSection>
   )
 }
 
@@ -121,48 +104,14 @@ function formatTransactionDate(date: string) {
 const styles = StyleSheet.create({
   section: {
     position: "relative",
-    marginTop: 10,
-    marginHorizontal: -20,
-    paddingTop: 50,
-    borderTopLeftRadius: 60,
-    borderTopRightRadius: 60,
-  },
-  backgroundLayer: {
-    ...StyleSheet.absoluteFill,
-    borderTopLeftRadius: 60,
-    borderTopRightRadius: 60,
-    overflow: "hidden",
-  },
-  content: {
-    paddingHorizontal: 20,
-  },
-  sectionTitle: {
-    marginBottom: 20,
-    fontSize: 40,
-    lineHeight: 40,
-    fontFamily: "FamiljenGrotesk-Bold",
-    color: "#1C1C1C",
-  },
-  viewAllButton: {
-    height: 28,
-    paddingHorizontal: 20,
-    backgroundColor: "#000000",
-    borderRadius: 999,
-    alignItems: "center",
-    justifyContent: "center",
-    alignSelf: "flex-start",
-  },
-  viewAllText: {
-    color: "#FFFFFF",
-    fontFamily: "FamiljenGrotesk-Bold",
-    fontSize: 12,
-    lineHeight: 12,
+    borderTopColor: colors.border,
+    borderTopWidth: 1,
   },
   transactions: {
     gap: 12,
   },
   transactionGroups: {
-    marginTop: 40,
+    marginTop: layout.titleContentGap,
   },
   transactionGroupSpacing: {
     marginBottom: 40,
@@ -171,12 +120,11 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     fontSize: 16,
     lineHeight: 16,
-    fontFamily: "Satoshi-Bold",
-    color: "#1C1C1C",
-    opacity: 0.5,
+    fontFamily: fonts.monoMedium,
+    color: colors.mutedForeground,
   },
   empty: {
-    color: "#777",
+    color: colors.mutedForeground,
     textAlign: "center",
     paddingVertical: 24,
   },

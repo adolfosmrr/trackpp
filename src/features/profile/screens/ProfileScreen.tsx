@@ -1,34 +1,35 @@
 import {
   View,
-  ScrollView,
-  Text,
-  Pressable,
   StyleSheet,
   ActivityIndicator,
 } from "react-native"
+import { useNavigation } from "@react-navigation/native"
+import type { NativeStackNavigationProp } from "@react-navigation/native-stack"
+
+import { Button } from "../../../components/buttons/Button"
+import { GlassButton } from "../../../components/buttons/GlassButton"
+import { ProfileAvatar } from "../../../components/profile/ProfileAvatar"
+import { SheetScaffold } from "../../../components/layout/SheetScaffold"
+import { AppText } from "../../../components/text/AppText"
+import { colors, radii } from "../../../theme"
+import type { AppStackParamList } from "../../../navigation/types"
 
 import { supabase } from "../../../services/supabase"
 
 import { useAuth } from "../../auth/context/AuthContext"
+import { PersonalInfoSection } from "../components/PersonalInfoSection"
 import { useProfile } from "../hooks/useProfile"
 import { useHouseholds } from "../../households/hooks/useHouseholds"
-import { useMe } from "../../auth/hooks/useMe"
 
 import { useHouseholdStore } from "../../../store/householdStore"
 
-export function ProfileScreen({ navigation, }: any) {
+export function ProfileScreen() {
+  const navigation = useNavigation<NativeStackNavigationProp<AppStackParamList>>()
   const { user } = useAuth()
 
   const selectedHouseholdId = useHouseholdStore(
     (state) => state.selectedHouseholdId
   )
-
-  const meQuery = useMe()
-  const {
-    data: backendUser,
-    isLoading: backendUserLoading,
-    error: backendUserError,
-  } = meQuery
 
   const profileQuery = useProfile()
   const {
@@ -49,216 +50,144 @@ export function ProfileScreen({ navigation, }: any) {
       membership.household.id === selectedHouseholdId
   )?.household
 
+  function openScreen(name: "InviteMember" | "CreateHousehold" | "Invitations") {
+    navigation.navigate(name)
+  }
+
   async function handleLogout() {
     await supabase.auth.signOut()
   }
 
-  if (
-    profileLoading ||
-    householdsLoading ||
-    backendUserLoading
-  ) {
+  function close() {
+    navigation.goBack()
+  }
+
+  if (profileLoading || householdsLoading) {
     return (
-      <View style={styles.center}>
-        <ActivityIndicator size="large" />
-      </View>
+      <SheetScaffold onClose={close} title="Perfil">
+        <View style={styles.center}>
+          <ActivityIndicator color={colors.brand} size="large" />
+        </View>
+      </SheetScaffold>
     )
   }
 
-  if (backendUserError) {
-    console.error(
-      "Backend /me error:",
-      backendUserError
-    )
-  }
-
-  if (
-    profileError ||
-    householdsError ||
-    backendUserError
-  ) {
+  if (profileError || householdsError) {
     return (
-      <View style={styles.center}>
-        <Text>
-          No se pudo cargar el perfil.
-        </Text>
+      <SheetScaffold onClose={close} title="Perfil">
+        <View style={styles.center}>
+          <AppText tone="muted" variant="body">
+            No se pudo cargar el perfil.
+          </AppText>
 
-        <Pressable
-          style={styles.logoutButton}
-          onPress={handleLogout}
-        >
-          <Text style={styles.logoutText}>
-            Cerrar sesión
-          </Text>
-        </Pressable>
-      </View>
+          <Button label="Cerrar sesión" onPress={handleLogout} tone="destructive" />
+        </View>
+      </SheetScaffold>
     )
   }
 
   return (
-    <ScrollView
-      style={styles.container}
-      contentContainerStyle={styles.content}
-      showsVerticalScrollIndicator={false}
-    >
+    <SheetScaffold onClose={close} title="Perfil">
       <View style={styles.header}>
-        <View style={styles.avatar}>
-          <Text style={styles.avatarText}>
-            {getInitials(profile?.name)}
-          </Text>
-        </View>
+        <ProfileAvatar
+          name={profile?.name}
+          style={styles.avatar}
+          uri={profile?.avatar_url}
+          variant="title"
+        />
 
-        <Text style={styles.name}>
+        <AppText variant="title">
           {profile?.name ?? "Usuario"}
-        </Text>
+        </AppText>
 
-        <Text style={styles.email}>
+        <AppText tone="muted" variant="caption">
           {user?.email ?? ""}
-        </Text>
+        </AppText>
       </View>
 
+      {profile ? (
+        <PersonalInfoSection email={user?.email ?? ""} profile={profile} />
+      ) : null}
+
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>
+        <AppText variant="sectionTitle">
           Preferencias
-        </Text>
+        </AppText>
 
         <View style={styles.row}>
-          <Text style={styles.label}>
+          <AppText tone="muted" variant="body">
             Moneda
-          </Text>
+          </AppText>
 
-          <Text style={styles.value}>
+          <AppText style={styles.value} variant="subtitle">
             {profile?.currency ?? "-"}
-          </Text>
+          </AppText>
         </View>
 
         <View style={styles.separator} />
 
         <View style={styles.row}>
-          <Text style={styles.label}>
+          <AppText tone="muted" variant="body">
             Zona horaria
-          </Text>
+          </AppText>
 
-          <Text style={styles.value}>
+          <AppText style={styles.value} variant="subtitle">
             {profile?.timezone ?? "-"}
-          </Text>
+          </AppText>
         </View>
       </View>
 
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>
+        <AppText variant="sectionTitle">
           Espacio financiero
-        </Text>
+        </AppText>
 
-        <Pressable
-          style={styles.inviteButton}
-          onPress={() =>
-            navigation
-              .getParent()
-              ?.navigate("InviteMember")
-          }
-        >
-          <Text style={styles.inviteButtonText}>
-            Invitar pareja
-          </Text>
-        </Pressable>
+        <GlassButton
+          accessibilityLabel="Invitar pareja"
+          label="Invitar pareja"
+          onPress={() => openScreen("InviteMember")}
+        />
+
+        <GlassButton
+          accessibilityLabel="Crear espacio"
+          label="Crear espacio"
+          onPress={() => openScreen("CreateHousehold")}
+        />
 
         <View style={styles.row}>
-          <Text style={styles.label}>
+          <AppText tone="muted" variant="body">
             Espacio activo
-          </Text>
+          </AppText>
 
-          <Text style={styles.value}>
+          <AppText style={styles.value} variant="subtitle">
             {currentHousehold?.name ?? "Sin espacio"}
-          </Text>
+          </AppText>
         </View>
 
         <View style={styles.separator} />
 
         <View style={styles.row}>
-          <Text style={styles.label}>
+          <AppText tone="muted" variant="body">
             Tipo
-          </Text>
+          </AppText>
 
-          <Text style={styles.value}>
+          <AppText style={styles.value} variant="subtitle">
             {formatHouseholdType(
               currentHousehold?.type
             )}
-          </Text>
+          </AppText>
         </View>
       </View>
 
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>
-          Backend
-        </Text>
+      <GlassButton
+        accessibilityLabel="Ver invitaciones"
+        label="Ver invitaciones"
+        onPress={() => openScreen("Invitations")}
+      />
 
-        <View style={styles.row}>
-          <Text style={styles.label}>
-            ID
-          </Text>
-
-          <Text style={styles.value}>
-            {backendUser?.id ?? "-"}
-          </Text>
-        </View>
-
-        <View style={styles.separator} />
-
-        <View style={styles.row}>
-          <Text style={styles.label}>
-            Email
-          </Text>
-
-          <Text style={styles.value}>
-            {backendUser?.email ?? "-"}
-          </Text>
-        </View>
-      </View>
-
-      <Pressable
-        style={styles.actionButton}
-        onPress={() =>
-          navigation
-            .getParent()
-            ?.navigate(
-              "Invitations"
-            )
-        }
-      >
-        <Text
-          style={styles.actionButtonText}
-        >
-          Ver invitaciones
-        </Text>
-      </Pressable>
-
-      <Pressable
-        style={styles.logoutButton}
-        onPress={handleLogout}
-      >
-        <Text style={styles.logoutText}>
-          Cerrar sesión
-        </Text>
-      </Pressable>
-    </ScrollView>
+      <Button label="Cerrar sesión" onPress={handleLogout} tone="destructive" />
+    </SheetScaffold>
   )
-}
-
-function getInitials(
-  name: string | null | undefined
-) {
-  if (!name) {
-    return "?"
-  }
-
-  return name
-    .trim()
-    .split(/\s+/)
-    .slice(0, 2)
-    .map((part) => part[0])
-    .join("")
-    .toUpperCase()
 }
 
 function formatHouseholdType(
@@ -276,66 +205,33 @@ function formatHouseholdType(
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-
-  content: {
-    padding: 24,
-    gap: 24,
-    paddingBottom: 120,
-  },
   center: {
-    flex: 1,
     alignItems: "center",
-    justifyContent: "center",
     gap: 20,
-    padding: 24,
+    justifyContent: "center",
+    minHeight: 160,
   },
 
   header: {
     alignItems: "center",
     gap: 8,
-    paddingVertical: 20,
+    paddingVertical: 8,
   },
 
   avatar: {
-    width: 72,
-    height: 72,
     borderRadius: 36,
-    backgroundColor: "#111",
-    alignItems: "center",
-    justifyContent: "center",
+    height: 72,
     marginBottom: 4,
-  },
-
-  avatarText: {
-    color: "#fff",
-    fontSize: 24,
-    fontWeight: "700",
-  },
-
-  name: {
-    fontSize: 24,
-    fontWeight: "700",
-  },
-
-  email: {
-    fontSize: 14,
-    color: "#777",
+    width: 72,
   },
 
   section: {
     borderWidth: 1,
-    borderColor: "#ddd",
-    borderRadius: 16,
+    backgroundColor: colors.card,
+    borderColor: colors.border,
+    borderRadius: radii.md,
     padding: 18,
     gap: 14,
-  },
-
-  sectionTitle: {
-    fontSize: 16,
-    fontWeight: "700",
   },
 
   row: {
@@ -344,54 +240,13 @@ const styles = StyleSheet.create({
     gap: 16,
   },
 
-  label: {
-    color: "#777",
-  },
-
   value: {
     flex: 1,
     textAlign: "right",
-    fontWeight: "600",
   },
 
   separator: {
     height: 1,
-    backgroundColor: "#eee",
-  },
-
-  logoutButton: {
-    padding: 16,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: "#ddd",
-    alignItems: "center",
-  },
-
-  logoutText: {
-    fontWeight: "600",
-    color: "#b42318",
-  },
-  inviteButton: {
-    marginTop: 8,
-    padding: 14,
-    borderWidth: 1,
-    borderColor: "#ddd",
-    borderRadius: 10,
-    alignItems: "center",
-  },
-
-  inviteButtonText: {
-    fontWeight: "700",
-  },
-  actionButton: {
-    padding: 16,
-    borderWidth: 1,
-    borderColor: "#ddd",
-    borderRadius: 12,
-    alignItems: "center",
-  },
-  
-  actionButtonText: {
-    fontWeight: "700",
+    backgroundColor: colors.border,
   },
 })

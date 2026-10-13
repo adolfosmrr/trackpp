@@ -1,10 +1,8 @@
 import { createNativeStackNavigator } from "@react-navigation/native-stack"
 
 import { AuthScreen } from "../features/auth/screens/AuthScreen"
-
-export type AuthStackParamList = {
-  Auth: undefined
-}
+import { colors } from "../theme"
+import type { AuthStackParamList } from "./types"
 
 const Stack = createNativeStackNavigator<AuthStackParamList>()
 
@@ -13,6 +11,7 @@ export function AuthNavigator() {
     <Stack.Navigator
       screenOptions={{
         headerShown: false,
+        contentStyle: { backgroundColor: colors.background },
       }}
     >
       <Stack.Screen name="Auth" component={AuthScreen} />

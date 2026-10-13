@@ -1,100 +1,65 @@
-import { StyleSheet } from "react-native"
-import { Gesture, GestureDetector } from "react-native-gesture-handler"
-import Animated, {
-  cancelAnimation,
-  interpolate,
-  runOnJS,
-  useAnimatedStyle,
-  useSharedValue,
-  withTiming,
-  type SharedValue,
-} from "react-native-reanimated"
+import { memo, useMemo } from "react"
+import { StyleSheet, View } from "react-native"
+import { Gesture, GestureDetector, type PanGesture } from "react-native-gesture-handler"
+import Animated, { interpolate, runOnJS, useAnimatedStyle, type SharedValue } from "react-native-reanimated"
+
+import { colors, radii } from "../../theme"
 
 type TopSectionHandleProps = {
-  onPress?: () => void
-  onDragEnd?: (collapsed: boolean) => void
   collapseProgress: SharedValue<number>
-  interactive?: boolean
-  reduceMotionEnabled?: boolean
+  onPress?: () => void
+  pan: PanGesture
 }
 
-const DRAG_COLLAPSE_DISTANCE = 180
-const FLICK_VELOCITY_THRESHOLD = 500
+const HANDLE_HEIGHT = 4
+const HANDLE_HIT_SLOP = { top: 20, bottom: 20, left: 12, right: 12 }
 
-export function TopSectionHandle({
-  onPress,
-  onDragEnd,
+export const TopSectionHandle = memo(function TopSectionHandle({
   collapseProgress,
-  interactive = true,
-  reduceMotionEnabled = false,
+  onPress,
+  pan,
 }: TopSectionHandleProps) {
-  const startProgress = useSharedValue(0)
-  const animatedStyle = useAnimatedStyle(() => ({
-    width: interpolate(collapseProgress.value, [0, 1], [20, 120]),
-  }))
-  const pan = Gesture.Pan()
-    .hitSlop(12)
-    .onStart(() => {
-      cancelAnimation(collapseProgress)
-      startProgress.value = collapseProgress.value
-    })
-    .onUpdate((event) => {
-      collapseProgress.value = Math.min(
-        1,
-        Math.max(0, startProgress.value - event.translationY / DRAG_COLLAPSE_DISTANCE)
-      )
-    })
-    .onEnd((event) => {
-      const target = event.velocityY < -FLICK_VELOCITY_THRESHOLD
-        ? 1
-        : event.velocityY > FLICK_VELOCITY_THRESHOLD
-          ? 0
-          : collapseProgress.value >= 0.5 ? 1 : 0
-
-      if (reduceMotionEnabled) {
-        collapseProgress.value = target
-        if (onDragEnd) runOnJS(onDragEnd)(target === 1)
-        return
-      }
-
-      collapseProgress.value = withTiming(target, { duration: 200 }, (finished) => {
-        if (finished && onDragEnd) runOnJS(onDragEnd)(target === 1)
-      })
-    })
-  const tap = Gesture.Tap()
-    .hitSlop(12)
-    .onEnd((_event, success) => {
-      if (success && onPress) runOnJS(onPress)()
-    })
-  const gesture = Gesture.Exclusive(pan, tap)
-  const handle = (
-    <Animated.View
-      accessibilityLabel={interactive ? "Control del panel superior" : undefined}
-      accessibilityRole={interactive ? "button" : undefined}
-      style={[styles.container, styles.handle, animatedStyle]}
-    />
+  const tap = useMemo(
+    () =>
+      Gesture.Tap()
+        .maxDistance(12)
+        .hitSlop(HANDLE_HIT_SLOP)
+        .requireExternalGestureToFail(pan)
+        .onEnd((_event, success) => {
+          if (success && onPress) runOnJS(onPress)()
+        }),
+    [onPress, pan]
   )
-
-  if (!interactive) {
-    return handle
-  }
+  const handleStyle = useAnimatedStyle(() => ({
+    width: interpolate(collapseProgress.value, [0, 1], [36, 120]),
+  }))
 
   return (
-    <GestureDetector gesture={gesture}>
-      {handle}
+    <GestureDetector gesture={tap}>
+      <View
+        accessibilityLabel="Control del panel superior"
+        accessibilityRole="button"
+        style={styles.hitArea}
+      >
+        <Animated.View style={[styles.handle, handleStyle]} />
+      </View>
     </GestureDetector>
   )
-}
+})
 
 const styles = StyleSheet.create({
-  container: {
+  hitArea: {
+    alignItems: "center",
     alignSelf: "center",
+    height: HANDLE_HEIGHT,
+    justifyContent: "center",
     marginBottom: 10,
+    width: "100%",
   },
   handle: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 9999,
-    height: 5,
-    width: 20,
+    backgroundColor: colors.mutedForeground,
+    borderRadius: radii.pill,
+    height: HANDLE_HEIGHT,
+    width: 36,
   },
 })

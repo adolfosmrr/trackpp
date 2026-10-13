@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react"
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react"
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
@@ -11,19 +11,33 @@ import {
   View,
 } from "react-native"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
-import Svg, {
-  Defs,
-  LinearGradient,
-  Path,
-  Rect,
-  Stop,
-} from "react-native-svg"
+import Svg, { Path } from "react-native-svg"
+import Animated, {
+  cancelAnimation,
+  Easing,
+  useAnimatedStyle,
+  useSharedValue,
+  withRepeat,
+  withTiming,
+} from "react-native-reanimated"
+import { scheduleOnRN } from "react-native-worklets"
+
+import type { NativeStackScreenProps } from "@react-navigation/native-stack"
 
 import { ApiError } from "../../../services/api"
+import type { AppStackParamList } from "../../../navigation/types"
 import { useHouseholdStore } from "../../../store/householdStore"
-import { SiriProvider } from "../../../components/organisms/apple-intelligence"
-import { useSiri } from "../../../components/organisms/apple-intelligence/context"
-import { useFinancialChat } from "../hooks/useFinancialChat"
+import { fieldStyles } from "../../../components/inputs/TextField"
+import { GradientBackground } from "../../../components/visual/GradientBackground"
+import { THINKING_PLACEHOLDER, useFinancialChat } from "../hooks/useFinancialChat"
+import { useReduceMotion, useTypewriter } from "../hooks/useTypewriter"
+import type { AiMessage } from "../types"
+import { GlassButton } from "../../../components/buttons/GlassButton"
+import { BackLink } from "../../../components/navigation/BackLink"
+import { AppText } from "../../../components/text/AppText"
+import { colors, fonts, layout, radii, typography } from "../../../theme"
+
+const FIELD_FADE_MS = 400
 
 const suggestions = [
   "¿Qué gastos fijos tengo pendientes?",
@@ -34,24 +48,108 @@ const suggestions = [
   "¿Cómo evolucionó comida en 3 meses?",
 ]
 
-export function AiConversationScreen({ route }: any) {
+type AiConversationScreenProps = NativeStackScreenProps<AppStackParamList, "AiConversation">
+
+function ThinkingLabel() {
+  const reduceMotion = useReduceMotion()
+  const opacity = useSharedValue(1)
+
+  useEffect(() => {
+    if (reduceMotion) {
+      cancelAnimation(opacity)
+      opacity.value = 1
+      return
+    }
+
+    opacity.value = withRepeat(
+      withTiming(0.4, { duration: 700, easing: Easing.inOut(Easing.ease) }),
+      -1,
+      true
+    )
+
+    return () => cancelAnimation(opacity)
+  }, [opacity, reduceMotion])
+
+  const animatedStyle = useAnimatedStyle(() => ({ opacity: opacity.value }))
+
   return (
-    <SiriProvider>
-      <AiConversationContent route={route} />
-    </SiriProvider>
+    <Animated.Text style={[typography.body, styles.messageInk, animatedStyle]}>
+      {THINKING_PLACEHOLDER}
+    </Animated.Text>
   )
 }
 
-function AiConversationContent({ route }: any) {
+function ThinkingBackdrop({ active }: { active: boolean }) {
+  const opacity = useSharedValue(0)
+  const [mounted, setMounted] = useState(false)
+  const activeRef = useRef(active)
+  activeRef.current = active
+  const hide = useCallback(() => {
+    if (!activeRef.current) setMounted(false)
+  }, [])
+
+  useEffect(() => {
+    if (active) setMounted(true)
+  }, [active])
+
+  useLayoutEffect(() => {
+    if (!mounted) return
+
+    if (active) {
+      opacity.value = withTiming(1, { duration: FIELD_FADE_MS })
+      return
+    }
+
+    opacity.value = withTiming(0, { duration: FIELD_FADE_MS }, (finished) => {
+      if (finished) scheduleOnRN(hide)
+    })
+  }, [active, hide, mounted, opacity])
+
+  const animatedStyle = useAnimatedStyle(() => ({ opacity: opacity.value }))
+
+  if (!mounted) return null
+
+  return (
+    <Animated.View pointerEvents="none" style={[StyleSheet.absoluteFill, animatedStyle]}>
+      <GradientBackground dotMotion dotSpacing={15} token="topSection" />
+    </Animated.View>
+  )
+}
+
+function MessageBubble({
+  message,
+  reveal,
+  onRevealComplete,
+}: {
+  message: AiMessage
+  reveal: boolean
+  onRevealComplete: () => void
+}) {
+  const content = useTypewriter(message.content, reveal && !message.pending, onRevealComplete)
+  const isUser = message.role === "user"
+
+  return (
+    <View style={[styles.message, isUser ? styles.userMessage : styles.assistantMessage]}>
+      <AppText tone="muted" variant="caption">{isUser ? "Tú" : "IA"}</AppText>
+      {message.pending ? (
+        <ThinkingLabel />
+      ) : (
+        <AppText variant="body">{content}</AppText>
+      )}
+    </View>
+  )
+}
+
+export function AiConversationScreen({ route, navigation }: AiConversationScreenProps) {
   const insets = useSafeAreaInsets()
   const householdId = useHouseholdStore((state) => state.selectedHouseholdId)
   const [conversationId, setConversationId] = useState<string | null>(
     route.params?.conversationId ?? null
   )
   const [input, setInput] = useState("")
-  const { messages, sendMessage, isPending, error, isLoadingMessages } =
+  const messagesRef = useRef<ScrollView>(null)
+  const { messages, sendMessage, retry, revealMessageId, completeReveal, isPending, error, isLoadingMessages } =
     useFinancialChat(conversationId, setConversationId)
-  const { toggle, isActive } = useSiri()
   const errorMessage =
     error instanceof ApiError && error.code === "AI_DAILY_LIMIT_REACHED"
       ? "Estás haciendo demasiadas preguntas. Intenta nuevamente en un momento."
@@ -61,168 +159,135 @@ function AiConversationContent({ route }: any) {
     setConversationId(route.params?.conversationId ?? null)
   }, [route.params?.conversationId])
 
-  useEffect(() => {
-    if (isPending && !isActive) {
-      void toggle()
-    } else if (!isPending && isActive) {
-      void toggle()
-    }
-  }, [isActive, isPending, toggle])
-
-  function handleSend() {
-    if (sendMessage(input)) {
-      setInput("")
-    }
+  function handleSend(text?: string) {
+    const message = text ?? input
+    if (isPending || !householdId || !message.trim()) return
+    setInput("")
+    sendMessage(message)
   }
 
   return (
-    <KeyboardAvoidingView
-      style={styles.container}
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
-    >
-      <ScrollView
-        style={styles.messages}
-        contentContainerStyle={styles.messagesContent}
-        keyboardShouldPersistTaps="handled"
+    <View style={styles.screen}>
+      <ThinkingBackdrop active={isPending} />
+      <KeyboardAvoidingView
+        style={styles.container}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
       >
-        {!conversationId && !messages.length ? (
-          <View style={styles.emptyState}>
-            <Text style={styles.subtitle}>
-              Pregunta sobre los movimientos y presupuestos del espacio seleccionado.
-            </Text>
-            <View style={styles.suggestions}>
-              {suggestions.map((suggestion) => (
-                <Pressable
-                  key={suggestion}
-                  style={styles.suggestion}
-                  onPress={() => {
-                    setInput(suggestion)
-                    sendMessage(suggestion)
-                  }}
-                  disabled={isPending || !householdId}
-                >
-                  <Text style={styles.suggestionText}>{suggestion}</Text>
-                </Pressable>
-              ))}
-            </View>
-          </View>
-        ) : null}
-
-        {isLoadingMessages && conversationId ? <ActivityIndicator /> : null}
-
-        {messages.map((message) => (
-          <View
-            key={message.id}
-            style={[
-              styles.message,
-              message.role === "user" ? styles.userMessage : styles.assistantMessage,
-            ]}
-          >
-            <Text style={styles.messageRole}>{message.role === "user" ? "Tú" : "IA"}</Text>
-            <Text style={message.role === "user" ? styles.userMessageContent : styles.messageContent}>
-              {message.content}
-            </Text>
-          </View>
-        ))}
-
-        {isPending ? (
-          <View style={styles.thinking}>
-            <ActivityIndicator size="small" />
-            <Text>Pensando...</Text>
-          </View>
-        ) : null}
-        {error ? <Text style={styles.error}>{errorMessage}</Text> : null}
-      </ScrollView>
-
-      <View style={[styles.composerWrapper, { paddingBottom: Math.max(insets.bottom, 8) }]}>
-        <View style={styles.composer}>
-          <TextInput
-            style={styles.input}
-            value={input}
-            onChangeText={setInput}
-            placeholder="Pregunta algo sobre tus finanzas"
-            multiline
-            maxLength={500}
-            editable={!isPending && Boolean(householdId)}
-            onSubmitEditing={handleSend}
-          />
-          <Pressable
-            style={[styles.sendButton, (!input.trim() || isPending || !householdId) && styles.disabled]}
-            onPress={handleSend}
-            disabled={!input.trim() || isPending || !householdId}
-          >
-            <Svg pointerEvents="none" style={StyleSheet.absoluteFill}>
-              <Defs>
-                <LinearGradient
-                  id="ai-send-button-gradient"
-                  x1="0%"
-                  y1="0%"
-                  x2="100%"
-                  y2="100%"
-                >
-                  <Stop offset="0" stopColor="#BFFFC7" />
-                  <Stop offset="1" stopColor="#18A5A7" />
-                </LinearGradient>
-              </Defs>
-              <Rect
-                width="100%"
-                height="100%"
-                fill="url(#ai-send-button-gradient)"
-              />
-            </Svg>
-            <Svg width={15} height={15} viewBox="0 0 15 15" fill="none">
-              <Path
-                d="M8.36399 14.9999L6.36399 14.9999L6.36399 3.41394L1.70677 8.07117C1.31622 8.46139 0.683131 8.46159 0.292705 8.07117C-0.0977202 7.68074 -0.0975223 7.04765 0.292705 6.6571L6.65696 0.292846C7.04749 -0.0976787 7.6805 -0.0976787 8.07103 0.292846L14.4353 6.6571C14.8255 7.04765 14.8257 7.68074 14.4353 8.07117C14.0449 8.46159 13.4118 8.46139 13.0212 8.07117L8.36399 3.41394L8.36399 14.9999Z"
-                fill="black"
-              />
-            </Svg>
-          </Pressable>
+        <View style={[styles.header, { paddingTop: insets.top + layout.titleContentGap }]}>
+          <BackLink onPress={() => navigation.goBack()} />
         </View>
-      </View>
-    </KeyboardAvoidingView>
+        <ScrollView
+          ref={messagesRef}
+          style={styles.messages}
+          contentContainerStyle={styles.messagesContent}
+          keyboardShouldPersistTaps="handled"
+          onContentSizeChange={() => messagesRef.current?.scrollToEnd({ animated: false })}
+        >
+          {!conversationId && !messages.length ? (
+            <View style={styles.emptyState}>
+              <AppText variant="subtitle">
+                Pregunta sobre los movimientos y presupuestos del espacio seleccionado.
+              </AppText>
+              <View style={styles.suggestions}>
+                {suggestions.map((suggestion) => (
+                  <Pressable
+                    key={suggestion}
+                    style={styles.suggestion}
+                    onPress={() => handleSend(suggestion)}
+                    disabled={isPending || !householdId}
+                  >
+                    <AppText variant="subtitle">{suggestion}</AppText>
+                  </Pressable>
+                ))}
+              </View>
+            </View>
+          ) : null}
+
+          {isLoadingMessages && conversationId ? <ActivityIndicator color={colors.brand} /> : null}
+
+          {messages.map((message) => (
+            <MessageBubble
+              key={message.id}
+              message={message}
+              reveal={message.id === revealMessageId}
+              onRevealComplete={completeReveal}
+            />
+          ))}
+
+          {!isPending && error ? (
+            <View style={styles.errorRow}>
+              <AppText tone="destructive" variant="body">{errorMessage}</AppText>
+              <GlassButton
+                accessibilityLabel="Reintentar"
+                label="Reintentar"
+                onPress={retry}
+              />
+            </View>
+          ) : null}
+        </ScrollView>
+
+        <View style={[styles.composerWrapper, { paddingBottom: Math.max(insets.bottom, 8) }]}>
+          <View style={[styles.composer, fieldStyles.multilineRadius]}>
+            <TextInput
+              style={styles.input}
+              value={input}
+              onChangeText={setInput}
+              placeholder="Pregunta algo sobre tus finanzas"
+              placeholderTextColor={colors.mutedForeground}
+              multiline
+              maxLength={500}
+              editable={Boolean(householdId)}
+              onSubmitEditing={() => handleSend()}
+            />
+            <Pressable
+              style={[styles.sendButton, (!input.trim() || isPending || !householdId) && styles.disabled]}
+              onPress={() => handleSend()}
+              disabled={!input.trim() || isPending || !householdId}
+            >
+              <Svg width={15} height={15} viewBox="0 0 15 15" fill="none">
+                <Path
+                  d="M8.36399 14.9999L6.36399 14.9999L6.36399 3.41394L1.70677 8.07117C1.31622 8.46139 0.683131 8.46159 0.292705 8.07117C-0.0977202 7.68074 -0.0975223 7.04765 0.292705 6.6571L6.65696 0.292846C7.04749 -0.0976787 7.6805 -0.0976787 8.07103 0.292846L14.4353 6.6571C14.8255 7.04765 14.8257 7.68074 14.4353 8.07117C14.0449 8.46159 13.4118 8.46139 13.0212 8.07117L8.36399 3.41394L8.36399 14.9999Z"
+                  fill={colors.brandForeground}
+                />
+              </Svg>
+            </Pressable>
+          </View>
+        </View>
+      </KeyboardAvoidingView>
+    </View>
   )
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#000000" },
+  screen: { flex: 1, backgroundColor: colors.background },
+  container: { flex: 1 },
   messages: { flex: 1 },
-  messagesContent: { gap: 12, padding: 20, paddingTop: 80 },
-  emptyState: { gap: 16 },
-  subtitle: {
-    color: "#FFFFFF",
-    fontFamily: "FamiljenGrotesk-Bold",
-    fontSize: 20,
-    lineHeight: 20,
-  },
+  header: { paddingHorizontal: layout.sheetPadding, paddingBottom: layout.titleContentGap },
+  messagesContent: { gap: layout.titleContentGap, padding: layout.sheetPadding, paddingTop: layout.titleContentGap },
+  emptyState: { gap: layout.titleContentGap },
   suggestions: { gap: 10 },
   suggestion: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 999,
-    paddingHorizontal: 20,
+    backgroundColor: colors.card,
+    borderColor: colors.border,
+    borderRadius: radii.pill,
+    borderWidth: 1,
+    paddingHorizontal: 12,
     paddingVertical: 10,
   },
-  suggestionText: {
-    color: "#1C1C1C",
-    fontFamily: "FamiljenGrotesk-Bold",
-    fontSize: 16,
-    lineHeight: 16,
-  },
-  message: { borderRadius: 14, gap: 4, maxWidth: "88%", padding: 13 },
-  userMessage: { alignSelf: "flex-end", backgroundColor: "#111" },
-  assistantMessage: { alignSelf: "flex-start", backgroundColor: "#f1f1f1" },
-  messageRole: { color: "#777", fontSize: 12, fontWeight: "700" },
-  messageContent: { lineHeight: 21 },
-  userMessageContent: { color: "#fff", lineHeight: 21 },
-  thinking: { alignItems: "center", flexDirection: "row", gap: 8 },
-  error: { color: "#b42318" },
+  message: { borderRadius: radii.md, borderWidth: 1, borderColor: colors.border, gap: 4, maxWidth: "88%", padding: 12 },
+  userMessage: { alignSelf: "flex-end", backgroundColor: colors.brandMuted, borderColor: colors.brandBorder },
+  assistantMessage: { alignSelf: "flex-start", backgroundColor: colors.card },
+  messageInk: { color: colors.foreground },
+  errorRow: { alignItems: "flex-start", gap: 8 },
   composerWrapper: {
-    paddingHorizontal: 20,
+    paddingHorizontal: layout.sectionInset,
     width: "100%",
   },
   composer: {
     alignItems: "center",
-    backgroundColor: "#FFFFFF",
-    borderRadius: 999,
+    backgroundColor: colors.field,
+    borderColor: colors.borderStrong,
+    borderWidth: 1,
     flexDirection: "row",
     gap: 12,
     paddingLeft: 20,
@@ -232,16 +297,17 @@ const styles = StyleSheet.create({
   },
   input: {
     backgroundColor: "transparent",
-    color: "#1C1C1C",
+    color: colors.foreground,
     flex: 1,
-    fontFamily: "FamiljenGrotesk-Regular",
+    fontFamily: fonts.sans,
     fontSize: 16,
     maxHeight: 100,
     padding: 0,
   },
   sendButton: {
     alignItems: "center",
-    borderRadius: 21,
+    backgroundColor: colors.brand,
+    borderRadius: radii.pill,
     height: 42,
     justifyContent: "center",
     overflow: "hidden",

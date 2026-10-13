@@ -1,15 +1,16 @@
 import { useEffect, useRef, useState } from "react"
 import {
   Alert,
-  Pressable,
   StyleSheet,
-  Text,
+  Switch,
+  TextInput,
   View,
 } from "react-native"
-import {
-  BottomSheetModal,
-  BottomSheetTextInput,
-} from "@gorhom/bottom-sheet"
+import type { NativeStackScreenProps } from "@react-navigation/native-stack"
+import { Button } from "../../../components/buttons/Button"
+import { FieldRow, TextField, fieldStyles } from "../../../components/inputs/TextField"
+import { AppText } from "../../../components/text/AppText"
+import { colors, fonts, layout } from "../../../theme"
 import { Gesture, GestureDetector } from "react-native-gesture-handler"
 import { runOnJS, useSharedValue } from "react-native-reanimated"
 
@@ -19,12 +20,22 @@ import { useHouseholdCategories } from "../../categories/hooks/useHouseholdCateg
 import { SegmentedToggle } from "../../../components/inputs/SegmentedToggle"
 import { FieldChevronIcon } from "../../../components/icons/FieldChevronIcon"
 import { useCreateLinkedTransactions } from "../hooks/useCreateLinkedTransactions"
+import { OptionChips } from "../../fixedExpenses/components/OptionChips"
 import { useCreateFixedExpense } from "../../fixedExpenses/hooks/useCreateFixedExpense"
 import { useUpdateFixedExpense } from "../../fixedExpenses/hooks/useUpdateFixedExpense"
-import { CategorySelectorSheet } from "./CategorySelectorSheet"
-import { HouseholdSelectorSheet } from "./HouseholdSelectorSheet"
+import {
+  AUTO_DEBIT_SOURCES,
+  FIXED_EXPENSE_FREQUENCIES,
+  type AutoDebitSource,
+  type FixedExpenseFrequency,
+} from "../../fixedExpenses/utils/frequency"
+import {
+  getLastCategoryId,
+  setLastCategoryId,
+  setLastEntryMode,
+} from "../services/entryPreferences"
+import type { AppStackParamList } from "../../../navigation/types"
 
-import type { Category } from "../../categories/types"
 import type {
   CreateMovementMode,
   LinkedTransactionTarget,
@@ -38,22 +49,32 @@ const MODE_SWIPE_VELOCITY = 650
 const MODE_HORIZONTAL_INTENT_RATIO = 1.3
 const MODE_VERTICAL_FAIL_DISTANCE = 26
 
+type SelectedCategoryDisplay = {
+  id: string
+  name: string
+  icon: string | null
+}
+
 type CreateTransactionFormProps = {
-  onSuccess?: () => void
+  navigation: NativeStackScreenProps<AppStackParamList, "CreateMovement">["navigation"]
+  route: NativeStackScreenProps<AppStackParamList, "CreateMovement">["route"]
   request: TransactionSheetRequest
 }
 
 export function CreateTransactionForm({
-  onSuccess,
+  navigation,
   request,
+  route,
 }: CreateTransactionFormProps) {
-  const [type, setType] = useState<"expense" | "income">("expense")
   const editingFixedExpense = request.kind === "edit-fixed"
     ? request.fixedExpense
     : undefined
   const initialMode = request.kind === "edit-fixed"
     ? "fixed"
     : request.initialMode
+  const [type, setType] = useState<"expense" | "income">(
+    initialMode === "income" ? "income" : "expense"
+  )
   const [mode, setMode] = useState<CreateMovementMode>(initialMode)
   const modeGestureCommitted = useSharedValue(false)
   const [title, setTitle] = useState(editingFixedExpense?.name ?? "")
@@ -69,6 +90,13 @@ export function CreateTransactionForm({
   const [dueDay, setDueDay] = useState(
     editingFixedExpense ? String(editingFixedExpense.due_day) : "10"
   )
+  const [frequency, setFrequency] = useState<FixedExpenseFrequency>(
+    editingFixedExpense?.frequency ?? "monthly"
+  )
+  const [autoDebit, setAutoDebit] = useState(editingFixedExpense?.auto_debit ?? false)
+  const [autoDebitSource, setAutoDebitSource] = useState<AutoDebitSource | null>(
+    editingFixedExpense?.auto_debit_source ?? null
+  )
   const selectedHouseholdId = useHouseholdStore(
     (state) => state.selectedHouseholdId
   )
@@ -77,11 +105,8 @@ export function CreateTransactionForm({
       ? [{ householdId: selectedHouseholdId, categoryId: null }]
       : []
   )
-  const [activeCategoryHouseholdId, setActiveCategoryHouseholdId] = useState<string | null>(null)
   const [selectedCategoriesByHousehold, setSelectedCategoriesByHousehold] =
-    useState<Record<string, Category>>({})
-  const householdSelectorRef = useRef<BottomSheetModal>(null)
-  const categorySelectorRef = useRef<BottomSheetModal>(null)
+    useState<Record<string, SelectedCategoryDisplay>>({})
   const createTransactionMutation = useCreateLinkedTransactions()
   const createFixedExpenseMutation = useCreateFixedExpense()
   const updateFixedExpenseMutation = useUpdateFixedExpense()
@@ -95,20 +120,7 @@ export function CreateTransactionForm({
   const additionalTargets = primaryTarget
     ? targets.filter((target) => target.householdId !== primaryTarget.householdId)
     : []
-  const {
-    data: categories,
-    isLoading: categoriesLoading,
-    isError: categoriesError,
-  } = useHouseholdCategories(
-    activeCategoryHouseholdId,
-    type,
-    Boolean(activeCategoryHouseholdId) && !isFixedMode,
-  )
-  const {
-    data: fixedCategories,
-    isLoading: fixedCategoriesLoading,
-    isError: fixedCategoriesError,
-  } = useHouseholdCategories(
+  const { data: fixedCategories } = useHouseholdCategories(
     fixedCategoryHouseholdId,
     "expense",
     isFixedMode,
@@ -145,19 +157,124 @@ export function CreateTransactionForm({
     })
   }, [memberships, selectedHouseholdId])
 
+  const suggestionHouseholdId = isFixedMode
+    ? fixedCategoryHouseholdId
+    : primaryTarget?.householdId ?? null
+  const { data: suggestionCategories } = useHouseholdCategories(
+    suggestionHouseholdId,
+    isFixedMode ? "expense" : type,
+    Boolean(suggestionHouseholdId) && !isEditingFixedExpense,
+  )
+  const appliedSuggestion = useRef<string | null>(null)
+  const suggestionKey = `${mode}:${suggestionHouseholdId ?? ""}`
+
   useEffect(() => {
-    if (
-      !isEditingFixedExpense &&
-      activeCategoryHouseholdId &&
-      !targets.some((target) => target.householdId === activeCategoryHouseholdId)
-    ) {
-      setActiveCategoryHouseholdId(null)
-      categorySelectorRef.current?.dismiss()
+    if (isEditingFixedExpense || !suggestionHouseholdId || !suggestionCategories) return
+    if (appliedSuggestion.current === suggestionKey) return
+
+    let cancelled = false
+    void getLastCategoryId(suggestionHouseholdId, mode).then((categoryId) => {
+      if (cancelled) return
+      appliedSuggestion.current = suggestionKey
+      if (!categoryId) return
+      const category = suggestionCategories.find((item) => item.id === categoryId)
+      if (!category) return
+
+      if (mode === "fixed") {
+        setFixedCategoryId((current) => current ?? category.id)
+        return
+      }
+
+      setTargets((currentTargets) =>
+        currentTargets.map((target) =>
+          target.householdId === suggestionHouseholdId && !target.categoryId
+            ? { ...target, categoryId: category.id }
+            : target
+        )
+      )
+      setSelectedCategoriesByHousehold((current) => {
+        if (current[suggestionHouseholdId]) return current
+        return { ...current, [suggestionHouseholdId]: category }
+      })
+    })
+
+    return () => {
+      cancelled = true
     }
-  }, [activeCategoryHouseholdId, isEditingFixedExpense, targets])
+  }, [
+    isEditingFixedExpense,
+    mode,
+    suggestionCategories,
+    suggestionHouseholdId,
+    suggestionKey,
+  ])
+
+  useEffect(() => {
+    const selection = route.params?.categorySelection
+    if (!selection) return
+
+    if (mode === "fixed") {
+      if (selection.householdId === fixedCategoryHouseholdId) {
+        setFixedCategoryId(selection.categoryId)
+        if (fixedCategoryHouseholdId) {
+          void setLastCategoryId(fixedCategoryHouseholdId, "fixed", selection.categoryId)
+        }
+      }
+    } else {
+      setTargets((currentTargets) =>
+        currentTargets.map((target) =>
+          target.householdId === selection.householdId
+            ? { ...target, categoryId: selection.categoryId }
+            : target
+        )
+      )
+      setSelectedCategoriesByHousehold((currentCategories) => ({
+        ...currentCategories,
+        [selection.householdId]: {
+          id: selection.categoryId,
+          name: selection.name,
+          icon: selection.icon,
+        },
+      }))
+      void setLastCategoryId(selection.householdId, type, selection.categoryId)
+    }
+
+    navigation.setParams({ categorySelection: undefined })
+  }, [
+    fixedCategoryHouseholdId,
+    mode,
+    navigation,
+    route.params?.categorySelection,
+    type,
+  ])
+
+  useEffect(() => {
+    const selection = route.params?.householdSelection
+    if (!selection) return
+    if (selection.householdIds.length > 0) {
+      setTargets((currentTargets) =>
+        selection.householdIds.map(
+          (householdId) =>
+            currentTargets.find((target) => target.householdId === householdId) ?? {
+              householdId,
+              categoryId: null,
+            }
+        )
+      )
+      setSelectedCategoriesByHousehold((currentCategories) =>
+        Object.fromEntries(
+          Object.entries(currentCategories).filter(([householdId]) =>
+            selection.householdIds.includes(householdId)
+          )
+        )
+      )
+    }
+    navigation.setParams({ householdSelection: undefined })
+  }, [navigation, route.params?.householdSelection])
 
   function handleModeChange(newMode: CreateMovementMode) {
     setMode(newMode)
+    void setLastEntryMode(newMode)
     setTargets((currentTargets) =>
       currentTargets.map((target) => ({ ...target, categoryId: null }))
     )
@@ -165,8 +282,6 @@ export function CreateTransactionForm({
     setFixedCategoryId(null)
     if (newMode !== "fixed") {
       setType(newMode)
-    } else {
-      setActiveCategoryHouseholdId(null)
     }
   }
 
@@ -250,6 +365,17 @@ export function CreateTransactionForm({
         return
       }
 
+      if (autoDebit && !autoDebitSource) {
+        Alert.alert("Error", "Elegí la tarjeta del débito automático.")
+        return
+      }
+
+      const fixedSchedule = {
+        frequency,
+        autoDebit,
+        autoDebitSource: autoDebit ? autoDebitSource : null,
+      }
+
       try {
         if (isEditingFixedExpense && editingFixedExpense) {
           if (request.kind !== "edit-fixed") {
@@ -265,6 +391,7 @@ export function CreateTransactionForm({
             chargeDay: parsedChargeDay,
             dueDay: parsedDueDay,
             isActive: editingFixedExpense.is_active,
+            ...fixedSchedule,
           })
         } else {
           await createFixedExpenseMutation.mutateAsync({
@@ -274,9 +401,14 @@ export function CreateTransactionForm({
             chargeDay: parsedChargeDay,
             dueDay: parsedDueDay,
             isActive: true,
+            ...fixedSchedule,
           })
         }
-        onSuccess?.()
+        if (fixedCategoryHouseholdId) {
+          await setLastCategoryId(fixedCategoryHouseholdId, "fixed", fixedCategoryId)
+        }
+        await setLastEntryMode("fixed")
+        navigation.goBack()
       } catch (error) {
         const message = error instanceof Error
           ? error.message
@@ -313,7 +445,13 @@ export function CreateTransactionForm({
         amount: parsedAmount,
         targets,
       })
-      onSuccess?.()
+      await Promise.all(
+        targets
+          .filter((target) => target.categoryId)
+          .map((target) => setLastCategoryId(target.householdId, type, target.categoryId!))
+      )
+      await setLastEntryMode(type)
+      navigation.goBack()
     } catch (error) {
       const message = error instanceof Error
         ? error.message
@@ -322,59 +460,40 @@ export function CreateTransactionForm({
     }
   }
 
-  function handleHouseholdSelection(householdIds: string[]) {
-    if (householdIds.length === 0) return
-
-    setTargets((currentTargets) =>
-      householdIds.map(
-        (householdId) =>
-          currentTargets.find((target) => target.householdId === householdId) ?? {
-            householdId,
-            categoryId: null,
-          }
-      )
-    )
-    setSelectedCategoriesByHousehold((currentCategories) =>
-      Object.fromEntries(
-        Object.entries(currentCategories).filter(([householdId]) =>
-          householdIds.includes(householdId)
-        )
-      )
-    )
-  }
-
-  function handleCategorySelect(category: Category) {
-    if (!activeCategoryHouseholdId) return
-
-    if (isFixedMode) {
-      setFixedCategoryId(category.id)
-      categorySelectorRef.current?.dismiss()
-      return
-    }
-
-    setTargets((currentTargets) =>
-      currentTargets.map((target) =>
-        target.householdId === activeCategoryHouseholdId
-          ? { ...target, categoryId: category.id }
-          : target
-      )
-    )
-    setSelectedCategoriesByHousehold((currentCategories) => ({
-      ...currentCategories,
-      [activeCategoryHouseholdId]: category,
-    }))
-    categorySelectorRef.current?.dismiss()
-  }
-
   function openCategorySelector(householdId: string) {
-    setActiveCategoryHouseholdId(householdId)
-    categorySelectorRef.current?.present()
+    const householdName = memberships?.find(
+      (membership) => membership.household_id === householdId,
+    )?.household.name ?? ""
+    navigation.navigate("CategoryPicker", {
+      returnTo: "CreateMovement",
+      householdId,
+      householdName,
+      entryType: type,
+      selectedCategoryId: targets.find((target) => target.householdId === householdId)?.categoryId ?? null,
+    })
   }
 
   function openFixedCategorySelector() {
     if (!fixedCategoryHouseholdId) return
-    setActiveCategoryHouseholdId(fixedCategoryHouseholdId)
-    categorySelectorRef.current?.present()
+    const householdName = memberships?.find(
+      (membership) => membership.household_id === fixedCategoryHouseholdId,
+    )?.household.name ?? ""
+    navigation.navigate("CategoryPicker", {
+      returnTo: "CreateMovement",
+      householdId: fixedCategoryHouseholdId,
+      householdName,
+      entryType: "expense",
+      selectedCategoryId: fixedCategoryId,
+    })
+  }
+
+  function openHouseholdSelector() {
+    navigation.navigate("HouseholdPicker", {
+      returnTo: "CreateMovement",
+      selectedHouseholdIds: targets.map((target) => target.householdId),
+      selectionMode: "multiple",
+      title: "Añadir a",
+    })
   }
 
   function renderCategoryField(target: LinkedTransactionTarget) {
@@ -384,50 +503,50 @@ export function CreateTransactionForm({
     const category = selectedCategoriesByHousehold[target.householdId]
 
     return (
-      <Pressable
+      <FieldRow
         key={target.householdId}
-        accessibilityRole="button"
         onPress={() => openCategorySelector(target.householdId)}
-        style={[styles.field, styles.darkField]}
       >
-        <Text style={styles.fieldLabel}>
+        <AppText style={styles.fieldLabel} variant="subtitle">
           Categoría {household?.name ?? target.householdId}
-        </Text>
+        </AppText>
         <View style={styles.fieldValueGroup}>
           {category ? (
-            <Text
-              numberOfLines={1}
+            <AppText
               ellipsizeMode="tail"
+              numberOfLines={1}
               style={styles.fieldValue}
+              tone="muted"
+              variant="subtitle"
             >
               {category.name}
-            </Text>
+            </AppText>
           ) : null}
           <FieldChevronIcon />
         </View>
-      </Pressable>
+      </FieldRow>
     )
   }
 
   function renderFixedCategoryField() {
     return (
-      <Pressable
-        accessibilityRole="button"
+      <FieldRow
         onPress={openFixedCategorySelector}
-        style={[styles.field, styles.darkField]}
       >
-        <Text style={styles.fieldLabel}>Categoría</Text>
+        <AppText style={styles.fieldLabel} variant="subtitle">Categoría</AppText>
         <View style={styles.fieldValueGroup}>
-          <Text
-            numberOfLines={1}
+          <AppText
             ellipsizeMode="tail"
+            numberOfLines={1}
             style={styles.fieldValue}
+            tone="muted"
+            variant="subtitle"
           >
             {selectedFixedCategory?.name ?? "Seleccionar categoría"}
-          </Text>
+          </AppText>
           <FieldChevronIcon />
         </View>
-      </Pressable>
+      </FieldRow>
     )
   }
 
@@ -448,28 +567,27 @@ export function CreateTransactionForm({
           ) : null}
 
       <View style={styles.fieldsStack}>
-      <BottomSheetTextInput
-        style={[styles.field, styles.input]}
-        placeholder="Título"
-        placeholderTextColor="rgba(28, 28, 28, 0.5)"
-        value={title}
-        onChangeText={setTitle}
-      />
-      <BottomSheetTextInput
-        style={[styles.field, styles.input]}
+      <TextField
+        accessibilityLabel="Monto"
+        autoFocus={!isEditingFixedExpense}
         placeholder="Monto"
-        placeholderTextColor="rgba(28, 28, 28, 0.5)"
         keyboardType="decimal-pad"
         value={amount}
         onChangeText={setAmount}
+      />
+      <TextField
+        accessibilityLabel="Título"
+        placeholder="Título"
+        value={title}
+        onChangeText={setTitle}
       />
 
       {isFixedMode ? (
         <>
           {renderFixedCategoryField()}
-          <View style={[styles.field, styles.dayField]}>
-            <Text style={styles.dayFieldLabel}>Día de cobro</Text>
-            <BottomSheetTextInput
+          <View style={[fieldStyles.surface, fieldStyles.row, fieldStyles.pill]}>
+            <AppText tone="muted" variant="subtitle">Día de cobro</AppText>
+            <TextInput
               style={styles.dayInput}
               keyboardType="number-pad"
               maxLength={2}
@@ -477,9 +595,9 @@ export function CreateTransactionForm({
               onChangeText={setChargeDay}
             />
           </View>
-          <View style={[styles.field, styles.dayField]}>
-            <Text style={styles.dayFieldLabel}>Día de vencimiento</Text>
-            <BottomSheetTextInput
+          <View style={[fieldStyles.surface, fieldStyles.row, fieldStyles.pill]}>
+            <AppText tone="muted" variant="subtitle">Día de vencimiento</AppText>
+            <TextInput
               style={styles.dayInput}
               keyboardType="number-pad"
               maxLength={2}
@@ -487,22 +605,60 @@ export function CreateTransactionForm({
               onChangeText={setDueDay}
             />
           </View>
+          <View style={styles.optionBlock}>
+            <AppText variant="sectionTitle">Frecuencia</AppText>
+            <OptionChips
+              accessibilityLabel="Frecuencia del gasto fijo"
+              onChange={setFrequency}
+              options={FIXED_EXPENSE_FREQUENCIES}
+              value={frequency}
+            />
+          </View>
+          <View style={[fieldStyles.surface, fieldStyles.row, fieldStyles.pill]}>
+            <AppText tone="muted" variant="subtitle">Débito automático</AppText>
+            <Switch
+              accessibilityLabel="Débito automático"
+              onValueChange={(enabled) => {
+                setAutoDebit(enabled)
+                if (!enabled) setAutoDebitSource(null)
+              }}
+              thumbColor={colors.foreground}
+              trackColor={{ false: colors.control, true: colors.brand }}
+              value={autoDebit}
+            />
+          </View>
+          {autoDebit ? (
+            <View style={styles.optionBlock}>
+              <AppText variant="sectionTitle">Tarjeta</AppText>
+              <OptionChips
+                accessibilityLabel="Tarjeta del débito automático"
+                onChange={setAutoDebitSource}
+                options={AUTO_DEBIT_SOURCES}
+                value={autoDebitSource}
+              />
+            </View>
+          ) : null}
+          {isEditingFixedExpense ? (
+            <AppText tone="muted" variant="caption">
+              Si cambiás el monto, el nuevo rige desde este período. Los anteriores quedan igual.
+            </AppText>
+          ) : null}
         </>
       ) : (
         <>
           {primaryTarget ? renderCategoryField(primaryTarget) : null}
 
-          <Pressable
-            accessibilityRole="button"
-            onPress={() => householdSelectorRef.current?.present()}
-            style={[styles.field, styles.darkField]}
+          <FieldRow
+            onPress={openHouseholdSelector}
           >
-            <Text style={styles.fieldLabel}>Añadir a Espacio</Text>
+            <AppText style={styles.fieldLabel} variant="subtitle">Añadir a Espacio</AppText>
             <View style={styles.fieldValueGroup}>
-              <Text
-                numberOfLines={1}
+              <AppText
                 ellipsizeMode="tail"
+                numberOfLines={1}
                 style={styles.fieldValue}
+                tone="muted"
+                variant="subtitle"
               >
                 {targets
                   .map(
@@ -512,10 +668,10 @@ export function CreateTransactionForm({
                       )?.household.name ?? target.householdId
                   )
                   .join(", ")}
-              </Text>
+              </AppText>
               <FieldChevronIcon />
             </View>
-          </Pressable>
+          </FieldRow>
 
           <View style={styles.targetsSection}>
             {additionalTargets.map(renderCategoryField)}
@@ -523,59 +679,22 @@ export function CreateTransactionForm({
         </>
       )}
 
-      <View style={styles.categorySection}>
-        {!isFixedMode ? (
-          <HouseholdSelectorSheet
-            ref={householdSelectorRef}
-            memberships={memberships ?? []}
-            selectedHouseholdIds={targets.map((target) => target.householdId)}
-            onChange={handleHouseholdSelection}
-            onDone={() => householdSelectorRef.current?.dismiss()}
-          />
-        ) : null}
-        <CategorySelectorSheet
-          ref={categorySelectorRef}
-          householdName={
-            memberships?.find(
-              (membership) => membership.household_id === activeCategoryHouseholdId
-            )?.household.name ?? ""
-          }
-          categories={isFixedMode ? fixedCategories : categories}
-          selectedCategoryId={
-            isFixedMode
-              ? fixedCategoryId
-              : targets.find((target) => target.householdId === activeCategoryHouseholdId)
-                ?.categoryId ?? null
-          }
-          isLoading={isFixedMode ? fixedCategoriesLoading : categoriesLoading}
-          hasError={isFixedMode ? fixedCategoriesError : categoriesError}
-          onSelect={handleCategorySelect}
-        />
-      </View>
-
-      <Pressable
-        style={[styles.button, (
-          isEditingFixedExpense
-            ? updateFixedExpenseMutation.isPending
-            : createTransactionMutation.isPending || createFixedExpenseMutation.isPending
-        ) && styles.buttonDisabled]}
-        onPress={handleSubmit}
+      <Button
         disabled={isEditingFixedExpense
           ? updateFixedExpenseMutation.isPending
           : createTransactionMutation.isPending || createFixedExpenseMutation.isPending}
-      >
-        <Text style={styles.buttonText}>
-          {(
-            isEditingFixedExpense
-              ? updateFixedExpenseMutation.isPending
-              : createTransactionMutation.isPending || createFixedExpenseMutation.isPending
-          )
-            ? "Guardando..."
-            : isEditingFixedExpense
-              ? "Guardar cambios"
-              : "Guardar movimiento"}
-        </Text>
-      </Pressable>
+        label={(
+          isEditingFixedExpense
+            ? updateFixedExpenseMutation.isPending
+            : createTransactionMutation.isPending || createFixedExpenseMutation.isPending
+        )
+          ? "Guardando..."
+          : isEditingFixedExpense
+            ? "Guardar cambios"
+            : "Guardar movimiento"}
+        onPress={handleSubmit}
+        tone="brand"
+      />
       </View>
       </View>
     </GestureDetector>
@@ -587,54 +706,22 @@ function isValidDay(value: number) {
 }
 
 const styles = StyleSheet.create({
-  container: { padding: 24 },
-  fieldsStack: { gap: 11, marginTop: 40 },
-  targetsSection: { gap: 11 },
-  field: {
-    width: "100%",
-    borderRadius: 999,
-    paddingHorizontal: 20,
-    paddingVertical: 15,
+  container: {
+    gap: layout.titleContentGap,
   },
-  input: {
-    backgroundColor: "#FFFFFF",
-    fontFamily: "FamiljenGrotesk-Bold",
-    fontSize: 16,
-    lineHeight: 16,
-  },
-  dayField: {
-    alignItems: "center",
-    backgroundColor: "#FFFFFF",
-    flexDirection: "row",
-    justifyContent: "space-between",
-  },
-  dayFieldLabel: {
-    color: "rgba(28,28,28,0.5)",
-    fontFamily: "FamiljenGrotesk-Bold",
-    fontSize: 16,
-    lineHeight: 16,
-  },
+  fieldsStack: { gap: layout.titleContentGap },
+  targetsSection: { gap: layout.titleContentGap },
   dayInput: {
-    color: "#1C1C1C",
-    fontFamily: "FamiljenGrotesk-Bold",
+    color: colors.foreground,
+    fontFamily: fonts.monoMedium,
     fontSize: 16,
     lineHeight: 16,
     minWidth: 32,
     padding: 0,
     textAlign: "right",
   },
-  darkField: {
-    alignItems: "center",
-    backgroundColor: "#000000",
-    flexDirection: "row",
-    justifyContent: "space-between",
-  },
   fieldLabel: {
-    color: "#FFFFFF",
-    fontFamily: "FamiljenGrotesk-Bold",
     flexShrink: 0,
-    fontSize: 16,
-    lineHeight: 16,
   },
   fieldValueGroup: {
     alignItems: "center",
@@ -646,24 +733,9 @@ const styles = StyleSheet.create({
     minWidth: 0,
   },
   fieldValue: {
-    color: "#FFFFFF",
     flex: 1,
     flexShrink: 1,
-    fontFamily: "FamiljenGrotesk-Bold",
-    fontSize: 16,
-    lineHeight: 16,
-    opacity: 0.5,
     textAlign: "right",
   },
-  categorySection: { gap: 10 },
-  helperText: { color: "#777" },
-  errorText: { color: "#b42318" },
-  button: {
-    alignItems: "center",
-    backgroundColor: "#111",
-    borderRadius: 999,
-    padding: 16,
-  },
-  buttonDisabled: { opacity: 0.6 },
-  buttonText: { color: "#fff", fontWeight: "600" },
+  optionBlock: { gap: layout.titleContentGap },
 })

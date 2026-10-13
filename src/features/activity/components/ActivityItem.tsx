@@ -3,6 +3,9 @@ import {
   Text,
   StyleSheet,
 } from "react-native"
+import { AppText } from "../../../components/text/AppText"
+import { useFormatMoney } from "../../households/hooks/useFormatMoney"
+import { colors, fonts, radii } from "../../../theme"
 
 import { formatRelativeTime } from "../../../utils/formatRelativeTime"
 import { TransactionCard } from "../../transactions/components/TransactionCard"
@@ -18,6 +21,8 @@ export function ActivityItem({
   item,
   currentUserId,
 }: ActivityItemProps) {
+  const format = useFormatMoney()
+
   if (item.type === "transaction_created" || item.type === "transaction_deleted") {
     const transaction = getActivityTransaction(item)
 
@@ -26,7 +31,7 @@ export function ActivityItem({
         <TransactionCard
           context="home"
           householdType="couple"
-          actorText={getActivityMessage(item, currentUserId)}
+          actorText={getActivityMessage(item, currentUserId, format)}
           transaction={transaction}
         />
       )
@@ -38,17 +43,17 @@ export function ActivityItem({
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.action}>
-          {getActivityMessage(item, currentUserId)}
-        </Text>
+        <AppText style={styles.action} variant="subtitle">
+          {getActivityMessage(item, currentUserId, format)}
+        </AppText>
 
-        <Text style={styles.time}>
+        <AppText tone="muted" variant="caption">
           {formatRelativeTime(item.created_at)}
-        </Text>
+        </AppText>
       </View>
 
       <View style={styles.detail}>
-        <Text style={styles.title}>
+        <AppText style={styles.title} tone="muted" variant="body">
           {getString(metadata.categoryIcon)
             ? `${getString(metadata.categoryIcon)} `
             : ""}
@@ -56,11 +61,11 @@ export function ActivityItem({
             getString(metadata.name) ??
             getString(metadata.categoryName) ??
             "Actividad"}
-        </Text>
+        </AppText>
 
         {getAmount(item) !== null && (
           <Text style={styles.amount}>
-            {formatCurrency(getAmount(item)!)}
+            {format(getAmount(item)!)}
           </Text>
         )}
       </View>
@@ -91,7 +96,8 @@ function getActivityTransaction(item: ActivityItemData) {
 
 export function getActivityMessage(
   item: ActivityItemData,
-  currentUserId: string | undefined
+  currentUserId: string | undefined,
+  format: (amount: number) => string,
 ) {
   const isCurrentUser = item.actor?.id === currentUserId
   const actor = isCurrentUser
@@ -116,14 +122,15 @@ export function getActivityMessage(
     return `${actor} se unió a ${householdName}`
   }
 
-  const action = getActivityAction(item, isCurrentUser)
+  const action = getActivityAction(item, isCurrentUser, format)
 
   return `${actor} ${action}`
 }
 
 function getActivityAction(
   item: ActivityItemData,
-  isCurrentUser: boolean
+  isCurrentUser: boolean,
+  format: (amount: number) => string,
 ) {
   switch (item.type) {
     case "transaction_created":
@@ -180,8 +187,8 @@ function getActivityAction(
       }
 
       return isCurrentUser
-        ? `corregiste un pago de ${name} de ${formatCurrency(oldAmount)} a ${formatCurrency(newAmount)}`
-        : `corrigió un pago de ${name} de ${formatCurrency(oldAmount)} a ${formatCurrency(newAmount)}`
+        ? `corregiste un pago de ${name} de ${format(oldAmount)} a ${format(newAmount)}`
+        : `corrigió un pago de ${name} de ${format(oldAmount)} a ${format(newAmount)}`
     }
   }
 }
@@ -210,20 +217,13 @@ function getAmount(item: ActivityItemData) {
   return typeof value === "number" ? value : null
 }
 
-function formatCurrency(amount: number) {
-  return new Intl.NumberFormat("es-AR", {
-    style: "currency",
-    currency: "ARS",
-    maximumFractionDigits: 2,
-  }).format(amount)
-}
-
 const styles = StyleSheet.create({
   container: {
-    padding: 14,
+    padding: 12,
     borderWidth: 1,
-    borderColor: "#eee",
-    borderRadius: 14,
+    borderColor: colors.border,
+    borderRadius: radii.md,
+    backgroundColor: colors.card,
     gap: 10,
   },
 
@@ -236,12 +236,6 @@ const styles = StyleSheet.create({
 
   action: {
     flex: 1,
-    fontWeight: "600",
-  },
-
-  time: {
-    color: "#777",
-    fontSize: 12,
   },
 
   detail: {
@@ -253,10 +247,11 @@ const styles = StyleSheet.create({
 
   title: {
     flex: 1,
-    color: "#555",
   },
 
   amount: {
-    fontWeight: "700",
+    fontWeight: "600",
+    color: colors.foreground,
+    fontFamily: fonts.monoMedium,
   },
 })

@@ -10,20 +10,12 @@ import { StyleSheet, View } from "react-native"
 import { createElement } from "react"
 import type { ComponentType, ReactNode } from "react"
 
-export type MainTabsParamList = {
-  Home: undefined
-  Transactions: undefined
-  AiChat: undefined
-  Budgets: undefined
-  Profile: undefined
-}
-
 export const TAB_ORDER = [
   "Home",
   "Transactions",
   "AiChat",
   "Budgets",
-  "Profile",
+  "FixedExpenses",
 ] as const
 
 const GESTURE_ACTIVATION_DISTANCE = 40
@@ -77,8 +69,8 @@ export function MainTabsSwipeContainer({ children }: { children: ReactNode }) {
   )
 }
 
-export function withMainTabsSwipe(Component: ComponentType<any>) {
-  return function MainTabsSwipeScreen(props: any) {
+export function withMainTabsSwipe<Props extends object>(Component: ComponentType<Props>) {
+  return function MainTabsSwipeScreen(props: Props) {
     return (
       <MainTabsSwipeContainer>
         {createElement(Component, props)}

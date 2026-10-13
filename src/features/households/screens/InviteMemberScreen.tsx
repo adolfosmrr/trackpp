@@ -2,18 +2,25 @@ import { useState } from "react"
 
 import {
   View,
-  Text,
-  TextInput,
-  Pressable,
   StyleSheet,
   Alert,
 } from "react-native"
+import type { NativeStackScreenProps } from "@react-navigation/native-stack"
+import { useSafeAreaInsets } from "react-native-safe-area-context"
+import { colors, layout } from "../../../theme"
+
+import { Button } from "../../../components/buttons/Button"
+import { TextField } from "../../../components/inputs/TextField"
+import { BackLink } from "../../../components/navigation/BackLink"
+import { AppText } from "../../../components/text/AppText"
 
 import { useCreateInvitation } from "../hooks/useCreateInvitation"
+import type { AppStackParamList } from "../../../navigation/types"
 
 export function InviteMemberScreen({
   navigation,
-}: any) {
+}: NativeStackScreenProps<AppStackParamList, "InviteMember">) {
+  const insets = useSafeAreaInsets()
   const [email, setEmail] =
     useState("")
 
@@ -59,19 +66,19 @@ export function InviteMemberScreen({
   }
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>
+    <View style={[styles.container, { paddingTop: insets.top + layout.titleContentGap }]}>
+      <BackLink onPress={() => navigation.goBack()} />
+      <AppText variant="title">
         Invitar pareja
-      </Text>
+      </AppText>
 
-      <Text style={styles.description}>
+      <AppText tone="muted" variant="body">
         Ingresa el correo de la persona
         que quieres agregar al espacio
         compartido.
-      </Text>
+      </AppText>
 
-      <TextInput
-        style={styles.input}
+      <TextField
         placeholder="correo@ejemplo.com"
         keyboardType="email-address"
         autoCapitalize="none"
@@ -80,23 +87,12 @@ export function InviteMemberScreen({
         onChangeText={setEmail}
       />
 
-      <Pressable
-        style={[
-          styles.button,
-          invitationMutation.isPending &&
-            styles.buttonDisabled,
-        ]}
+      <Button
+        disabled={invitationMutation.isPending}
+        label={invitationMutation.isPending ? "Enviando..." : "Crear invitación"}
         onPress={handleInvite}
-        disabled={
-          invitationMutation.isPending
-        }
-      >
-        <Text style={styles.buttonText}>
-          {invitationMutation.isPending
-            ? "Enviando..."
-            : "Crear invitación"}
-        </Text>
-      </Pressable>
+        tone="brand"
+      />
     </View>
   )
 }
@@ -123,41 +119,8 @@ const styles =
   StyleSheet.create({
     container: {
       flex: 1,
-      padding: 24,
-      gap: 18,
-    },
-
-    title: {
-      fontSize: 26,
-      fontWeight: "700",
-    },
-
-    description: {
-      fontSize: 15,
-      color: "#777",
-      lineHeight: 22,
-    },
-
-    input: {
-      borderWidth: 1,
-      borderColor: "#ccc",
-      borderRadius: 12,
-      padding: 14,
-    },
-
-    button: {
-      backgroundColor: "#111",
-      padding: 16,
-      borderRadius: 12,
-      alignItems: "center",
-    },
-
-    buttonDisabled: {
-      opacity: 0.6,
-    },
-
-    buttonText: {
-      color: "#fff",
-      fontWeight: "700",
+      backgroundColor: colors.background,
+      padding: layout.sheetPadding,
+      gap: layout.titleContentGap,
     },
   })

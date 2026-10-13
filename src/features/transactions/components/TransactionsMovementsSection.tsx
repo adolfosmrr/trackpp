@@ -1,7 +1,11 @@
-import { Pressable, StyleSheet, Text, View } from "react-native"
+import { StyleSheet, Text, View } from "react-native"
+import { colors, fonts, layout } from "../../../theme"
 import { useMemo } from "react"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 
+import { EmptyState } from "../../../components/feedback/EmptyState"
+import { ListSection } from "../../../components/layout/ListSection"
+import { SectionHeader } from "../../../components/layout/SectionHeader"
 import { TransactionCard } from "./TransactionCard"
 import type { Transaction, TransactionFilters } from "../types"
 import {
@@ -14,8 +18,9 @@ type TransactionsMovementsSectionProps = {
   transactions: Transaction[]
   householdType: "personal" | "couple"
   userId?: string
-  deletingId: string | null
   onDelete: (transaction: Transaction) => void
+  onCreate: () => void
+  onClearFilters: () => void
   filters: TransactionFilters
   activeFilterCount: number
   onOpenFilters: () => void
@@ -25,8 +30,9 @@ export function TransactionsMovementsSection({
   transactions,
   householdType,
   userId,
-  deletingId,
   onDelete,
+  onCreate,
+  onClearFilters,
   filters,
   activeFilterCount,
   onOpenFilters,
@@ -44,16 +50,13 @@ export function TransactionsMovementsSection({
   const hasFilteredResults = filteredTransactions.length > 0
 
   return (
-    <View style={[styles.section, { paddingBottom: bottomPadding }]}> 
-      <View style={styles.content}>
-        <View style={styles.titleRow}>
-          <Text style={styles.sectionTitle}>Todos los{"\n"}Movimientos</Text>
-          <Pressable style={styles.filterButton} onPress={onOpenFilters}>
-            <Text style={styles.filterButtonText}>
-              {activeFilterCount ? `Filtrar · ${activeFilterCount}` : "Filtrar"}
-            </Text>
-          </Pressable>
-        </View>
+    <ListSection style={{ paddingBottom: bottomPadding }}>
+      <View style={styles.section}>
+        <SectionHeader
+          actionLabel={activeFilterCount ? `Filtrar · ${activeFilterCount}` : "Filtrar"}
+          onAction={onOpenFilters}
+          title={"Todos los\nMovimientos"}
+        />
 
         <View style={styles.transactionGroups}>
           {transactionsByDate.length ? (
@@ -74,7 +77,6 @@ export function TransactionsMovementsSection({
                       actorText={householdType === "couple"
                         ? `Por ${transaction.created_by === userId ? "ti" : transaction.creator?.name ?? "otro miembro"}`
                         : undefined}
-                      deleting={deletingId === transaction.id}
                       onDelete={() => onDelete(transaction)}
                       transaction={transaction}
                     />
@@ -82,59 +84,37 @@ export function TransactionsMovementsSection({
                 </View>
               </View>
             ))
+          ) : transactions.length && !hasFilteredResults ? (
+            <EmptyState
+              title="Nada coincide con estos filtros"
+              body="Probá con otro período o limpiá los filtros para ver todos los movimientos."
+              actionLabel="Limpiar filtros"
+              onAction={onClearFilters}
+            />
           ) : (
-            <Text style={styles.empty}>
-              {transactions.length && !hasFilteredResults
-                ? "No hay movimientos que coincidan con estos filtros."
-                : "Todavía no hay movimientos."}
-            </Text>
+            <EmptyState
+              title="Todavía no cargaste movimientos"
+              body="Anotá un gasto, un ingreso o un gasto fijo desde el botón + Movimiento."
+              actionLabel="Agregar movimiento"
+              onAction={onCreate}
+            />
           )}
         </View>
       </View>
-    </View>
+    </ListSection>
   )
 }
 
 const styles = StyleSheet.create({
   section: {
-    backgroundColor: "#E6E6E6",
-    borderTopLeftRadius: 60,
-    borderTopRightRadius: 60,
-    marginHorizontal: -20,
-    paddingTop: 50,
-  },
-  content: {
-    paddingHorizontal: 20,
-  },
-  sectionTitle: {
-    color: "#1C1C1C",
-    fontFamily: "FamiljenGrotesk-Bold",
-    fontSize: 40,
-    lineHeight: 40,
-  },
-  titleRow: {
-    alignItems: "flex-start",
-    flexDirection: "row",
-    justifyContent: "space-between",
-    gap: 12,
-  },
-  filterButton: {
-    alignItems: "center",
-    backgroundColor: "#000000",
-    borderRadius: 999,
-    justifyContent: "center",
-    marginTop: 4,
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-  },
-  filterButtonText: {
-    color: "#FFFFFF",
-    fontFamily: "FamiljenGrotesk-Bold",
-    fontSize: 12,
-    lineHeight: 12,
+    backgroundColor: colors.transparent,
+    borderTopColor: colors.border,
+    borderTopWidth: 1,
+    marginHorizontal: 0,
+    marginTop: layout.belowTopSection,
   },
   transactionGroups: {
-    marginTop: 40,
+    marginTop: layout.titleContentGap,
   },
   transactionGroupSpacing: {
     marginBottom: 40,
@@ -143,15 +123,15 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   transactionDate: {
-    color: "#1C1C1C",
-    fontFamily: "Satoshi-Bold",
-    fontSize: 16,
+    color: colors.mutedForeground,
+    fontFamily: fonts.monoMedium,
+    fontSize: 12,
     lineHeight: 16,
-    marginBottom: 20,
-    opacity: 0.5,
+    marginBottom: 10,
   },
   empty: {
-    color: "#777",
+    color: colors.mutedForeground,
+    fontFamily: fonts.sans,
     marginTop: 40,
     textAlign: "center",
   },

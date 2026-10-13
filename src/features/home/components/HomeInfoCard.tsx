@@ -11,6 +11,9 @@ import {
   View,
 } from "react-native"
 
+import { AppText } from "../../../components/text/AppText"
+import { colors, radii } from "../../../theme"
+
 export type HomeInfoCardVariant = "darkGradientText" | "light" | "gradient" | "dark"
 
 type HomeInfoCardProps = {
@@ -19,8 +22,8 @@ type HomeInfoCardProps = {
   variant: HomeInfoCardVariant
 }
 
-const CARD_GRADIENT = ["#BFFFC7", "#18A5A7"]
-const TEXT_GRADIENT = ["#BFFFC7", "#18A5A7"]
+const CARD_GRADIENT = [colors.brandMuted, colors.brandDeep]
+const TEXT_GRADIENT = [colors.brandBright, colors.brand]
 
 export function HomeInfoCard({
   icon,
@@ -53,19 +56,20 @@ export function HomeInfoCard({
           {icon ? <Text style={styles.icon}>{icon}</Text> : null}
           {isDarkText ? (
             <View style={styles.gradientTextWrapper}>
-              <Text
-                style={[styles.message, styles.gradientTextMeasure]}
+              <AppText
                 pointerEvents="none"
+                style={[styles.message, styles.gradientTextMeasure]}
+                variant="subtitle"
               >
                 {message}
-              </Text>
+              </AppText>
               <MaskedView
                 style={StyleSheet.absoluteFill}
                 pointerEvents="none"
                 maskElement={
-                  <Text style={[styles.message, styles.maskText]}>
+                  <AppText style={[styles.message, styles.maskText]} variant="subtitle">
                     {message}
-                  </Text>
+                  </AppText>
                 }
               >
                 <Svg
@@ -89,7 +93,7 @@ export function HomeInfoCard({
               </MaskedView>
             </View>
           ) : (
-            <Text
+            <AppText
               style={[
                 styles.message,
                 variant === "gradient"
@@ -98,9 +102,10 @@ export function HomeInfoCard({
                     ? styles.darkMessage
                     : styles.lightMessage,
               ]}
+              variant="subtitle"
             >
               {message}
-            </Text>
+            </AppText>
           )}
         </View>
       </View>
@@ -111,26 +116,24 @@ export function HomeInfoCard({
 const styles = StyleSheet.create({
   card: {
     width: "100%",
-    borderRadius: 20,
-    shadowColor: "#000000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 12,
-    elevation: 4,
+    borderRadius: radii.md,
   },
   cardSurface: {
     width: "100%",
-    borderRadius: 20,
+    borderColor: colors.border,
+    borderRadius: radii.md,
+    borderWidth: 1,
     overflow: "hidden",
+    backgroundColor: colors.card,
   },
   darkCard: {
-    backgroundColor: "#111",
+    backgroundColor: colors.card,
   },
   plainDarkCard: {
-    backgroundColor: "#000000",
+    backgroundColor: colors.backgroundElevated,
   },
   lightCard: {
-    backgroundColor: "#EEEEEE",
+    backgroundColor: colors.popover,
   },
   content: {
     flexDirection: "row",
@@ -151,23 +154,20 @@ const styles = StyleSheet.create({
   message: {
     flex: 1,
     minWidth: 0,
-    fontSize: 16,
-    lineHeight: 16,
-    fontFamily: "FamiljenGrotesk-Bold",
   },
   maskText: {
-    color: "#000",
+    color: colors.foreground,
   },
   gradientTextMeasure: {
     opacity: 0,
   },
   gradientMessage: {
-    color: "#1C1C1C",
+    color: colors.foreground,
   },
   lightMessage: {
-    color: "#1C1C1C",
+    color: colors.foreground,
   },
   darkMessage: {
-    color: "#FFFFFF",
+    color: colors.foreground,
   },
 })

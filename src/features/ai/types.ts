@@ -12,4 +12,6 @@ export type AiMessage = {
   role: "user" | "assistant"
   content: string
   createdAt: string
+  /** Local placeholder while the assistant is working. Never persisted. */
+  pending?: boolean
 }

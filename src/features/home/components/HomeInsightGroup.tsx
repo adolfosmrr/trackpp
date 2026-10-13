@@ -1,5 +1,6 @@
-import { StyleSheet, Text } from "react-native"
+import { StyleSheet } from "react-native"
 
+import { AppText } from "../../../components/text/AppText"
 import type {
   HomeAiInsightAction,
   HomeAiInsightGroup as HomeAiInsightGroupData,
@@ -24,27 +25,35 @@ export function HomeInsightGroup({
     .filter((action): action is HomeAiInsightAction => Boolean(action))
 
   if (groupActions.length !== group.actionIds.length) {
-    return <Text style={[styles.group, variant === "plain" && styles.plainGroup]}>{group.text}</Text>
+    return (
+      <AppText tone={variant === "plain" ? "muted" : "default"} variant={variant === "plain" ? "title" : "body"}>
+        {group.text}
+      </AppText>
+    )
   }
 
   return (
-    <Text style={[styles.group, variant === "plain" && styles.plainGroup]}>
+    <AppText tone={variant === "plain" ? "muted" : "default"} variant={variant === "plain" ? "title" : "body"}>
       {segmentInsightGroup(group.text, groupActions).map((segment, index) =>
         segment.type === "action" ? (
-          <Text
+          <AppText
             accessibilityLabel={`Abrir detalle: ${segment.action.label}`}
             accessibilityRole="button"
             key={`${segment.action.id}-${segment.start}`}
             onPress={() => onActionPress(segment.action)}
             style={styles.action}
+            tone="brand"
+            variant={variant === "plain" ? "title" : "body"}
           >
             {segment.value}
-          </Text>
+          </AppText>
         ) : (
-          <Text key={`text-${group.id}-${index}`}>{segment.value}</Text>
+          <AppText key={`text-${group.id}-${index}`} variant={variant === "plain" ? "title" : "body"}>
+            {segment.value}
+          </AppText>
         )
       )}
-    </Text>
+    </AppText>
   )
 }
 
@@ -78,7 +87,5 @@ export function segmentInsightGroup(text: string, actions: HomeAiInsightAction[]
 }
 
 const styles = StyleSheet.create({
-  group: { color: "#1C1C1C", fontFamily: "FamiljenGrotesk-Medium", fontSize: 14, lineHeight: 18 },
-  plainGroup: { color: "#FFFFFF", fontFamily: "FamiljenGrotesk-Bold", fontSize: 22, lineHeight: 28, opacity: 0.5 },
   action: { textDecorationLine: "underline" },
 })

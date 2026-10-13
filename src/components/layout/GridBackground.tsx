@@ -1,4 +1,6 @@
-import { useMemo } from "react"
+import { memo, useMemo } from "react"
+
+import { colors } from "../../theme"
 import {
   StyleSheet,
   useWindowDimensions,
@@ -12,11 +14,11 @@ type GridBackgroundProps = {
   opacity?: number
 }
 
-export function GridBackground({
+export const GridBackground = memo(function GridBackground({
   spacing = 15,
-  lineColor = "#000",
-  lineWidth = 0.3,
-  opacity = 0.1,
+  lineColor = colors.gridLine,
+  lineWidth = 1,
+  opacity = 1,
 }: GridBackgroundProps) {
   const { width, height } = useWindowDimensions()
   const safeSpacing = Math.max(1, spacing)
@@ -56,7 +58,7 @@ export function GridBackground({
       ))}
     </View>
   )
-}
+})
 
 const styles = StyleSheet.create({
   container: {

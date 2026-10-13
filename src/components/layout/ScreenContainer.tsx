@@ -1,5 +1,7 @@
 import type { ReactNode } from "react"
 import { StyleProp, StyleSheet, View, ViewStyle } from "react-native"
+
+import { colors, layout } from "../../theme"
 import {
     BottomTabBarHeightContext,
     useBottomTabBarHeight,
@@ -17,7 +19,7 @@ type ScreenContainerProps = {
 export function ScreenContainer({
     children,
     style,
-    paddingHorizontal = 20,
+    paddingHorizontal = layout.sectionInset,
 }: ScreenContainerProps) {
     const tabBarHeightContext = useContext(BottomTabBarHeightContext)
 
@@ -53,7 +55,7 @@ function ScreenContainerWithTabBar({
     return (
         <ScreenContainerView
             paddingBottom={tabBarHeight}
-            paddingHorizontal={paddingHorizontal ?? 20}
+            paddingHorizontal={paddingHorizontal ?? layout.sectionInset}
             style={style}
         >
             {children}
@@ -83,6 +85,7 @@ function ScreenContainerView({
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        paddingHorizontal: 20,
+        backgroundColor: colors.background,
+        paddingHorizontal: layout.sectionInset,
     },
 })

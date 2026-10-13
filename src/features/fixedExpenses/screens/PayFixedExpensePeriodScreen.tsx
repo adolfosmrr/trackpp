@@ -2,36 +2,57 @@ import { useState } from "react"
 import {
   ActivityIndicator,
   Alert,
-  Pressable,
   StyleSheet,
   Text,
-  TextInput,
   View,
 } from "react-native"
+import type { NativeStackScreenProps } from "@react-navigation/native-stack"
+import { useSafeAreaInsets } from "react-native-safe-area-context"
+import { colors, fonts, layout } from "../../../theme"
+
+import { Button } from "../../../components/buttons/Button"
+import { TextField } from "../../../components/inputs/TextField"
+import { BackLink } from "../../../components/navigation/BackLink"
+import { AppText } from "../../../components/text/AppText"
+import { useFormatMoney } from "../../households/hooks/useFormatMoney"
 
 import { useFixedExpensePeriods } from "../hooks/useFixedExpensePeriods"
 import { usePayFixedExpensePeriod } from "../hooks/usePayFixedExpensePeriod"
-import { useHouseholds } from "../../households/hooks/useHouseholds"
-import { useHouseholdStore } from "../../../store/householdStore"
+import type { AppStackParamList } from "../../../navigation/types"
 
-export function PayFixedExpensePeriodScreen({ route, navigation }: any) {
+type PayFixedExpensePeriodScreenProps = NativeStackScreenProps<
+  AppStackParamList,
+  "PayFixedExpensePeriod"
+>
+
+export function PayFixedExpensePeriodScreen({
+  route,
+  navigation,
+}: PayFixedExpensePeriodScreenProps) {
+  const insets = useSafeAreaInsets()
+  const format = useFormatMoney()
   const periodsQuery = useFixedExpensePeriods()
   const { data: periods, isLoading } = periodsQuery
   const mutation = usePayFixedExpensePeriod()
-  const { data: memberships } = useHouseholds()
-  const selectedHouseholdId = useHouseholdStore((state) => state.selectedHouseholdId)
-  const currency = memberships?.find(
-    (membership) => membership.household.id === selectedHouseholdId
-  )?.household.currency ?? "ARS"
   const period = periods?.find((item) => item.id === route.params.periodId)
   const [amount, setAmount] = useState("")
 
   if (isLoading) {
-    return <ActivityIndicator />
+    return (
+      <View style={[styles.container, { paddingTop: insets.top + layout.titleContentGap }]}>
+        <BackLink onPress={() => navigation.goBack()} />
+        <ActivityIndicator color={colors.brand} />
+      </View>
+    )
   }
 
   if (!period) {
-    return <View style={styles.center}><Text>No se encontró la obligación mensual.</Text></View>
+    return (
+      <View style={[styles.container, { paddingTop: insets.top + layout.titleContentGap }]}>
+        <BackLink onPress={() => navigation.goBack()} />
+        <AppText tone="muted" variant="body">No se encontró la obligación mensual.</AppText>
+      </View>
+    )
   }
 
   const currentPeriod = period
@@ -47,7 +68,7 @@ export function PayFixedExpensePeriodScreen({ route, navigation }: any) {
     if (parsedAmount > currentPeriod.remaining) {
       Alert.alert(
         "Error",
-        `El monto supera el saldo pendiente de ${formatCurrency(currentPeriod.remaining, currency)}.`
+        `El monto supera el saldo pendiente de ${format(currentPeriod.remaining)}.`
       )
       return
     }
@@ -67,42 +88,41 @@ export function PayFixedExpensePeriodScreen({ route, navigation }: any) {
   }
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>{period.name}</Text>
-      <Text>Total: {formatCurrency(period.expectedAmount, currency)}</Text>
-      <Text>Pagado: {formatCurrency(period.totalPaid, currency)}</Text>
-      <Text>Pendiente: {formatCurrency(period.remaining, currency)}</Text>
+    <View style={[styles.container, { paddingTop: insets.top + layout.titleContentGap }]}>
+      <BackLink onPress={() => navigation.goBack()} />
+      <AppText variant="title">{period.name}</AppText>
+      <Text style={styles.meta}>Total: {format(period.expectedAmount)}</Text>
+      <Text style={styles.meta}>Pagado: {format(period.totalPaid)}</Text>
+      <Text style={styles.meta}>Pendiente: {format(period.remaining)}</Text>
 
-      <TextInput
-        style={styles.input}
+      <TextField
         placeholder="Monto a pagar"
         keyboardType="decimal-pad"
         value={amount}
         onChangeText={setAmount}
       />
 
-      <Pressable style={styles.secondaryButton} onPress={() => setAmount(String(period.remaining))}>
-        <Text style={styles.secondaryButtonText}>Pagar saldo completo</Text>
-      </Pressable>
-      <Pressable style={[styles.button, mutation.isPending && styles.disabled]} onPress={() => void handlePay()} disabled={mutation.isPending}>
-        <Text style={styles.buttonText}>{mutation.isPending ? "Registrando..." : "Registrar pago parcial"}</Text>
-      </Pressable>
+      <Button
+        label="Pagar saldo completo"
+        onPress={() => setAmount(String(period.remaining))}
+        tone="outline"
+      />
+      <Button
+        disabled={mutation.isPending}
+        label={mutation.isPending ? "Registrando..." : "Registrar pago parcial"}
+        onPress={() => void handlePay()}
+        tone="brand"
+      />
     </View>
   )
 }
 
-function formatCurrency(amount: number, currency: string) {
-  return new Intl.NumberFormat("es-AR", { style: "currency", currency, maximumFractionDigits: 2 }).format(amount)
-}
-
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 24, gap: 16 },
-  center: { flex: 1, alignItems: "center", justifyContent: "center", padding: 24 },
-  title: { fontSize: 22, fontWeight: "700" },
-  input: { borderWidth: 1, borderColor: "#ccc", borderRadius: 10, padding: 14 },
-  secondaryButton: { padding: 14, borderRadius: 10, borderWidth: 1, borderColor: "#111", alignItems: "center" },
-  secondaryButtonText: { fontWeight: "600" },
-  button: { padding: 16, borderRadius: 10, backgroundColor: "#111", alignItems: "center" },
-  disabled: { opacity: 0.6 },
-  buttonText: { color: "#fff", fontWeight: "600" },
+  container: {
+    flex: 1,
+    backgroundColor: colors.background,
+    padding: layout.sheetPadding,
+    gap: layout.titleContentGap,
+  },
+  meta: { color: colors.mutedForeground, fontFamily: fonts.mono, fontSize: 14 },
 })

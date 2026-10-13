@@ -2,21 +2,32 @@ import { useState } from "react"
 import {
   ActivityIndicator,
   Alert,
-  FlatList,
   LayoutChangeEvent,
-  Pressable,
   RefreshControl,
+  ScrollView,
   StyleSheet,
-  Text,
   View,
 } from "react-native"
-import Svg, { Defs, LinearGradient, Rect, Stop } from "react-native-svg"
-
+import type { CompositeScreenProps } from "@react-navigation/native"
+import type { NativeBottomTabScreenProps } from "@react-navigation/bottom-tabs/unstable"
+import type { NativeStackScreenProps } from "@react-navigation/native-stack"
+import { useSafeAreaInsets } from "react-native-safe-area-context"
+import { useQueryClient } from "@tanstack/react-query"
+import { colors, layout, refreshControlColors } from "../../../theme"
+import { Button } from "../../../components/buttons/Button"
+import { GlassButton } from "../../../components/buttons/GlassButton"
+import { AppText } from "../../../components/text/AppText"
+import { CircleAddButton } from "../../../components/buttons/CircleAddButton"
+import { ListSection } from "../../../components/layout/ListSection"
+import { useFormatMoney } from "../../households/hooks/useFormatMoney"
+import { showUndo } from "../../../components/feedback/undo"
 import { useDeleteFixedExpense } from "../hooks/useDeleteFixedExpense"
+import { createFixedExpense } from "../services/fixedExpenseService"
 import {
   getCurrentFixedExpensePeriod,
   useFixedExpensePeriods,
 } from "../hooks/useFixedExpensePeriods"
+import { FixedExpenseList } from "../components/FixedExpenseList"
 import { useFixedExpenses } from "../hooks/useFixedExpenses"
 import { usePayFixedExpensePeriod } from "../hooks/usePayFixedExpensePeriod"
 import type { FixedExpense, FixedExpensePeriod } from "../types"
@@ -30,10 +41,19 @@ import { HomeGreeting } from "../../home/components/HomeGreeting"
 import { HomeIncomeExpenseSummary } from "../../home/components/HomeIncomeExpenseSummary"
 import { ScreenContainer } from "../../../components/layout/ScreenContainer"
 import { TopSection } from "../../../components/layout/TopSection"
+import { SectionHeader } from "../../../components/layout/SectionHeader"
 import { TopSectionHeader } from "../../../components/layout/TopSectionHeader"
-import { useCreateTransactionSheet } from "../../transactions/components/CreateTransactionSheetProvider"
+import { createMovementParams, editFixedExpenseParams } from "../../transactions/openCreateMovement"
+import type { AppStackParamList, MainTabsParamList } from "../../../navigation/types"
 
-export function FixedExpensesScreen({ navigation }: any) {
+type FixedExpensesScreenProps = CompositeScreenProps<
+  NativeBottomTabScreenProps<MainTabsParamList, "FixedExpenses">,
+  NativeStackScreenProps<AppStackParamList>
+>
+
+export function FixedExpensesScreen({ navigation }: FixedExpensesScreenProps) {
+  const insets = useSafeAreaInsets()
+  const queryClient = useQueryClient()
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [processingPeriodId, setProcessingPeriodId] = useState<string | null>(null)
   const [topSectionHeight, setTopSectionHeight] = useState(0)
@@ -42,7 +62,6 @@ export function FixedExpensesScreen({ navigation }: any) {
   const { data: profile, isLoading: profileLoading, error: profileError } = profileQuery
   const dashboardQuery = useDashboard()
   const { data: dashboard, isLoading: dashboardLoading, error: dashboardError } = dashboardQuery
-  const { openCreateTransaction, openEditFixedExpense } = useCreateTransactionSheet()
   const fixedExpensesQuery = useFixedExpenses()
   const { data, isLoading, error } = fixedExpensesQuery
   const currentPeriod = getCurrentFixedExpensePeriod()
@@ -51,19 +70,14 @@ export function FixedExpensesScreen({ navigation }: any) {
     currentPeriod
   )
   const {
-    data: periods,
     isLoading: periodsLoading,
     error: periodsError,
   } = periodsQuery
   const deleteMutation = useDeleteFixedExpense()
   const payMutation = usePayFixedExpensePeriod()
   const householdsQuery = useHouseholds()
-  const { data: memberships } = householdsQuery
+  const format = useFormatMoney()
   const selectedHouseholdId = useHouseholdStore((state) => state.selectedHouseholdId)
-  const selectedHousehold = memberships?.find(
-    (membership) => membership.household.id === selectedHouseholdId
-  )
-  const currency = selectedHousehold?.household.currency ?? "ARS"
 
   async function handleRefresh() {
     setRefreshing(true)
@@ -85,31 +99,53 @@ export function FixedExpensesScreen({ navigation }: any) {
     setTopSectionHeight((current) => current || height)
   }
 
-  function confirmDelete(expense: FixedExpense) {
-    Alert.alert(
-      "¿Eliminar gasto fijo?",
-      `${expense.name} dejará de aparecer entre tus gastos fijos.`,
-      [
-        { text: "Cancelar", style: "cancel" },
-        {
-          text: "Eliminar",
-          style: "destructive",
-          onPress: () => void handleDelete(expense.id),
-        },
-      ]
-    )
-  }
-
-  async function handleDelete(id: string) {
+  async function confirmDelete(expense: FixedExpense) {
     if (deletingId) return
-    setDeletingId(id)
+    const queryKey = ["fixed-expenses", selectedHouseholdId] as const
+    const previous = queryClient.getQueryData<FixedExpense[]>(queryKey)
+    queryClient.setQueryData<FixedExpense[]>(
+      queryKey,
+      (current) => current?.filter((item) => item.id !== expense.id),
+    )
+    setDeletingId(expense.id)
+
     try {
-      await deleteMutation.mutateAsync(id)
+      await deleteMutation.mutateAsync(expense.id)
     } catch (deleteError) {
-      Alert.alert("Error", deleteError instanceof Error ? deleteError.message : "No se pudo eliminar el gasto fijo.")
+      queryClient.setQueryData(queryKey, previous)
+      showUndo({
+        message: deleteError instanceof Error
+          ? deleteError.message
+          : "No se pudo eliminar el gasto fijo.",
+      })
+      return
     } finally {
       setDeletingId(null)
     }
+
+    showUndo({
+      message: "Eliminaste el gasto fijo",
+      actionLabel: "Deshacer",
+      onAction: () => {
+        void createFixedExpense(expense.household_id, {
+          name: expense.name,
+          amount: expense.amount,
+          categoryId: expense.category_id,
+          chargeDay: expense.charge_day,
+          dueDay: expense.due_day,
+          frequency: expense.frequency,
+          autoDebit: expense.auto_debit,
+          autoDebitSource: expense.auto_debit_source,
+          isActive: true,
+        }).then(() => {
+          void queryClient.invalidateQueries({ queryKey: ["fixed-expenses", expense.household_id] })
+          void queryClient.invalidateQueries({ queryKey: ["fixed-expense-periods", expense.household_id] })
+          void queryClient.invalidateQueries({ queryKey: ["activity", expense.household_id] })
+        }).catch(() => {
+          showUndo({ message: "No se pudo deshacer el gasto fijo." })
+        })
+      },
+    })
   }
 
   function confirmComplete(period: FixedExpensePeriod) {
@@ -117,7 +153,7 @@ export function FixedExpensesScreen({ navigation }: any) {
 
     Alert.alert(
       "Completar pago",
-      `Se registrará un pago de ${formatCurrency(period.remaining, currency)} para ${period.name}.`,
+      `Se registrará un pago de ${format(period.remaining)} para ${period.name}.`,
       [
         { text: "Cancelar", style: "cancel" },
         { text: "Confirmar", onPress: () => void handleComplete(period) },
@@ -143,7 +179,11 @@ export function FixedExpensesScreen({ navigation }: any) {
   }
 
   if (isLoading || periodsLoading || profileLoading || dashboardLoading) {
-    return <View style={styles.center}><ActivityIndicator size="large" /></View>
+    return (
+      <View style={styles.center}>
+        <ActivityIndicator color={colors.brand} size="large" />
+      </View>
+    )
   }
 
   if (error || periodsError || profileError || dashboardError) {
@@ -151,9 +191,9 @@ export function FixedExpensesScreen({ navigation }: any) {
 
     return (
       <View style={styles.center}>
-        <Text>No se pudieron cargar los gastos fijos.</Text>
+        <AppText tone="muted" variant="body">No se pudieron cargar los gastos fijos.</AppText>
         {__DEV__ && loadError instanceof Error ? (
-          <Text style={styles.errorDetail}>{loadError.message}</Text>
+          <AppText tone="destructive" variant="caption">{loadError.message}</AppText>
         ) : null}
       </View>
     )
@@ -162,172 +202,100 @@ export function FixedExpensesScreen({ navigation }: any) {
   return (
     <View style={styles.screenWrapper}>
       <ScreenContainer paddingHorizontal={0}>
-        <FlatList
-          data={data}
-          keyExtractor={(item) => item.id}
+        <ScrollView
           style={!topSectionHeight ? styles.hiddenList : undefined}
-          contentContainerStyle={styles.list}
+          contentContainerStyle={{ paddingBottom: Math.max(insets.bottom, 0) + 66 }}
           refreshControl={
             <RefreshControl
               refreshing={refreshing}
               onRefresh={handleRefresh}
               progressViewOffset={topSectionHeight}
-              tintColor="#1C1C1C"
-              colors={["#1C1C1C"]}
-              progressBackgroundColor="#FFFFFF"
+              {...refreshControlColors}
             />
           }
-          ListHeaderComponent={
-            topSectionHeight > 0 ? (
-              <View>
-                <View style={{ height: topSectionHeight }} />
-                <NotificationPermissionBanner />
-              </View>
-            ) : null
-          }
-          ListEmptyComponent={
-            <View style={styles.emptyState}>
-              <Text style={styles.empty}>Todavía no tienes gastos fijos.</Text>
-              <Text style={styles.emptyDescription}>
-                Agrega alquiler, servicios, suscripciones u otros gastos recurrentes.
-              </Text>
-              <Pressable
-                style={styles.emptyButton}
-                onPress={() => openCreateTransaction("fixed")}
-              >
-                <Text style={styles.primaryButtonText}>Agregar gasto fijo</Text>
-              </Pressable>
+        >
+          <ListSection style={styles.list}>
+          {topSectionHeight > 0 ? (
+            <View>
+              <View style={{ height: topSectionHeight }} />
+              <NotificationPermissionBanner />
+              <SectionHeader
+                title="Gastos fijos"
+                trailing={
+                  <CircleAddButton
+                    accessibilityLabel="Agregar gasto fijo"
+                    onPress={() => {
+                      void createMovementParams("fixed").then((params) => {
+                        navigation.navigate("CreateMovement", params)
+                      })
+                    }}
+                  />
+                }
+              />
             </View>
-          }
-          renderItem={({ item }) => {
-            const period = periods?.find((entry) => entry.fixedExpenseId === item.id)
-
-            return (
-              <View style={styles.card}>
-                <View style={styles.cardHeader}>
-                  <Text style={styles.name} numberOfLines={1}>
-                    {period?.category?.icon ?? item.category?.icon
-                      ? `${period?.category?.icon ?? item.category?.icon} `
-                      : ""}
-                    {period?.name ?? item.name}
-                  </Text>
-                  <Text style={styles.amount} numberOfLines={1}>
-                    {formatCurrency(period?.expectedAmount ?? item.amount, currency)}
-                  </Text>
-                </View>
-
-                <View style={styles.separator} />
-
-                <View style={styles.infoGrid}>
-                  <View style={styles.infoColumn}>
-                    <Text style={styles.infoText}>
-                      Inicia: {String(item.charge_day).padStart(2, "0")} cada mes
-                    </Text>
-                    <Text style={styles.infoText}>
-                      Vence: {String(item.due_day).padStart(2, "0")} cada mes
-                    </Text>
-                  </View>
-                  <View style={styles.infoColumn}>
-                    {period ? (
-                      <>
-                        <Text style={styles.infoText}>
-                          Pagado: {formatCurrency(period.totalPaid, currency)}
-                        </Text>
-                        <Text style={styles.infoText}>
-                          Pendiente: {formatCurrency(period.remaining, currency)}
-                        </Text>
-                      </>
-                    ) : null}
-                  </View>
-                </View>
-
-                <View style={styles.separator} />
-
-                {period ? (
-                  <View style={styles.statusProgress}>
-                    <Text style={styles.status}>{getStatusLabel(period.status)}</Text>
-                    <PaymentProgress period={period} />
-                  </View>
-                ) : null}
-
+          ) : null}
+          <FixedExpenseList
+            emptyBody="Sumá alquiler, servicios o suscripciones para seguirlos todos los meses."
+            onCreate={() => {
+              void createMovementParams("fixed").then((params) => {
+                navigation.navigate("CreateMovement", params)
+              })
+            }}
+            onOpenHistory={(expense) => {
+              navigation.navigate("FixedExpenseHistory", { fixedExpenseId: expense.id })
+            }}
+            renderActions={(expense, period) => {
+              const lastPayment = period?.lastPayment
+              return (
                 <View style={styles.actions}>
-                  <Pressable
-                    style={styles.actionButton}
-                    onPress={() => openEditFixedExpense(item, currentPeriod)}
-                  >
-                    <Text style={styles.actionButtonText}>Editar</Text>
-                  </Pressable>
+                  <GlassButton
+                    accessibilityLabel="Editar"
+                    label="Editar"
+                    onPress={() => {
+                      navigation.navigate("CreateMovement", editFixedExpenseParams(expense, currentPeriod))
+                    }}
+                  />
 
-                  <Pressable
-                    style={styles.actionButton}
+                  <GlassButton
+                    accessibilityLabel={deletingId === expense.id ? "Eliminando..." : "Eliminar"}
                     disabled={deletingId !== null}
-                    onPress={() => confirmDelete(item)}
-                  >
-                    <Text style={styles.actionButtonText}>
-                      {deletingId === item.id ? "Eliminando..." : "Eliminar"}
-                    </Text>
-                  </Pressable>
+                    label={deletingId === expense.id ? "Eliminando..." : "Eliminar"}
+                    onPress={() => confirmDelete(expense)}
+                  />
 
                   {period && period.remaining > 0 ? (
                     <>
-                      <View style={styles.gradientButton}>
-                        <Svg pointerEvents="none" style={StyleSheet.absoluteFill}>
-                          <Defs>
-                            <LinearGradient
-                              id="fixed-expense-complete-gradient"
-                              x1="0%"
-                              y1="0%"
-                              x2="100%"
-                              y2="100%"
-                            >
-                              <Stop offset="0" stopColor="#BFFFC7" />
-                              <Stop offset="1" stopColor="#18A5A7" />
-                            </LinearGradient>
-                          </Defs>
-                          <Rect
-                            width="100%"
-                            height="100%"
-                            fill="url(#fixed-expense-complete-gradient)"
-                          />
-                        </Svg>
-                        <Pressable
-                          accessibilityLabel="Pago completado"
-                          disabled={processingPeriodId !== null}
-                          style={[styles.actionButton, styles.gradientActionButton, processingPeriodId !== null && styles.disabled]}
-                          onPress={() => confirmComplete(period)}
-                        >
-                          <Text style={[styles.actionButtonText, styles.completeActionButtonText]}>
-                            {processingPeriodId === period.id ? "Procesando..." : "Pago Completo"}
-                          </Text>
-                        </Pressable>
-                      </View>
+                      <Button
+                        accessibilityLabel="Pago completado"
+                        disabled={processingPeriodId !== null}
+                        label={processingPeriodId === period.id ? "Procesando..." : "Pago Completo"}
+                        onPress={() => confirmComplete(period)}
+                        tone="brand"
+                      />
 
-                      <Pressable
+                      <GlassButton
                         accessibilityLabel="Pago parcial"
                         disabled={processingPeriodId !== null}
-                        style={[styles.actionButton, processingPeriodId !== null && styles.disabled]}
+                        label="Pago Parcial"
                         onPress={() => navigation.navigate("PayFixedExpensePeriod", { periodId: period.id })}
-                      >
-                        <Text style={styles.actionButtonText}>Pago Parcial</Text>
-                      </Pressable>
+                      />
                     </>
                   ) : null}
 
-                  {period?.lastPayment ? (
-                    <Pressable
+                  {lastPayment ? (
+                    <GlassButton
                       accessibilityLabel="Corregir último pago"
                       disabled={processingPeriodId !== null}
-                      style={[styles.actionButton, processingPeriodId !== null && styles.disabled]}
-                      onPress={() => navigation.navigate("CorrectFixedExpensePayment", { paymentId: period.lastPayment!.id })}
-                    >
-                      <Text style={styles.actionButtonText}>Corregir Último Pago</Text>
-                    </Pressable>
+                      label="Corregir Último Pago"
+                      onPress={() => navigation.navigate("CorrectFixedExpensePayment", { paymentId: lastPayment.id })}
+                    />
                   ) : null}
                 </View>
-              </View>
-            )
-          }}
-        />
+              )
+            }}
+          />
+          </ListSection>
+        </ScrollView>
       </ScreenContainer>
       <TopSection
         mode="collapsed"
@@ -336,7 +304,7 @@ export function FixedExpensesScreen({ navigation }: any) {
         style={styles.topSectionOverlay}
         renderContent={(collapseProgress) => (
           <>
-            <TopSectionHeader collapseProgress={collapseProgress} profile={profile} />
+            <TopSectionHeader profile={profile} />
             <HomeGreeting displayName={profile?.name?.trim()} collapseProgress={collapseProgress} />
             <HomeBalance
               balance={dashboard?.balance ?? 0}
@@ -355,40 +323,8 @@ export function FixedExpensesScreen({ navigation }: any) {
   )
 }
 
-function formatCurrency(amount: number, currency: string) {
-  return new Intl.NumberFormat("es-AR", { style: "currency", currency, maximumFractionDigits: 2 }).format(amount)
-}
-
-function PaymentProgress({ period }: { period: FixedExpensePeriod }) {
-  const paymentPercentage = period.expectedAmount > 0
-    ? (period.totalPaid / period.expectedAmount) * 100
-    : 0
-  const progressPercentage = Math.max(0, Math.min(paymentPercentage, 100))
-  const visiblePercentage = Math.round(progressPercentage)
-
-  return (
-    <View style={styles.progressSection} accessible accessibilityLabel={`${visiblePercentage}% pagado`}>
-      <Text style={styles.progressLabel}>{visiblePercentage}% pagado</Text>
-      <View style={styles.progressTrack}>
-        <View style={[styles.progressFill, { width: `${progressPercentage}%` }]} />
-      </View>
-    </View>
-  )
-}
-
-function getStatusLabel(status: string) {
-  switch (status) {
-    case "upcoming": return "Próximo"
-    case "pending": return "Pendiente"
-    case "partial": return "Parcial"
-    case "paid": return "Pagado"
-    case "overdue": return "Vencido"
-    default: return status
-  }
-}
-
 const styles = StyleSheet.create({
-  screenWrapper: { flex: 1, position: "relative" },
+  screenWrapper: { flex: 1, position: "relative", backgroundColor: colors.background },
   topSectionOverlay: {
     left: 0,
     position: "absolute",
@@ -397,126 +333,12 @@ const styles = StyleSheet.create({
     zIndex: 10,
   },
   hiddenList: { opacity: 0 },
-  center: { flex: 1, alignItems: "center", justifyContent: "center", padding: 24 },
-  list: { gap: 12, paddingHorizontal: 20, paddingTop: 20, paddingBottom: 24 },
-  primaryButtonText: { color: "#fff", fontWeight: "600" },
-  card: {
-    backgroundColor: "#EEEEEE",
-    padding: 20,
-    borderRadius: 20,
-    shadowColor: "#000000",
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 12,
-    elevation: 6,
-  },
-  cardHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: 12,
-    marginBottom: 15,
-  },
-  name: {
-    flex: 1,
-    flexShrink: 1,
-    color: "#1C1C1C",
-    fontFamily: "FamiljenGrotesk-Bold",
-    fontSize: 24,
-  },
-  amount: {
-    flexShrink: 1,
-    color: "#1C1C1C",
-    fontFamily: "FamiljenGrotesk-Bold",
-    fontSize: 24,
-    lineHeight: 24,
-    textAlign: "right",
-  },
-  separator: {
-    width: "100%",
-    height: 1,
-    backgroundColor: "#000000",
-  },
-  infoGrid: {
-    flexDirection: "row",
-    width: "100%",
-    marginVertical: 15,
-  },
-  infoColumn: {
-    width: "50%",
-    gap: 8,
-  },
-  infoText: {
-    color: "rgba(28,28,28,0.7)",
-    fontFamily: "Satoshi-Bold",
-    fontSize: 12,
-    lineHeight: 12,
-  },
-  statusProgress: {
-    marginTop: 15,
-    gap: 8,
-  },
-  status: {
-    color: "rgba(28,28,28,0.7)",
-    fontFamily: "Satoshi-Bold",
-    fontSize: 16,
-    lineHeight: 16,
-  },
-  disabled: { opacity: 0.55 },
-  progressSection: { gap: 6 },
-  progressLabel: {
-    color: "rgba(28,28,28,0.7)",
-    fontFamily: "Satoshi-Bold",
-    fontSize: 12,
-    lineHeight: 12,
-  },
-  progressTrack: {
-    height: 8,
-    overflow: "hidden",
-    borderRadius: 4,
-    backgroundColor: "#B6B6B6",
-  },
-  progressFill: {
-    height: "100%",
-    borderRadius: 4,
-    backgroundColor: "#000000",
-  },
+  center: { flex: 1, backgroundColor: colors.background, alignItems: "center", justifyContent: "center", padding: layout.sheetPadding },
+  list: { gap: layout.titleContentGap, paddingTop: layout.belowTopSection },
   actions: {
     flexDirection: "row",
     flexWrap: "wrap",
     gap: 10,
     marginTop: 15,
   },
-  actionButton: {
-    alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    borderRadius: 999,
-    backgroundColor: "#000000",
-  },
-  actionButtonText: {
-    color: "#FFFFFF",
-    fontFamily: "FamiljenGrotesk-Bold",
-    fontSize: 12,
-    lineHeight: 12,
-  },
-  gradientActionButton: {
-    backgroundColor: "transparent",
-  },
-  completeActionButtonText: {
-    color: "#1C1C1C",
-  },
-  gradientButton: {
-    borderRadius: 999,
-    overflow: "hidden",
-  },
-  empty: { color: "#777", textAlign: "center", padding: 24 },
-  emptyState: { alignItems: "center", gap: 8, paddingVertical: 24 },
-  emptyDescription: { color: "#777", textAlign: "center", paddingHorizontal: 16 },
-  emptyButton: { marginTop: 8, padding: 14, borderRadius: 10, backgroundColor: "#111" },
-  errorDetail: { color: "#b42318", textAlign: "center" },
 })

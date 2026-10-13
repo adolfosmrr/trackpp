@@ -2,7 +2,6 @@ import { supabase } from "../../../services/supabase"
 
 import type {
   CreateLinkedTransactionsInput,
-  CreateTransactionInput,
   Transaction,
 } from "../types"
 
@@ -57,31 +56,6 @@ export async function getTransactions(
   }) as Transaction[]
 
   return mappedTransactions
-}
-
-export async function createTransaction(
-  input: CreateTransactionInput
-): Promise<Transaction> {
-  const { data, error } = await supabase.rpc(
-    "create_transaction_with_activity",
-    {
-      p_household_id: input.householdId,
-      p_type: input.type,
-      p_title: input.title,
-      p_amount: input.amount,
-      p_description: input.description ?? null,
-      p_category_id: input.categoryId ?? null,
-      p_transaction_date:
-        input.transactionDate ??
-        new Date().toISOString().slice(0, 10),
-    }
-  )
-
-  if (error) {
-    throw error
-  }
-
-  return parseTransactionRpcResult(data)
 }
 
 export async function createLinkedTransactions(

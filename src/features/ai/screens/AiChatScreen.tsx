@@ -1,22 +1,40 @@
-import { useState } from "react"
+import { useState, type ReactNode } from "react"
 import { useQueryClient } from "@tanstack/react-query"
-import { Alert, FlatList, Pressable, RefreshControl, StyleSheet, Text, View } from "react-native"
+import { CompositeScreenProps, useIsFocused } from "@react-navigation/native"
+import { NativeStackScreenProps } from "@react-navigation/native-stack"
+import { NativeBottomTabScreenProps } from "@react-navigation/bottom-tabs/unstable"
+import { FlatList, Pressable, RefreshControl, StyleSheet, Text, View } from "react-native"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
+import { GlassView, isGlassEffectAPIAvailable, isLiquidGlassAvailable } from "expo-glass-effect"
 
+import { GlassButton } from "../../../components/buttons/GlassButton"
+import { EmptyState } from "../../../components/feedback/EmptyState"
+import { AppText } from "../../../components/text/AppText"
+import { showUndo } from "../../../components/feedback/undo"
+import { useHouseholdStore } from "../../../store/householdStore"
 import { ScreenContainer } from "../../../components/layout/ScreenContainer"
 import { FieldChevronIcon } from "../../../components/icons/FieldChevronIcon"
-import { GridBackground } from "../../../components/layout/GridBackground"
-import { MeshGradient } from "../../../components/visual/MeshGradient"
+import { GradientBackground } from "../../../components/visual/GradientBackground"
 import { useAiConversationPreviews } from "../hooks/useAiConversationPreviews"
 import { useAiConversations } from "../hooks/useAiConversations"
 import { useDeleteAiConversation } from "../hooks/useDeleteAiConversation"
 import type { AiConversation } from "../types"
+import { colors, fonts, layout, radii, refreshControlColors } from "../../../theme"
+import type { AppStackParamList, MainTabsParamList } from "../../../navigation/types"
 
-export function AiChatScreen({ navigation }: any) {
+const liquidGlassEnabled = isLiquidGlassAvailable() && isGlassEffectAPIAvailable()
+
+type AiChatScreenProps = CompositeScreenProps<
+  NativeBottomTabScreenProps<MainTabsParamList, "AiChat">,
+  NativeStackScreenProps<AppStackParamList>
+>
+
+export function AiChatScreen({ navigation }: AiChatScreenProps) {
   const insets = useSafeAreaInsets()
+  const isFocused = useIsFocused()
   const queryClient = useQueryClient()
+  const selectedHouseholdId = useHouseholdStore((state) => state.selectedHouseholdId)
   const [refreshing, setRefreshing] = useState(false)
-  const [deletingConversationId, setDeletingConversationId] = useState<string | null>(null)
   const conversationsQuery = useAiConversations()
   const deleteMutation = useDeleteAiConversation()
   const listTopPadding = Math.max(100, insets.top + 20)
@@ -36,49 +54,31 @@ export function AiChatScreen({ navigation }: any) {
   }
 
   function handleNewConversation() {
-    navigation.navigate("AiConversation")
+    navigation.navigate("AiConversation", {})
   }
 
-  function confirmDelete(conversationId: string) {
-    Alert.alert(
-      "¿Eliminar conversación?",
-      "Esta conversación y sus mensajes se eliminarán permanentemente.",
-      [
-        { text: "Cancelar", style: "cancel" },
-        {
-          text: "Eliminar",
-          style: "destructive",
-          onPress: () => void handleDelete(conversationId),
-        },
-      ]
+  async function confirmDelete(conversationId: string) {
+    const queryKey = ["ai-conversations", selectedHouseholdId] as const
+    const previous = queryClient.getQueryData<AiConversation[]>(queryKey)
+    queryClient.setQueryData<AiConversation[]>(
+      queryKey,
+      (current) => current?.filter((conversation) => conversation.id !== conversationId),
     )
-  }
 
-  async function handleDelete(conversationId: string) {
-    if (deletingConversationId === conversationId) return
-
-    setDeletingConversationId(conversationId)
     try {
       await deleteMutation.mutateAsync(conversationId)
     } catch {
-      Alert.alert("Error", "No se pudo eliminar la conversación.")
-    } finally {
-      setDeletingConversationId(null)
+      queryClient.setQueryData(queryKey, previous)
+      showUndo({ message: "No se pudo eliminar la conversación." })
+      return
     }
+
+    showUndo({ message: "Eliminaste la conversación" })
   }
 
   return (
     <ScreenContainer style={styles.container}>
-      <MeshGradient
-        colors={["#FFF", "#4F3B97", "#14044B", "#FFF"]}
-        speed={0.5}
-        blur={0.5}
-        noise={0.3}
-        intensity={1}
-        animated
-        style={styles.meshBackground}
-      />
-      <GridBackground />
+      <GradientBackground dotMotion={isFocused} dotSpacing={15} token="topSection" />
       <FlatList
         data={conversations}
         keyExtractor={(conversation) => conversation.id}
@@ -92,31 +92,40 @@ export function AiChatScreen({ navigation }: any) {
             refreshing={refreshing}
             onRefresh={handleRefresh}
             progressViewOffset={listTopPadding}
-            tintColor="#1C1C1C"
-            colors={["#1C1C1C"]}
-            progressBackgroundColor="#FFFFFF"
+            {...refreshControlColors}
           />
         }
         ItemSeparatorComponent={() => <View style={styles.conversationGap} />}
         ListHeaderComponent={(
           <View>
-            <Text style={styles.title}>AIsistente</Text>
-            <Pressable style={styles.newConversationButton} onPress={handleNewConversation}>
-              <Text style={styles.newConversationText}>Nueva conversación</Text>
-              <FieldChevronIcon />
-            </Pressable>
-            <Text style={styles.recentConversationsTitle}>
+            <AppText variant="title">AIsistente</AppText>
+            <GlassButton
+              accessibilityLabel="Nueva conversación"
+              fallbackStyle={styles.newConversationButton}
+              glassStyle={styles.newConversationGlass}
+              icon={(color) => <FieldChevronIcon color={color} />}
+              label="Nueva conversación"
+              onPress={handleNewConversation}
+              style={styles.newConversationContent}
+              tone="brand"
+            />
+            <AppText style={styles.recentConversationsTitle} tone="muted" variant="title">
               Conversaciones{"\n"}recientes
-            </Text>
+            </AppText>
           </View>
         )}
         ListEmptyComponent={
           conversationsQuery.isLoading ? (
-            <Text style={styles.loadingText}>Cargando conversaciones...</Text>
+            <AppText tone="muted" variant="body">Cargando conversaciones...</AppText>
           ) : conversationsQuery.error ? (
-            <Text style={styles.errorText}>No se pudieron cargar las conversaciones.</Text>
+            <AppText tone="destructive" variant="body">No se pudieron cargar las conversaciones.</AppText>
           ) : (
-            <Text style={styles.emptyText}>Aún no tienes conversaciones.</Text>
+            <EmptyState
+              title="Todavía no hablaste con el asistente"
+              body="Preguntale por tus gastos o por cómo viene el mes."
+              actionLabel="Nueva conversación"
+              onAction={handleNewConversation}
+            />
           )
         }
         ListFooterComponent={<View style={styles.listFooter} />}
@@ -128,7 +137,7 @@ export function AiChatScreen({ navigation }: any) {
               conversationId: item.id,
             })}
             onDelete={() => confirmDelete(item.id)}
-            isDeleting={deletingConversationId === item.id}
+            isDeleting={false}
           />
         )}
       />
@@ -149,12 +158,12 @@ function ConversationCard({
   onDelete: () => void
   isDeleting: boolean
 }) {
-  return (
-    <Pressable style={styles.conversationCard} onPress={onPress}>
+  const body = (
+    <>
       <View style={styles.conversationHeader}>
-        <Text style={styles.preview} numberOfLines={1}>
+        <AppText numberOfLines={1} style={styles.preview} variant="subtitle">
           {getConversationPreview(preview)}
-        </Text>
+        </AppText>
         <FieldChevronIcon />
       </View>
 
@@ -168,15 +177,36 @@ function ConversationCard({
             onDelete()
           }}
           hitSlop={8}
+          style={styles.deleteHit}
         >
-          <Text style={styles.deleteText}>{isDeleting ? "Eliminando..." : "Eliminar"}</Text>
+          <AppText tone="destructive" variant="caption">{isDeleting ? "Eliminando..." : "Eliminar"}</AppText>
         </Pressable>
       </View>
-    </Pressable>
+    </>
+  )
+
+  return (
+    <ConversationSurface>
+      <Pressable style={styles.conversationCard} onPress={onPress}>
+        {body}
+      </Pressable>
+    </ConversationSurface>
   )
 }
 
-export function getConversationPreview(value: string) {
+function ConversationSurface({ children }: { children: ReactNode }) {
+  if (!liquidGlassEnabled) {
+    return <View style={styles.conversationFallback}>{children}</View>
+  }
+
+  return (
+    <GlassView colorScheme="dark" glassEffectStyle="regular" style={styles.conversationGlass}>
+      {children}
+    </GlassView>
+  )
+}
+
+function getConversationPreview(value: string) {
   const normalized = value.trim()
 
   if (normalized.length <= 20) {
@@ -186,7 +216,7 @@ export function getConversationPreview(value: string) {
   return `${normalized.slice(0, 20)}...`
 }
 
-export function formatConversationDate(value: string) {
+function formatConversationDate(value: string) {
   const date = new Date(value)
   const weekday = new Intl.DateTimeFormat("es-ES", {
     weekday: "short",
@@ -203,52 +233,51 @@ export function formatConversationDate(value: string) {
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: "#FFFFFF",
-  },
-  meshBackground: {
-    bottom: 0,
-    left: 0,
-    position: "absolute",
-    right: 0,
-    top: 0,
+    backgroundColor: colors.background,
   },
   listContent: { flexGrow: 1 },
   listFooter: { height: 20 },
-  title: {
-    color: "#1C1C1C",
-    fontFamily: "FamiljenGrotesk-Bold",
-    fontSize: 40,
-    lineHeight: 40,
-  },
   newConversationButton: {
     alignItems: "center",
-    backgroundColor: "#000000",
-    borderRadius: 20,
+    backgroundColor: colors.brand,
     flexDirection: "row",
+    height: layout.headerPill,
     justifyContent: "space-between",
-    marginTop: 20,
-    paddingHorizontal: 20,
-    paddingVertical: 15,
+    marginTop: layout.titleContentGap,
+    paddingHorizontal: layout.sheetPadding,
     width: "100%",
   },
-  newConversationText: {
-    color: "#FFFFFF",
-    fontFamily: "FamiljenGrotesk-Bold",
-    fontSize: 18,
-    lineHeight: 18,
+  newConversationGlass: {
+    marginTop: layout.titleContentGap,
+    width: "100%",
+  },
+  newConversationContent: {
+    alignItems: "center",
+    flexDirection: "row",
+    height: layout.headerPill,
+    justifyContent: "space-between",
+    paddingHorizontal: layout.sheetPadding,
+    width: "100%",
   },
   recentConversationsTitle: {
-    color: "rgba(28,28,28,0.5)",
-    fontFamily: "FamiljenGrotesk-Bold",
-    fontSize: 40,
-    lineHeight: 40,
-    marginBottom: 20,
-    marginTop: 40,
+    marginBottom: layout.titleContentGap,
+    marginTop: layout.titleContentGap,
   },
   conversationGap: { height: 10 },
+  conversationGlass: {
+    borderRadius: radii.topSection,
+    overflow: "hidden",
+    width: "100%",
+  },
+  conversationFallback: {
+    backgroundColor: colors.card,
+    borderColor: colors.border,
+    borderRadius: radii.topSection,
+    borderWidth: 1,
+    overflow: "hidden",
+    width: "100%",
+  },
   conversationCard: {
-    backgroundColor: "#000000",
-    borderRadius: 20,
     paddingHorizontal: 20,
     paddingVertical: 15,
     width: "100%",
@@ -260,15 +289,11 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
   },
   preview: {
-    color: "#FFFFFF",
     flex: 1,
     flexShrink: 1,
-    fontFamily: "FamiljenGrotesk-Regular",
-    fontSize: 18,
-    lineHeight: 18,
   },
   separator: {
-    backgroundColor: "rgba(255,255,255,0.5)",
+    backgroundColor: colors.border,
     height: 1,
     marginVertical: 15,
     width: "100%",
@@ -280,19 +305,16 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
   },
   date: {
-    color: "rgba(255,255,255,0.5)",
-    fontFamily: "Satoshi-Bold",
+    color: colors.mutedForeground,
+    fontFamily: fonts.mono,
     fontSize: 14,
     lineHeight: 14,
     textTransform: "uppercase",
   },
-  deleteText: {
-    color: "#FF2F2F",
-    fontFamily: "FamiljenGrotesk-Regular",
-    fontSize: 12,
-    lineHeight: 12,
+  deleteHit: {
+    alignItems: "center",
+    justifyContent: "center",
+    minHeight: 44,
+    minWidth: 44,
   },
-  loadingText: { color: "rgba(28,28,28,0.5)", marginTop: 20 },
-  errorText: { color: "#B42318", marginTop: 20 },
-  emptyText: { color: "rgba(28,28,28,0.5)", marginTop: 20 },
 })

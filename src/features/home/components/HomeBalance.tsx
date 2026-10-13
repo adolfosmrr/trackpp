@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react"
+import { memo, useEffect, useState } from "react"
 import { Pressable, StyleSheet, Text, View } from "react-native"
 import Animated, {
   Easing,
@@ -13,38 +13,45 @@ import Animated, {
 import { BalanceHiddenIcon } from "../../../components/icons/BalanceHiddenIcon"
 import { BalanceVisibleIcon } from "../../../components/icons/BalanceVisibleIcon"
 import { AnimatedAmount } from "../../../components/animated/AnimatedAmount"
+import { useFormatMoney } from "../../households/hooks/useFormatMoney"
+import { colors, fonts } from "../../../theme"
+import {
+  TOP_BALANCE_AMOUNT_HEIGHT,
+  TOP_BALANCE_FONT_SIZE,
+  TOP_BALANCE_LABEL_HEIGHT,
+  TOP_BALANCE_MARGIN_TOP,
+} from "../../../components/layout/topSectionCollapse"
 
 type HomeBalanceProps = {
   balance: number
-  currencySymbol?: string
   collapseProgress: SharedValue<number>
   isCollapsed: boolean
 }
 
-export function HomeBalance({
+export const HomeBalance = memo(function HomeBalance({
   balance,
-  currencySymbol = "$",
   collapseProgress,
   isCollapsed,
 }: HomeBalanceProps) {
+  const format = useFormatMoney()
   const [isBalanceVisible, setIsBalanceVisible] = useState(true)
   const reduceMotionEnabled = useReducedMotion()
   const visibilityProgress = useSharedValue(1)
   const containerStyle = useAnimatedStyle(() => ({
-    marginTop: interpolate(collapseProgress.value, [0, 1], [60, 20]),
+    marginTop: interpolate(collapseProgress.value, [0, 1], TOP_BALANCE_MARGIN_TOP),
   }))
   const amountStyle = useAnimatedStyle(() => ({
-    fontSize: interpolate(collapseProgress.value, [0, 1], [60, 40]),
-    lineHeight: interpolate(collapseProgress.value, [0, 1], [66, 46]),
+    fontSize: interpolate(collapseProgress.value, [0, 1], TOP_BALANCE_FONT_SIZE),
+    lineHeight: interpolate(collapseProgress.value, [0, 1], TOP_BALANCE_AMOUNT_HEIGHT),
   }))
   const amountHolderStyle = useAnimatedStyle(() => ({
-    height: interpolate(collapseProgress.value, [0, 1], [66, 46]),
+    height: interpolate(collapseProgress.value, [0, 1], TOP_BALANCE_AMOUNT_HEIGHT),
   }))
   const collapsedVisibilityStyle = useAnimatedStyle(() => ({
     opacity: interpolate(collapseProgress.value, [0, 0.6, 1], [0, 0, 1]),
   }))
   const expandedVisibilityStyle = useAnimatedStyle(() => ({
-    height: interpolate(collapseProgress.value, [0, 1], [22, 0]),
+    height: interpolate(collapseProgress.value, [0, 1], TOP_BALANCE_LABEL_HEIGHT),
     opacity: interpolate(collapseProgress.value, [0, 0.4, 1], [1, 1, 0]),
   }))
   const amountVisibilityStyle = useAnimatedStyle(() => ({
@@ -70,7 +77,7 @@ export function HomeBalance({
         <Pressable
           accessibilityLabel={isBalanceVisible ? "Ocultar balance" : "Mostrar balance"}
           accessibilityRole="button"
-          hitSlop={8}
+          hitSlop={14}
           onPress={() => setIsBalanceVisible((visible) => !visible)}
           style={styles.visibilityButton}
         >
@@ -81,7 +88,7 @@ export function HomeBalance({
         <Animated.View style={[styles.amountHolder, amountHolderStyle]}>
           <AnimatedAmount
             value={balance}
-            formatter={(value) => `${currencySymbol} ${formatAmount(value)}`}
+            formatter={format}
             animatedStyle={[amountStyle, amountVisibilityStyle]}
             style={styles.amount}
             textProps={{
@@ -100,7 +107,7 @@ export function HomeBalance({
           <Pressable
             accessibilityLabel={isBalanceVisible ? "Ocultar balance" : "Mostrar balance"}
             accessibilityRole="button"
-            hitSlop={8}
+            hitSlop={14}
             onPress={() => setIsBalanceVisible((visible) => !visible)}
           >
             {isBalanceVisible ? <BalanceVisibleIcon /> : <BalanceHiddenIcon />}
@@ -109,13 +116,7 @@ export function HomeBalance({
       </View>
     </Animated.View>
   )
-}
-
-function formatAmount(amount: number) {
-  return new Intl.NumberFormat("es-AR", {
-    maximumFractionDigits: 0,
-  }).format(amount)
-}
+})
 
 const styles = StyleSheet.create({
   container: {
@@ -124,20 +125,22 @@ const styles = StyleSheet.create({
   labelRow: {
     alignItems: "center",
     flexDirection: "row",
+    height: TOP_BALANCE_LABEL_HEIGHT[0],
   },
   label: {
-    color: "#FFFFFF",
-    fontFamily: "Satoshi-Regular",
-    fontSize: 18,
-    opacity: 0.5,
+    color: colors.mutedForeground,
+    fontFamily: fonts.sans,
+    fontSize: 14,
+    letterSpacing: 0.2,
   },
   visibilityButton: {
     marginLeft: 15,
   },
   amount: {
-    color: "#FFFFFF",
-    fontFamily: "FamiljenGrotesk-Bold",
+    color: colors.foreground,
+    fontFamily: fonts.monoSemibold,
     fontSize: 60,
+    letterSpacing: -1,
     lineHeight: 66,
   },
   amountRow: {
@@ -145,6 +148,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
   },
   amountHolder: {
+    height: TOP_BALANCE_AMOUNT_HEIGHT[0],
     overflow: "hidden",
     position: "relative",
   },
