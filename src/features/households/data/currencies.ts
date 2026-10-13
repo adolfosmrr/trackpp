@@ -35,6 +35,18 @@ export function currencyChoiceLabel(option: CurrencyOption) {
   return `${option.country} • ${option.currency} (${option.code})`
 }
 
+function normalizeSearchText(value: string) {
+  return value.normalize("NFD").replace(/\p{M}/gu, "").toLocaleLowerCase("es")
+}
+
+export function currencyMatchesQuery(option: CurrencyOption, query: string) {
+  const needle = normalizeSearchText(query.trim())
+  if (!needle) return false
+  return [option.country, option.currency, option.code].some((value) =>
+    normalizeSearchText(value).includes(needle),
+  )
+}
+
 export const CURRENCY_REGIONS: readonly CurrencyRegion[] = [
   region("europe", "Europa", [
     { country: "Albania", currency: "Lek", code: "ALL" },

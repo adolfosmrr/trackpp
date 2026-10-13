@@ -1,6 +1,7 @@
-import { useEffect, useState } from "react"
-import { Pressable, StyleSheet, View, type LayoutChangeEvent } from "react-native"
+import { useEffect, useMemo, useState } from "react"
+import { Pressable, StyleSheet, Text, TextInput, View, type LayoutChangeEvent } from "react-native"
 import type { NativeStackScreenProps } from "@react-navigation/native-stack"
+import { requireOptionalNativeModule } from "expo"
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
@@ -13,13 +14,21 @@ import { AppText } from "../../../components/text/AppText"
 import { ChevronDownIcon } from "../../../components/icons/ChevronDownIcon"
 import { selectionToken } from "../../../navigation/selectionToken"
 import type { AppStackParamList } from "../../../navigation/types"
-import { colors, layout, radii } from "../../../theme"
+import { colors, fonts, layout, radii } from "../../../theme"
 import {
   CURRENCY_REGIONS,
   currencyChoiceLabel,
+  currencyMatchesQuery,
   type CurrencyOption,
   type CurrencyRegion,
 } from "../data/currencies"
+
+// SymbolView's iOS entry loads SymbolModule immediately. Skip that require
+// until a dev build actually contains the native module.
+const symbolModule = requireOptionalNativeModule("SymbolModule")
+const SymbolView = symbolModule
+  ? (require("expo-symbols") as typeof import("expo-symbols")).SymbolView
+  : null
 
 const liquidGlassEnabled = isLiquidGlassAvailable() && isGlassEffectAPIAvailable()
 
@@ -27,7 +36,16 @@ type CurrencyPickerScreenProps = NativeStackScreenProps<AppStackParamList, "Curr
 
 export function CurrencyPickerScreen({ navigation, route }: CurrencyPickerScreenProps) {
   const { selectedCode, selectedCountry } = route.params
+  const [query, setQuery] = useState("")
   const [expandedRegionId, setExpandedRegionId] = useState<string | null>(null)
+  const needle = query.trim()
+  const searching = needle.length > 0
+  const matches = useMemo(() => {
+    if (!searching) return []
+    return CURRENCY_REGIONS.flatMap((region) =>
+      region.options.filter((option) => currencyMatchesQuery(option, needle)),
+    )
+  }, [needle, searching])
 
   function selectCurrency(option: CurrencyOption) {
     navigation.popTo("CreateHousehold", {
@@ -44,20 +62,127 @@ export function CurrencyPickerScreen({ navigation, route }: CurrencyPickerScreen
     setExpandedRegionId((current) => (current === regionId ? null : regionId))
   }
 
+  function updateQuery(value: string) {
+    setQuery(value)
+    if (value.trim().length === 0) setExpandedRegionId(null)
+  }
+
+  function clearQuery() {
+    setQuery("")
+    setExpandedRegionId(null)
+  }
+
   return (
-    <SheetScaffold onClose={() => navigation.goBack()} title="Moneda">
-      {CURRENCY_REGIONS.map((region) => (
-        <CurrencyRegionCard
-          key={region.id}
-          onSelect={selectCurrency}
-          onToggle={() => toggleRegion(region.id)}
-          open={expandedRegionId === region.id}
-          region={region}
-          selectedCode={selectedCode}
-          selectedCountry={selectedCountry}
-        />
-      ))}
+    <SheetScaffold
+      onClose={() => navigation.goBack()}
+      pinned={(
+        <CurrencySearchField onChangeText={updateQuery} onClear={clearQuery} value={query} />
+      )}
+      title="Moneda"
+    >
+      {searching ? (
+        matches.length > 0 ? (
+          <CurrencyOptionList
+            onSelect={selectCurrency}
+            options={matches}
+            selectedCode={selectedCode}
+            selectedCountry={selectedCountry}
+          />
+        ) : (
+          <AppText tone="muted" variant="body">No hay monedas que coincidan.</AppText>
+        )
+      ) : (
+        CURRENCY_REGIONS.map((region) => (
+          <CurrencyRegionCard
+            key={region.id}
+            onSelect={selectCurrency}
+            onToggle={() => toggleRegion(region.id)}
+            open={expandedRegionId === region.id}
+            region={region}
+            selectedCode={selectedCode}
+            selectedCountry={selectedCountry}
+          />
+        ))
+      )}
     </SheetScaffold>
+  )
+}
+
+function CurrencySearchField({
+  value,
+  onChangeText,
+  onClear,
+}: {
+  value: string
+  onChangeText: (value: string) => void
+  onClear: () => void
+}) {
+  const field = (
+    <>
+      <SearchSymbol
+        fallback="⌕"
+        name={{ android: "search", ios: "magnifyingglass", web: "search" }}
+      />
+      <TextInput
+        accessibilityLabel="Buscar moneda"
+        autoCapitalize="none"
+        autoCorrect={false}
+        onChangeText={onChangeText}
+        placeholder="Buscar"
+        placeholderTextColor={colors.mutedForeground}
+        returnKeyType="search"
+        style={styles.searchInput}
+        value={value}
+      />
+      {value.length > 0 ? (
+        <Pressable
+          accessibilityLabel="Borrar búsqueda"
+          hitSlop={8}
+          onPress={onClear}
+          style={styles.clearButton}
+        >
+          <SearchSymbol
+            fallback="×"
+            name={{ android: "cancel", ios: "xmark.circle.fill", web: "cancel" }}
+          />
+        </Pressable>
+      ) : null}
+    </>
+  )
+
+  if (!liquidGlassEnabled) {
+    return <View style={[styles.searchGlass, styles.fallback]}>{field}</View>
+  }
+
+  return (
+    <GlassView colorScheme="dark" glassEffectStyle="clear" style={styles.searchGlass}>
+      {field}
+    </GlassView>
+  )
+}
+
+function SearchSymbol({
+  name,
+  fallback,
+}: {
+  name: {
+    ios: "magnifyingglass" | "xmark.circle.fill"
+    android: "search" | "cancel"
+    web: "search" | "cancel"
+  }
+  fallback: string
+}) {
+  if (!SymbolView) {
+    return <Text style={styles.searchGlyph}>{fallback}</Text>
+  }
+
+  return (
+    <SymbolView
+      name={name}
+      size={16}
+      tintColor={colors.mutedForeground}
+      weight="regular"
+    />
   )
 }
 
@@ -109,29 +234,13 @@ function CurrencyRegionCard({
     </Pressable>
   )
 
-  const options = region.options.map((option) => {
-    const selected = option.code === selectedCode && option.country === selectedCountry
-    return (
-      <Pressable
-        key={option.country}
-        accessibilityRole="button"
-        accessibilityState={{ selected }}
-        onPress={() => onSelect(option)}
-        style={[styles.option, selected && styles.optionSelected]}
-      >
-        <AppText tone={selected ? "brand" : "default"} variant="body">
-          {currencyChoiceLabel(option)}
-        </AppText>
-      </Pressable>
-    )
-  })
-
-  const list = liquidGlassEnabled ? (
-    <GlassView colorScheme="dark" glassEffectStyle="regular" style={styles.listGlass}>
-      {options}
-    </GlassView>
-  ) : (
-    <View style={[styles.listGlass, styles.fallback]}>{options}</View>
+  const list = (
+    <CurrencyOptionList
+      onSelect={onSelect}
+      options={region.options}
+      selectedCode={selectedCode}
+      selectedCountry={selectedCountry}
+    />
   )
 
   return (
@@ -152,7 +261,78 @@ function CurrencyRegionCard({
   )
 }
 
+function CurrencyOptionList({
+  options,
+  selectedCode,
+  selectedCountry,
+  onSelect,
+}: {
+  options: readonly CurrencyOption[]
+  selectedCode: string
+  selectedCountry: string
+  onSelect: (option: CurrencyOption) => void
+}) {
+  const rows = options.map((option) => {
+    const selected = option.code === selectedCode && option.country === selectedCountry
+    return (
+      <Pressable
+        key={option.country}
+        accessibilityRole="button"
+        accessibilityState={{ selected }}
+        onPress={() => onSelect(option)}
+        style={[styles.option, selected && styles.optionSelected]}
+      >
+        <AppText tone={selected ? "brand" : "default"} variant="body">
+          {currencyChoiceLabel(option)}
+        </AppText>
+      </Pressable>
+    )
+  })
+
+  if (!liquidGlassEnabled) {
+    return <View style={[styles.listGlass, styles.fallback]}>{rows}</View>
+  }
+
+  return (
+    <GlassView colorScheme="dark" glassEffectStyle="regular" style={styles.listGlass}>
+      {rows}
+    </GlassView>
+  )
+}
+
 const styles = StyleSheet.create({
+  searchGlass: {
+    alignItems: "center",
+    borderRadius: radii.pill,
+    flexDirection: "row",
+    height: layout.headerPill,
+    overflow: "hidden",
+    paddingLeft: layout.titleContentGap,
+  },
+  searchInput: {
+    color: colors.foreground,
+    flex: 1,
+    fontFamily: fonts.sans,
+    fontSize: 16,
+    height: layout.headerPill,
+    margin: 0,
+    paddingHorizontal: layout.titleContentGap,
+    paddingVertical: 0,
+  },
+  searchGlyph: {
+    color: colors.mutedForeground,
+    fontFamily: fonts.sans,
+    fontSize: 16,
+    lineHeight: 20,
+    textAlign: "center",
+    width: 16,
+  },
+  clearButton: {
+    alignItems: "center",
+    height: layout.headerPill,
+    justifyContent: "center",
+    width: layout.headerPill,
+  },
   headerGlass: {
     borderRadius: radii.pill,
     height: layout.headerPill,

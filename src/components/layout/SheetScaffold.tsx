@@ -20,6 +20,8 @@ type SheetScaffoldProps = {
   onClose: () => void
   closeAccessibilityLabel?: string
   children: ReactNode
+  /** Fixed under the title, above the scrolling content. */
+  pinned?: ReactNode
   footer?: ReactNode
   contentStyle?: StyleProp<ViewStyle>
 }
@@ -29,6 +31,7 @@ export function SheetScaffold({
   onClose,
   closeAccessibilityLabel,
   children,
+  pinned,
   footer,
   contentStyle,
 }: SheetScaffoldProps) {
@@ -54,10 +57,14 @@ export function SheetScaffold({
 
   return (
     <>
+      {pinned ? <View style={styles.pinned}>{pinned}</View> : null}
       <ScrollView
         contentContainerStyle={[
           styles.content,
-          { paddingBottom: bottomPadding },
+          {
+            paddingBottom: bottomPadding,
+            paddingTop: pinned ? 0 : layout.sheetHeaderHeight,
+          },
           contentStyle,
         ]}
         keyboardShouldPersistTaps="handled"
@@ -90,10 +97,16 @@ const styles = StyleSheet.create({
   scroll: {
     flex: 1,
   },
+  pinned: {
+    backgroundColor: colors.background,
+    paddingBottom: layout.titleContentGap,
+    paddingHorizontal: layout.sheetPadding,
+    paddingTop: layout.sheetHeaderHeight,
+    zIndex: 1,
+  },
   content: {
     gap: layout.titleContentGap,
     paddingHorizontal: layout.sheetPadding,
-    paddingTop: layout.sheetHeaderHeight,
   },
   footer: {
     backgroundColor: colors.background,
