@@ -136,7 +136,7 @@ export const typography = {
   },
 } as const
 
-export const meshColors = {
+const meshColors = {
   auth: ["#0C1210", "#16382A", "#3ECF8E", "#101614"] as [
     string,
     string,

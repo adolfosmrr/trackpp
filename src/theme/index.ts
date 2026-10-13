@@ -3,7 +3,6 @@ export {
   fonts,
   gradients,
   layout,
-  meshColors,
   radii,
   refreshControlColors,
   spacing,

@@ -1,11 +1,11 @@
-import { useRef, useState } from "react"
-import { Alert, Pressable, StyleSheet, View } from "react-native"
-import { colors, fonts, layout, meshColors } from "../../../theme"
+import { useEffect, useRef, useState } from "react"
+import { Alert, AppState, Pressable, StyleSheet, View } from "react-native"
+import { useIsFocused } from "@react-navigation/native"
+import { colors, fonts, layout } from "../../../theme"
 import { AppText } from "../../../components/text/AppText"
 
-import { GridBackground } from "../../../components/layout/GridBackground"
 import AnimatedText from "../../../components/text/AnimatedText"
-import { MeshGradient } from "../../../components/visual/MeshGradient"
+import { GradientBackground } from "../../../components/visual/GradientBackground"
 import { AuthToggle, type AuthMode } from "../components/AuthToggle"
 import { GoogleAuthButton } from "../components/GoogleAuthButton"
 import { LoginForm, type LoginFormHandle } from "../components/LoginForm"
@@ -16,9 +16,22 @@ import {
 import { PrimaryAuthButton } from "../components/PrimaryAuthButton"
 import { signInWithGoogle } from "../services/googleAuth"
 
-const SHOW_MESH_GRADIENT = true
+function useAppIsActive() {
+  const [active, setActive] = useState(AppState.currentState === "active")
+
+  useEffect(() => {
+    const subscription = AppState.addEventListener("change", (next) => {
+      setActive(next === "active")
+    })
+    return () => subscription.remove()
+  }, [])
+
+  return active
+}
 
 export function AuthScreen() {
+  const isFocused = useIsFocused()
+  const appIsActive = useAppIsActive()
   const [mode, setMode] = useState<AuthMode>("login")
   const [authLoading, setAuthLoading] = useState(false)
   const formRef = useRef<LoginFormHandle | RegisterFormHandle>(null)
@@ -46,18 +59,11 @@ export function AuthScreen() {
 
   return (
     <View style={styles.container}>
-      {SHOW_MESH_GRADIENT ? (
-        <MeshGradient
-          colors={meshColors.auth}
-          speed={0.5}
-          blur={0.5}
-          noise={0.3}
-          intensity={0.45}
-          animated
-          style={styles.meshBackground}
-        />
-      ) : null}
-      <GridBackground />
+      <GradientBackground
+        dotMotion={isFocused && appIsActive}
+        dotSpacing={15}
+        token="topSection"
+      />
 
       <View style={styles.content}>
         <View style={styles.authMessageClip}>
@@ -147,13 +153,6 @@ const styles = StyleSheet.create({
     zIndex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-  },
-  meshBackground: {
-    position: "absolute",
-    top: 0,
-    right: 0,
-    bottom: 0,
-    left: 0,
   },
   authMessage: {
     fontFamily: fonts.sansSemibold,
