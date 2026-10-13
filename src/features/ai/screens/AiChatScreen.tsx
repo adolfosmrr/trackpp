@@ -1,10 +1,11 @@
-import { useState } from "react"
+import { useState, type ReactNode } from "react"
 import { useQueryClient } from "@tanstack/react-query"
-import { CompositeScreenProps } from "@react-navigation/native"
+import { CompositeScreenProps, useIsFocused } from "@react-navigation/native"
 import { NativeStackScreenProps } from "@react-navigation/native-stack"
 import { NativeBottomTabScreenProps } from "@react-navigation/bottom-tabs/unstable"
 import { FlatList, Pressable, RefreshControl, StyleSheet, Text, View } from "react-native"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
+import { GlassView, isGlassEffectAPIAvailable, isLiquidGlassAvailable } from "expo-glass-effect"
 
 import { GlassButton } from "../../../components/buttons/GlassButton"
 import { EmptyState } from "../../../components/feedback/EmptyState"
@@ -21,6 +22,8 @@ import type { AiConversation } from "../types"
 import { colors, fonts, layout, radii, refreshControlColors } from "../../../theme"
 import type { AppStackParamList, MainTabsParamList } from "../../../navigation/types"
 
+const liquidGlassEnabled = isLiquidGlassAvailable() && isGlassEffectAPIAvailable()
+
 type AiChatScreenProps = CompositeScreenProps<
   NativeBottomTabScreenProps<MainTabsParamList, "AiChat">,
   NativeStackScreenProps<AppStackParamList>
@@ -28,6 +31,7 @@ type AiChatScreenProps = CompositeScreenProps<
 
 export function AiChatScreen({ navigation }: AiChatScreenProps) {
   const insets = useSafeAreaInsets()
+  const isFocused = useIsFocused()
   const queryClient = useQueryClient()
   const selectedHouseholdId = useHouseholdStore((state) => state.selectedHouseholdId)
   const [refreshing, setRefreshing] = useState(false)
@@ -74,7 +78,7 @@ export function AiChatScreen({ navigation }: AiChatScreenProps) {
 
   return (
     <ScreenContainer style={styles.container}>
-      <GradientBackground dotSpacing={15} token="topSection" />
+      <GradientBackground dotMotion={isFocused} dotSpacing={15} token="topSection" />
       <FlatList
         data={conversations}
         keyExtractor={(conversation) => conversation.id}
@@ -154,8 +158,8 @@ function ConversationCard({
   onDelete: () => void
   isDeleting: boolean
 }) {
-  return (
-    <Pressable style={styles.conversationCard} onPress={onPress}>
+  const body = (
+    <>
       <View style={styles.conversationHeader}>
         <AppText numberOfLines={1} style={styles.preview} variant="subtitle">
           {getConversationPreview(preview)}
@@ -178,7 +182,27 @@ function ConversationCard({
           <AppText tone="destructive" variant="caption">{isDeleting ? "Eliminando..." : "Eliminar"}</AppText>
         </Pressable>
       </View>
-    </Pressable>
+    </>
+  )
+
+  return (
+    <ConversationSurface>
+      <Pressable style={styles.conversationCard} onPress={onPress}>
+        {body}
+      </Pressable>
+    </ConversationSurface>
+  )
+}
+
+function ConversationSurface({ children }: { children: ReactNode }) {
+  if (!liquidGlassEnabled) {
+    return <View style={styles.conversationFallback}>{children}</View>
+  }
+
+  return (
+    <GlassView colorScheme="dark" glassEffectStyle="regular" style={styles.conversationGlass}>
+      {children}
+    </GlassView>
   )
 }
 
@@ -236,14 +260,24 @@ const styles = StyleSheet.create({
     width: "100%",
   },
   recentConversationsTitle: {
+    marginBottom: layout.titleContentGap,
     marginTop: layout.titleContentGap,
   },
   conversationGap: { height: 10 },
-  conversationCard: {
+  conversationGlass: {
+    borderRadius: radii.topSection,
+    overflow: "hidden",
+    width: "100%",
+  },
+  conversationFallback: {
     backgroundColor: colors.card,
     borderColor: colors.border,
-    borderRadius: radii.md,
+    borderRadius: radii.topSection,
     borderWidth: 1,
+    overflow: "hidden",
+    width: "100%",
+  },
+  conversationCard: {
     paddingHorizontal: 20,
     paddingVertical: 15,
     width: "100%",

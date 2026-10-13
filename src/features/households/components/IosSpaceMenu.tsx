@@ -23,9 +23,7 @@ import {
 } from "./spaceMenu"
 
 const compactCapsule = [
-  // `frame(height:)` proposes 40 but does not clip, and @expo/ui drops
-  // min/max height when `height` is set. `clipShape` masks the regular
-  // glass ideal size, which draws outside that frame, down to 40pt.
+  // Caps the grown capsule at 40. This does not stretch a shorter glass.
   frame({ height: layout.headerPill }),
   clipShape("capsule"),
 ]
@@ -56,6 +54,11 @@ export function SpaceMenu({ compact, label, items, onSelect, onCreate }: SpaceMe
               lineLimit(1),
               truncationMode("tail"),
               frame({ maxWidth: 220, alignment: "leading" }),
+              // The glass background wraps the label. A 40pt label is what
+              // grows it; `frame` on the menu itself only clips.
+              ...(compact
+                ? [frame({ height: layout.headerPill, alignment: "center" })]
+                : []),
             ]}
           >
             {label}
@@ -64,8 +67,9 @@ export function SpaceMenu({ compact, label, items, onSelect, onCreate }: SpaceMe
         modifiers={[
           buttonStyle("glass"),
           buttonBorderShape("capsule"),
-          // Regular is the default. Smaller sizes do not stretch up to the frame.
-          controlSize("regular"),
+          // Regular measured about 28pt on device. extraLarge is the largest
+          // size this SDK can request; the outer clip holds the result at 40.
+          controlSize(compact ? "extraLarge" : "regular"),
           padding({ vertical: 0 }),
           menuIndicator("visible"),
           menuOrder("fixed"),

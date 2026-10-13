@@ -66,9 +66,9 @@ export const layout = {
   titleContentGap: spacing.lg,
   /**
    * Gap between the bottom of the top section and the first content on a tab.
-   * Presupuesto and Fijos already used 8; Home and Movimientos were larger.
+   * 8 (`spacing.sm`) sat against the panel. 24 is the nearest token to 23.
    */
-  belowTopSection: spacing.sm,
+  belowTopSection: spacing.xxl,
   /** Space from a form sheet's top edge to the title row, clear of the grabber. */
   sheetHeaderTop: SHEET_HEADER_TOP,
   /** Title row plus the gaps above and below it. Content starts under this. */
