@@ -5,15 +5,15 @@ import { MatrixTextMorph } from "../../../components/text/MatrixTextMorph"
 
 type PrimaryAuthButtonProps = {
   label: string
-  loading: boolean
-  loadingLabel: string
+  loading?: boolean
+  loadingLabel?: string
   disabled?: boolean
   onPress: () => void
 }
 
 export function PrimaryAuthButton({
   label,
-  loading,
+  loading = false,
   loadingLabel,
   disabled = false,
   onPress,
@@ -25,7 +25,7 @@ export function PrimaryAuthButton({
       disabled={loading || disabled}
     >
       {loading ? (
-        <Text style={styles.buttonText}>{loadingLabel}</Text>
+        <Text style={styles.buttonText}>{loadingLabel ?? label}</Text>
       ) : (
         <MatrixTextMorph
           text={label}

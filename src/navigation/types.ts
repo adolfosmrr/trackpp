@@ -5,6 +5,7 @@ import type { TransactionFilters, TransactionSheetRequest } from "../features/tr
 
 export type AuthStackParamList = {
   Auth: undefined
+  SignUp: undefined
 }
 
 export type MainTabsParamList = {

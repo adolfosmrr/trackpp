@@ -8,6 +8,7 @@ import {
 
 import { TextField } from "../../../components/inputs/TextField"
 import { AppText } from "../../../components/text/AppText"
+import { AuthEmailField } from "./AuthEmailField"
 
 import { supabase } from "../../../services/supabase"
 import { AUTH_REDIRECT_URL } from "../services/authCallback"
@@ -79,12 +80,10 @@ export const LoginForm = forwardRef<LoginFormHandle, LoginFormProps>(
     return (
       <View style={styles.container}>
       <View style={styles.inputsContainer}>
-        <TextField
-          placeholder="Tu correo va acá"
-          autoCapitalize="none"
-          keyboardType="email-address"
-          value={email}
+        <AuthEmailField
           onChangeText={setEmail}
+          placeholder="Tu correo va acá"
+          value={email}
         />
 
         <TextField
