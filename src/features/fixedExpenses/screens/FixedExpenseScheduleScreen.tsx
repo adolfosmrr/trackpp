@@ -10,12 +10,12 @@ import { ReminderMenuEditor } from "../components/ReminderMenuEditor"
 import { selectionToken } from "../../../navigation/selectionToken"
 import type { AppStackParamList } from "../../../navigation/types"
 import { colors, layout, radii } from "../../../theme"
+import { toLocalDateString } from "../../../utils/localDate"
 import {
   START_REMINDER_PRESETS,
   chargeReminderLabel,
   normalizeStartReminderDays,
   parseDateInputValue,
-  toDateInputValue,
 } from "../utils/reminders"
 
 type FixedExpenseScheduleScreenProps = NativeStackScreenProps<
@@ -28,7 +28,7 @@ export function FixedExpenseScheduleScreen({
   route,
 }: FixedExpenseScheduleScreenProps) {
   const [startsOn, setStartsOn] = useState(
-    route.params.startsOn ?? toDateInputValue(new Date()),
+    route.params.startsOn ?? toLocalDateString(new Date()),
   )
   const [endsOn, setEndsOn] = useState(route.params.endsOn)
   const [endEnabled, setEndEnabled] = useState(route.params.endsOn != null)
@@ -67,7 +67,7 @@ export function FixedExpenseScheduleScreen({
             minimumDate={undefined}
             value={parseDateInputValue(startsOn)}
             onChange={(date) => {
-              const next = toDateInputValue(date)
+              const next = toLocalDateString(date)
               setStartsOn(next)
               if (endsOn && endsOn < next) setEndsOn(next)
             }}
@@ -107,7 +107,7 @@ export function FixedExpenseScheduleScreen({
               <DatePicker
                 minimumDate={parseDateInputValue(startsOn)}
                 value={parseDateInputValue(endsOn ?? startsOn)}
-                onChange={(date) => setEndsOn(toDateInputValue(date))}
+                onChange={(date) => setEndsOn(toLocalDateString(date))}
                 onDismiss={() => setShowEndPicker(false)}
               />
             ) : null}

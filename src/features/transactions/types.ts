@@ -1,6 +1,6 @@
 import type { FixedExpense } from "../fixedExpenses/types"
 
-export type TransactionType = "expense" | "income"
+type TransactionType = "expense" | "income"
 
 export type CreateMovementMode = TransactionType | "fixed"
 
@@ -59,7 +59,7 @@ export type TransactionCreator = {
   avatar_url: string | null
 }
 
-export type FixedExpensePaymentReference = {
+type FixedExpensePaymentReference = {
   id: string
   fixed_expense_period_id: string
   fixed_expense_period: {

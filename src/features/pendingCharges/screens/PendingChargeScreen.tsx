@@ -33,7 +33,6 @@ import {
   chargeOrigin,
   chargeTitle,
   currenciesMatch,
-  formatChargeAmount,
   formatChargeDate,
 } from "../utils/pendingChargeFormat"
 
@@ -130,7 +129,7 @@ export function PendingChargeScreen({ navigation, route }: PendingChargeScreenPr
       })
       navigation.goBack()
     } catch (error) {
-      Alert.alert("No se pudo vincular", errorText(error, "Probá de nuevo en un momento."))
+      Alert.alert("No se pudo vincular", errorText(error, "Prueba de nuevo en un momento."))
     }
   }
 
@@ -145,7 +144,7 @@ export function PendingChargeScreen({ navigation, route }: PendingChargeScreenPr
       })
       navigation.goBack()
     } catch (error) {
-      Alert.alert("No se pudo cargar", errorText(error, "Probá de nuevo en un momento."))
+      Alert.alert("No se pudo cargar", errorText(error, "Prueba de nuevo en un momento."))
     }
   }
 
@@ -198,7 +197,7 @@ export function PendingChargeScreen({ navigation, route }: PendingChargeScreenPr
             <View style={styles.summary}>
               <AppText variant="title">{chargeTitle(charge)}</AppText>
               <Text style={styles.amount}>
-                {formatChargeAmount(charge.amount, charge.currency)}
+                {formatMoney(charge.amount, charge.currency)}
               </Text>
               <AppText tone="muted" variant="body">
                 {chargeOrigin(charge)}
@@ -228,7 +227,7 @@ export function PendingChargeScreen({ navigation, route }: PendingChargeScreenPr
                     <AppText tone="muted" variant="body">
                       {suggestion.name} · {formatPeriodLabel(suggestion.period)}. Esperado{" "}
                       {formatMoney(suggestion.expectedAmount, suggestionCurrency(memberships, suggestion.householdId))}, pendiente{" "}
-                      {formatMoney(suggestion.remaining, suggestionCurrency(memberships, suggestion.householdId))}.                       Confirmá para registrarlo como pago de ese gasto fijo.
+                      {formatMoney(suggestion.remaining, suggestionCurrency(memberships, suggestion.householdId))}.                       Confirma para registrarlo como pago de ese gasto fijo.
                     </AppText>
                     <Button
                       accessibilityLabel={`Vincular con ${suggestion.name}`}
@@ -285,7 +284,7 @@ export function PendingChargeScreen({ navigation, route }: PendingChargeScreenPr
                 </FieldRow>
 
                 {memberships && memberships.length === 0 ? (
-                  <AppText tone="destructive" variant="caption">No tenés espacios para cargar este gasto.</AppText>
+                  <AppText tone="destructive" variant="caption">No tienes espacios para cargar este gasto.</AppText>
                 ) : null}
                 {householdId && !currencyMatches ? (
                   <AppText tone="destructive" variant="caption">

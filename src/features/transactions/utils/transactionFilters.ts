@@ -1,3 +1,4 @@
+import { toLocalDateString } from "../../../utils/localDate"
 import type {
   Transaction,
   TransactionCategory,
@@ -59,13 +60,6 @@ export function formatTransactionDate(date: string) {
     .toUpperCase()
 }
 
-export function getLocalDateString(date = new Date()) {
-  const year = date.getFullYear()
-  const month = String(date.getMonth() + 1).padStart(2, "0")
-  const day = String(date.getDate()).padStart(2, "0")
-  return `${year}-${month}-${day}`
-}
-
 export function getTransactionCategories(transactions: Transaction[]): TransactionCategory[] {
   const categories = new Map<string, TransactionCategory>()
 
@@ -115,7 +109,7 @@ function matchesFilters(transaction: Transaction, filters: TransactionFilters) {
 function matchesDateFilter(date: string, filter: TransactionDateFilter) {
   if (filter.type === "any") return true
 
-  const today = getLocalDateString()
+  const today = toLocalDateString()
   if (filter.type === "today") return date === today
   if (filter.type === "this-month") return date.slice(0, 7) === today.slice(0, 7)
 
@@ -123,7 +117,7 @@ function matchesDateFilter(date: string, filter: TransactionDateFilter) {
     const previousMonth = new Date()
     previousMonth.setDate(1)
     previousMonth.setMonth(previousMonth.getMonth() - 1)
-    return date.slice(0, 7) === getLocalDateString(previousMonth).slice(0, 7)
+    return date.slice(0, 7) === toLocalDateString(previousMonth).slice(0, 7)
   }
 
   if (filter.type === "specific") return date === filter.date

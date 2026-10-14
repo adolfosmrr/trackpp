@@ -29,7 +29,7 @@ export type HouseholdSelection = {
   householdIds: string[]
 }
 
-export type FixedExpenseScheduleSelection = {
+type FixedExpenseScheduleSelection = {
   token: string
   startsOn: string | null
   endsOn: string | null
@@ -43,7 +43,7 @@ export type CreateMovementParams = {
   scheduleSelection?: FixedExpenseScheduleSelection
 }
 
-export type CategoryPickerParams =
+type CategoryPickerParams =
   | {
       returnTo: "CreateMovement"
       householdId: string
@@ -67,7 +67,7 @@ export type CategoryPickerParams =
       selectedCategoryId: string | null
     }
 
-export type HouseholdPickerParams =
+type HouseholdPickerParams =
   | {
       returnTo: "CreateMovement"
       selectedHouseholdIds: string[]
@@ -84,12 +84,12 @@ export type HouseholdPickerParams =
       createdHouseholdId?: string
     }
 
-export type BudgetEditorParams = {
+type BudgetEditorParams = {
   request?: BudgetSheetRequest
   categorySelection?: CategorySelection
 }
 
-export type CurrencySelection = {
+type CurrencySelection = {
   token: string
   code: string
   country: string

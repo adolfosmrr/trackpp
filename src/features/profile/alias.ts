@@ -8,7 +8,7 @@ export function aliasFormatError(value: string) {
   const alias = normalizeAlias(value)
   if (!alias) return null
   if (!ALIAS_PATTERN.test(alias)) {
-    return "Usá de 3 a 20 caracteres: empieza con una letra y seguí con letras, números o _."
+    return "Usa de 3 a 20 caracteres: empieza con una letra y sigue con letras, números o _."
   }
   return null
 }

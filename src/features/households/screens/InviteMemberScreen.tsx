@@ -58,7 +58,7 @@ export function InviteMemberScreen({
     } catch (error) {
       const message =
         error instanceof Error
-          ? parseApiError(error.message)
+          ? error.message
           : "No se pudo crear la invitación."
 
       Alert.alert("Error", message)
@@ -95,24 +95,6 @@ export function InviteMemberScreen({
       />
     </View>
   )
-}
-
-function parseApiError(
-  message: string
-) {
-  try {
-    const parsed =
-      JSON.parse(message)
-
-    if (
-      typeof parsed.error ===
-      "string"
-    ) {
-      return parsed.error
-    }
-  } catch {}
-
-  return message
 }
 
 const styles =

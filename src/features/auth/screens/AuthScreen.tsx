@@ -17,7 +17,7 @@ import Animated, {
   withTiming,
 } from "react-native-reanimated"
 
-import AnimatedText from "../../../components/text/AnimatedText"
+import { AnimatedText } from "../../../components/text/AnimatedText"
 import { MatrixTextMorph } from "../../../components/text/MatrixTextMorph"
 import { GradientBackground } from "../../../components/visual/GradientBackground"
 import type { AuthStackParamList } from "../../../navigation/types"

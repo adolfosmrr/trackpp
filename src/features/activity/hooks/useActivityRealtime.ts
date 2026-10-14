@@ -34,14 +34,6 @@ export function useActivityRealtime(enabled = true) {
             payload.new
           )
 
-          if (__DEV__) {
-            console.log("[Activity Realtime] event received", {
-              householdId: selectedHouseholdId,
-              eventType: payload.eventType,
-              activityType,
-            })
-          }
-
           invalidate(queryClient, "activity", selectedHouseholdId)
 
           const actorId = getActorId(payload.new)
@@ -63,15 +55,6 @@ export function useActivityRealtime(enabled = true) {
               invalidate(queryClient, "dashboard", selectedHouseholdId)
               invalidate(queryClient, "dashboard-insights", selectedHouseholdId)
               invalidate(queryClient, "budgets", selectedHouseholdId)
-              logInvalidations(
-                [
-                  "transactions",
-                  "dashboard",
-                  "dashboard-insights",
-                  "budgets",
-                ],
-                selectedHouseholdId
-              )
               break
             case "budget_created":
             case "budget_updated":
@@ -82,17 +65,12 @@ export function useActivityRealtime(enabled = true) {
                 "dashboard-insights",
                 selectedHouseholdId
               )
-              logInvalidations(
-                ["budgets", "dashboard-insights"],
-                selectedHouseholdId
-              )
               break
             case "fixed_expense_created":
             case "fixed_expense_updated":
             case "fixed_expense_deleted":
               invalidate(queryClient, "fixed-expenses", selectedHouseholdId)
               invalidate(queryClient, "fixed-expense-reminders", selectedHouseholdId)
-              logInvalidations(["fixed-expenses", "fixed-expense-reminders"], selectedHouseholdId)
               break
             case "fixed_expense_payment_created":
             case "fixed_expense_payment_updated":
@@ -103,60 +81,20 @@ export function useActivityRealtime(enabled = true) {
               invalidate(queryClient, "dashboard", selectedHouseholdId)
               invalidate(queryClient, "budgets", selectedHouseholdId)
               invalidate(queryClient, "dashboard-insights", selectedHouseholdId)
-              logInvalidations(
-                [
-                  "fixed-expense-periods",
-                  "fixed-expenses",
-                  "fixed-expense-reminders",
-                  "transactions",
-                  "dashboard",
-                  "budgets",
-                  "dashboard-insights",
-                ],
-                selectedHouseholdId
-              )
               break
             case "member_joined":
               if (user?.id) {
                 invalidate(queryClient, "households", user.id)
               }
-              logInvalidations(
-                user?.id ? ["households"] : [],
-                selectedHouseholdId
-              )
               break
             case null:
               break
           }
         }
       )
-      .subscribe((status) => {
-        if (!__DEV__) {
-          return
-        }
-
-        if (status === "SUBSCRIBED") {
-          console.log("[Activity Realtime] subscribed", {
-            householdId: selectedHouseholdId,
-          })
-        } else if (
-          status === "CHANNEL_ERROR" ||
-          status === "TIMED_OUT" ||
-          status === "CLOSED"
-        ) {
-          console.log("[Activity Realtime] " + status, {
-            householdId: selectedHouseholdId,
-          })
-        }
-      })
+      .subscribe()
 
     return () => {
-      if (__DEV__) {
-        console.log("[Activity Realtime] unsubscribed", {
-          householdId: selectedHouseholdId,
-        })
-      }
-
       void supabase.removeChannel(channel)
     }
   }, [
@@ -175,18 +113,6 @@ function invalidate(
   void queryClient.invalidateQueries({
     queryKey: [key, householdId],
   })
-}
-
-function logInvalidations(
-  keys: string[],
-  householdId: string
-) {
-  if (__DEV__ && keys.length) {
-    console.log("[Activity Realtime] invalidating", {
-      householdId,
-      queries: keys,
-    })
-  }
 }
 
 function getActivityType(

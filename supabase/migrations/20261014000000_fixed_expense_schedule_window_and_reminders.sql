@@ -1,8 +1,8 @@
 -- Not applied. Adds the schedule window and reminder offsets for fixed expenses
 -- without changing create_fixed_expense_with_activity or
 -- update_fixed_expense_with_activity (those signatures stay valid before this
--- migration runs). The client calls save_fixed_expense_plan and keeps a local
--- copy when the function is not in the schema cache yet.
+-- migration runs). The client calls save_fixed_expense_plan after the expense
+-- is saved and surfaces the error if the function is missing.
 
 alter table public.fixed_expenses
   add column if not exists starts_on date,

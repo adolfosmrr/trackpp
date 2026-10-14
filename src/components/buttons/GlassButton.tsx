@@ -105,7 +105,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
   },
   pressable: {
-    backgroundColor: "transparent",
+    backgroundColor: colors.transparent,
   },
   disabled: {
     opacity: 0.55,

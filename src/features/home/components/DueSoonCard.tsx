@@ -26,8 +26,8 @@ export function DueSoonCard({ onPress }: DueSoonCardProps) {
 
   const next = due[0]
   const countLabel = due.length === 1
-    ? "Tenés 1 gasto fijo por vencer."
-    : `Tenés ${due.length} gastos fijos por vencer.`
+    ? "Tienes 1 gasto fijo por vencer."
+    : `Tienes ${due.length} gastos fijos por vencer.`
 
   return (
     <ListSection>

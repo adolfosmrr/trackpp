@@ -11,13 +11,13 @@ export type HouseholdActivityType =
   | "fixed_expense_payment_created"
   | "fixed_expense_payment_updated"
 
-export type ActivityActor = {
+type ActivityActor = {
   id: string
   name: string | null
   avatar_url: string | null
 }
 
-export type HouseholdActivity = {
+type HouseholdActivity = {
   id: string
   household_id: string
   actor_id: string | null

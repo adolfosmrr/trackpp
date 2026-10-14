@@ -411,7 +411,7 @@ export function CreateTransactionForm({
       }
 
       if (autoDebit && !autoDebitSource) {
-        Alert.alert("Error", "Elegí la tarjeta del débito automático.")
+        Alert.alert("Error", "Elige la tarjeta del débito automático.")
         return
       }
 
@@ -733,7 +733,7 @@ export function CreateTransactionForm({
           />
           {isEditingFixedExpense ? (
             <AppText tone="muted" variant="caption">
-              Si cambiás el monto, el nuevo rige desde este período. Los anteriores quedan igual.
+              Si cambias el monto, el nuevo rige desde este período. Los anteriores quedan igual.
             </AppText>
           ) : null}
         </>

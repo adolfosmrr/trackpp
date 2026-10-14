@@ -204,7 +204,7 @@ export function FixedExpensesScreen({ navigation }: FixedExpensesScreenProps) {
       <ScreenContainer paddingHorizontal={0}>
         <ScrollView
           style={!topSectionHeight ? styles.hiddenList : undefined}
-          contentContainerStyle={{ paddingBottom: Math.max(insets.bottom, 0) + 66 }}
+          contentContainerStyle={{ paddingBottom: Math.max(insets.bottom, 0) + layout.tabBarClearance }}
           refreshControl={
             <RefreshControl
               refreshing={refreshing}
@@ -235,7 +235,7 @@ export function FixedExpensesScreen({ navigation }: FixedExpensesScreenProps) {
             </View>
           ) : null}
           <FixedExpenseList
-            emptyBody="Sumá alquiler, servicios o suscripciones para seguirlos todos los meses."
+            emptyBody="Suma alquiler, servicios o suscripciones para seguirlos todos los meses."
             onCreate={() => {
               void createMovementParams("fixed").then((params) => {
                 navigation.navigate("CreateMovement", params)

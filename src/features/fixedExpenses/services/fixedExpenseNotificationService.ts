@@ -6,11 +6,13 @@ import {
   type FixedExpensePlan,
 } from "./fixedExpensePlan"
 import { nextReminderPeriod } from "../utils/frequency"
+import { LEGACY_CHARGE_REMINDER_DAYS } from "../utils/reminders"
 import { resolveMonthlyDay } from "../utils/monthlyDate"
 import type { FixedExpense, FixedExpensePeriod } from "../types"
 import {
   getNotificationPermissionStatus,
 } from "../../notifications/services/notificationPermissionService"
+import { toLocalDateString } from "../../../utils/localDate"
 import {
   loadScheduledFixedExpenseNotifications,
   saveScheduledFixedExpenseNotifications,
@@ -37,55 +39,6 @@ type NotificationCandidate = {
   triggerAt: Date
   body: string
   priority: number
-}
-
-export async function scheduleFixedExpensePeriodNotifications(
-  userId: string,
-  householdId: string,
-  period: FixedExpensePeriod
-) {
-  return syncFixedExpenseNotifications({
-    userId,
-    householdId,
-    periods: [period],
-    fixedExpenses: [],
-  })
-}
-
-export async function cancelFixedExpensePeriodNotifications(
-  userId: string,
-  householdId: string,
-  periodId: string
-) {
-  const stored = await loadScheduledFixedExpenseNotifications(userId)
-  const matching = stored.filter(
-    (item) => item.householdId === householdId &&
-      item.fixedExpensePeriodId === periodId
-  )
-
-  await Promise.all(
-    matching.map((item) =>
-      Notifications.cancelScheduledNotificationAsync(item.notificationId)
-    )
-  )
-
-  if (__DEV__) {
-    console.log("[Notifications] cancel", { householdId, periodId })
-  }
-
-  await saveScheduledFixedExpenseNotifications(
-    userId,
-    stored.filter((item) => !matching.includes(item))
-  )
-}
-
-export async function rescheduleFixedExpensePeriodNotifications(
-  userId: string,
-  householdId: string,
-  period: FixedExpensePeriod
-) {
-  await cancelFixedExpensePeriodNotifications(userId, householdId, period.id)
-  return scheduleFixedExpensePeriodNotifications(userId, householdId, period)
 }
 
 export async function syncFixedExpenseNotifications({
@@ -205,49 +158,9 @@ export async function syncFixedExpenseNotifications({
       body: candidate.body,
     })
     await saveScheduledFixedExpenseNotifications(userId, nextStored)
-
-    if (__DEV__) {
-      console.log("[Notifications] schedule", {
-        householdId,
-        reminderType: candidate.reminderType,
-      })
-    }
   }
 
   await saveScheduledFixedExpenseNotifications(userId, nextStored)
-
-  if (__DEV__) {
-    console.log("[Notifications] sync", {
-      householdId,
-      count: nextStored.filter((item) => item.householdId === householdId).length,
-    })
-  }
-}
-
-export async function scheduleTestNotification(seconds = 5) {
-  if (!__DEV__) {
-    return null
-  }
-
-  return Notifications.scheduleNotificationAsync({
-    content: {
-      title: "Prueba de recordatorios",
-      body: "Las notificaciones locales están activas.",
-      data: { type: "fixed_expense", userId: "development" },
-      sound: "default",
-    },
-    trigger: {
-      type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
-      seconds,
-    },
-  })
-}
-
-if (__DEV__) {
-  const debugGlobal = globalThis as typeof globalThis & {
-    scheduleTestNotification?: typeof scheduleTestNotification
-  }
-  debugGlobal.scheduleTestNotification = scheduleTestNotification
 }
 
 function buildPeriodCandidates(
@@ -294,10 +207,10 @@ function buildUpcomingOccurrenceCandidates(
       )
       if (!next) return []
 
-      const chargeDate = toDateString(
+      const chargeDate = toLocalDateString(
         resolveMonthlyDay(next.year, next.month, expense.charge_day)
       )
-      const dueDate = toDateString(
+      const dueDate = toLocalDateString(
         resolveMonthlyDay(next.year, next.month, expense.due_day)
       )
 
@@ -333,7 +246,7 @@ function buildCandidates(
   }> = []
 
   if (dateInWindow(chargeDate, plan)) {
-    for (const days of plan.chargeReminderDays ?? [5, 1, 0]) {
+    for (const days of plan.chargeReminderDays ?? LEGACY_CHARGE_REMINDER_DAYS) {
       const event = chargeReminderEvent(days, chargeDate, name)
       if (event) events.push(event)
     }
@@ -516,7 +429,7 @@ function getNotificationTitle(type: FixedExpenseNotificationType) {
   }
 }
 
-export function createLocalNotificationDate(dateString: string, hour = 9) {
+function createLocalNotificationDate(dateString: string, hour = 9) {
   const [year, month, day] = dateString.slice(0, 10).split("-").map(Number)
   return new Date(year, month - 1, day, hour, 0, 0, 0)
 }
@@ -524,9 +437,5 @@ export function createLocalNotificationDate(dateString: string, hour = 9) {
 function shiftDate(dateString: string, days: number) {
   const date = createLocalNotificationDate(dateString, 12)
   date.setDate(date.getDate() + days)
-  return toDateString(date)
-}
-
-function toDateString(date: Date) {
-  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`
+  return toLocalDateString(date)
 }

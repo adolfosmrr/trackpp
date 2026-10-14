@@ -57,7 +57,7 @@ export function CreateHouseholdScreen({ navigation, route }: CreateHouseholdScre
   async function handleCreate() {
     const cleanName = name.trim()
     if (!cleanName) {
-      Alert.alert("Error", "Escribí un nombre para el espacio.")
+      Alert.alert("Error", "Escribe un nombre para el espacio.")
       return
     }
 
@@ -84,7 +84,7 @@ export function CreateHouseholdScreen({ navigation, route }: CreateHouseholdScre
             : "No se pudo enviar la invitación."
           Alert.alert(
             "Espacio creado",
-            `${message} Podés invitar desde el perfil.`,
+            `${message} Puedes invitar desde el perfil.`,
           )
           finishCreatedHousehold(household.id)
           return
@@ -140,7 +140,7 @@ export function CreateHouseholdScreen({ navigation, route }: CreateHouseholdScre
           <View style={styles.section}>
             <AppText variant="sectionTitle">Invitar ahora</AppText>
             <AppText tone="muted" variant="caption">
-              Opcional. Si lo dejás vacío, podés invitar a otras personas más tarde desde Perfil.
+              Opcional. Si lo dejas vacío, puedes invitar a otras personas más tarde desde Perfil.
             </AppText>
             <TextField
               autoCapitalize="none"

@@ -10,14 +10,12 @@ type HomeInsightGroupProps = {
   group: HomeAiInsightGroupData
   actions: HomeAiInsightAction[]
   onActionPress: (action: HomeAiInsightAction) => void
-  variant?: "card" | "plain"
 }
 
 export function HomeInsightGroup({
   group,
   actions,
   onActionPress,
-  variant = "card",
 }: HomeInsightGroupProps) {
   const actionsById = new Map(actions.map((action) => [action.id, action]))
   const groupActions = group.actionIds
@@ -26,14 +24,14 @@ export function HomeInsightGroup({
 
   if (groupActions.length !== group.actionIds.length) {
     return (
-      <AppText tone={variant === "plain" ? "muted" : "default"} variant={variant === "plain" ? "title" : "body"}>
+      <AppText variant="body">
         {group.text}
       </AppText>
     )
   }
 
   return (
-    <AppText tone={variant === "plain" ? "muted" : "default"} variant={variant === "plain" ? "title" : "body"}>
+    <AppText variant="body">
       {segmentInsightGroup(group.text, groupActions).map((segment, index) =>
         segment.type === "action" ? (
           <AppText
@@ -43,12 +41,12 @@ export function HomeInsightGroup({
             onPress={() => onActionPress(segment.action)}
             style={styles.action}
             tone="brand"
-            variant={variant === "plain" ? "title" : "body"}
+            variant="body"
           >
             {segment.value}
           </AppText>
         ) : (
-          <AppText key={`text-${group.id}-${index}`} variant={variant === "plain" ? "title" : "body"}>
+          <AppText key={`text-${group.id}-${index}`} variant="body">
             {segment.value}
           </AppText>
         )
@@ -61,7 +59,7 @@ type GroupSegment =
   | { type: "text"; value: string }
   | { type: "action"; value: string; action: HomeAiInsightAction; start: number }
 
-export function segmentInsightGroup(text: string, actions: HomeAiInsightAction[]): GroupSegment[] {
+function segmentInsightGroup(text: string, actions: HomeAiInsightAction[]): GroupSegment[] {
   const matches = actions.flatMap((action, actionIndex) => {
     const found: Array<{ action: HomeAiInsightAction; actionIndex: number; start: number; end: number }> = []
     let searchFrom = 0

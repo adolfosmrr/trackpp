@@ -1,28 +1,8 @@
 import { useEffect, useRef, useState } from "react"
-import { AccessibilityInfo } from "react-native"
+
+import { useReduceMotion } from "../../../hooks/useReduceMotion"
 
 const WORD_INTERVAL_MS = 40
-
-export function useReduceMotion() {
-  const [reduceMotion, setReduceMotion] = useState(false)
-
-  useEffect(() => {
-    let mounted = true
-    void AccessibilityInfo.isReduceMotionEnabled().then((enabled) => {
-      if (mounted) setReduceMotion(enabled)
-    })
-    const subscription = AccessibilityInfo.addEventListener(
-      "reduceMotionChanged",
-      setReduceMotion,
-    )
-    return () => {
-      mounted = false
-      subscription.remove()
-    }
-  }, [])
-
-  return reduceMotion
-}
 
 export function useTypewriter(text: string, active: boolean, onComplete?: () => void) {
   const reduceMotion = useReduceMotion()

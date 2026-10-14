@@ -1,11 +1,12 @@
 import {
-  AccessibilityInfo,
   StyleSheet,
   View,
   type StyleProp,
   type TextStyle,
 } from "react-native"
-import { memo, useEffect, useRef, useState } from "react"
+import { memo, useEffect, useRef } from "react"
+
+import { useReduceMotion } from "../../hooks/useReduceMotion"
 import Animated, {
   Easing,
   useSharedValue,
@@ -208,29 +209,11 @@ export const AnimatedText = memo(function AnimatedText({
   exitFrom,
   exitTo,
 }: AnimatedTextProps) {
-  const [reduceMotionEnabled, setReduceMotionEnabled] = useState(false)
+  const reduceMotionEnabled = useReduceMotion()
   const hasMounted = useRef(false)
 
   useEffect(() => {
-    let mounted = true
-
-    void AccessibilityInfo.isReduceMotionEnabled().then((enabled) => {
-      if (mounted) {
-        setReduceMotionEnabled(enabled)
-      }
-    })
-
-    const subscription = AccessibilityInfo.addEventListener(
-      "reduceMotionChanged",
-      setReduceMotionEnabled
-    )
-
     hasMounted.current = true
-
-    return () => {
-      mounted = false
-      subscription.remove()
-    }
   }, [])
 
   const config: AnimationConfig = {
@@ -318,5 +301,3 @@ const styles = StyleSheet.create({
     position: "relative",
   },
 })
-
-export default AnimatedText

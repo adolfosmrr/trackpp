@@ -1,6 +1,6 @@
 import type { AutoDebitSource, FixedExpenseFrequency } from "./utils/frequency"
 
-export type FixedExpenseCategory = {
+type FixedExpenseCategory = {
   id: string
   name: string
   icon: string | null

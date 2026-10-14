@@ -1,8 +1,6 @@
-import { formatMoney } from "../../../utils/formatMoney"
-
 import type { BankChargeSource, PendingBankCharge } from "../types"
 
-export function sourceLabel(source: BankChargeSource) {
+function sourceLabel(source: BankChargeSource) {
   switch (source) {
     case "naranja":
       return "Naranja"
@@ -22,10 +20,6 @@ export function chargeOrigin(charge: Pick<PendingBankCharge, "source" | "card_la
 
 export function chargeTitle(charge: Pick<PendingBankCharge, "merchant">) {
   return charge.merchant?.trim() || "Gasto con tarjeta"
-}
-
-export function formatChargeAmount(amount: number, currency = "ARS") {
-  return formatMoney(amount, currency)
 }
 
 export function formatChargeDate(value: string | null) {
