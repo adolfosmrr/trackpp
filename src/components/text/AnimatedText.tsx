@@ -247,38 +247,46 @@ export const AnimatedText = memo(function AnimatedText({
   const mergedExitFrom = { ...DEFAULT_EXIT_FROM, ...exitFrom }
   const mergedExitTo = { ...DEFAULT_EXIT_TO, ...exitTo }
   const shouldAnimate = hasMounted.current && !reduceMotionEnabled
-  const words = text.trim().split(/\s+/)
+  const lines = text.split("\n")
   let globalCharacterIndex = 0
 
   return (
     <View style={styles.textWrapper}>
-      {words.map((word, wordIndex) => {
-        const wordCharacters = Array.from(word)
-        const wordStartIndex = globalCharacterIndex
-        globalCharacterIndex += wordCharacters.length
+      {lines.map((line, lineIndex) => {
+        const words = line.trim().split(/\s+/).filter((word) => word.length > 0)
 
         return (
-          <View
-            key={`${text}-word-${wordIndex}`}
-            style={[
-              styles.wordWrapper,
-              wordIndex < words.length - 1 && styles.wordSpacing,
-            ]}
-          >
-            {wordCharacters.map((char, characterIndex) => (
-              <Character
-                key={`${text}-${wordStartIndex + characterIndex}`}
-                char={char}
-                index={wordStartIndex + characterIndex}
-                style={style}
-                animationConfig={config}
-                enterFrom={mergedEnterFrom}
-                enterTo={mergedEnterTo}
-                exitFrom={mergedExitFrom}
-                exitTo={mergedExitTo}
-                shouldAnimate={shouldAnimate}
-              />
-            ))}
+          <View key={`${text}-line-${lineIndex}`} style={styles.lineWrapper}>
+            {words.map((word, wordIndex) => {
+              const wordCharacters = Array.from(word)
+              const wordStartIndex = globalCharacterIndex
+              globalCharacterIndex += wordCharacters.length
+
+              return (
+                <View
+                  key={`${text}-word-${lineIndex}-${wordIndex}`}
+                  style={[
+                    styles.wordWrapper,
+                    wordIndex < words.length - 1 && styles.wordSpacing,
+                  ]}
+                >
+                  {wordCharacters.map((char, characterIndex) => (
+                    <Character
+                      key={`${text}-${wordStartIndex + characterIndex}`}
+                      char={char}
+                      index={wordStartIndex + characterIndex}
+                      style={style}
+                      animationConfig={config}
+                      enterFrom={mergedEnterFrom}
+                      enterTo={mergedEnterTo}
+                      exitFrom={mergedExitFrom}
+                      exitTo={mergedExitTo}
+                      shouldAnimate={shouldAnimate}
+                    />
+                  ))}
+                </View>
+              )
+            })}
           </View>
         )
       })}
@@ -288,10 +296,15 @@ export const AnimatedText = memo(function AnimatedText({
 
 const styles = StyleSheet.create({
   textWrapper: {
+    alignItems: "center",
     alignSelf: "stretch",
     justifyContent: "center",
+  },
+  lineWrapper: {
     flexDirection: "row",
     flexWrap: "wrap",
+    justifyContent: "center",
+    maxWidth: "100%",
   },
   wordWrapper: {
     flexDirection: "row",

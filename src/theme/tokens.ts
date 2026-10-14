@@ -43,6 +43,9 @@ export const colors = {
   transparent: "transparent",
 } as const
 
+/** Resting and peak opacity of GradientBackground dots. */
+export const dotOpacity = 0.7
+
 export const spacing = {
   xs: 4,
   sm: 8,
@@ -79,6 +82,8 @@ export const layout = {
    * A captured `_UITabBarPlatterView` frame is 62pt tall.
    */
   tabBarPill: 62,
+  /** Space above every in-screen segmented selector. */
+  segmentedOffset: 5,
 } as const
 
 const RADIUS_XL = 16

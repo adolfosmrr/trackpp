@@ -16,6 +16,9 @@ import {
 import { PrimaryAuthButton } from "../components/PrimaryAuthButton"
 import { signInWithGoogle } from "../services/googleAuth"
 
+const LOGIN_GREETING = "¡Hola!\n¡Bienvenido de vuelta!"
+const REGISTER_GREETING = "¡Hola persona que aún no conozco!"
+
 function useAppIsActive() {
   const [active, setActive] = useState(AppState.currentState === "active")
 
@@ -66,13 +69,18 @@ export function AuthScreen() {
       />
 
       <View style={styles.content}>
-        <View style={styles.authMessageClip}>
+        <View
+          style={[
+            styles.authMessageClip,
+            {
+              minHeight:
+                typography.display.lineHeight *
+                (mode === "login" ? LOGIN_GREETING : REGISTER_GREETING).split("\n").length,
+            },
+          ]}
+        >
           <AnimatedText
-            text={
-              mode === "login"
-                ? "¡Hola! ¡Bienvenido de vuelta!"
-                : "¡Hola persona que aún no conozco!"
-            }
+            text={mode === "login" ? LOGIN_GREETING : REGISTER_GREETING}
             animationConfig={{
               spring: {
                 damping: 18,
@@ -160,7 +168,6 @@ const styles = StyleSheet.create({
   },
   authMessageClip: {
     width: "100%",
-    minHeight: typography.display.lineHeight,
     overflow: "hidden",
     alignItems: "center",
     justifyContent: "center",
@@ -185,6 +192,7 @@ const styles = StyleSheet.create({
   },
   link: {
     color: "#FFFFFF",
+    fontFamily: typography.title.fontFamily,
     textAlign: "center",
     marginTop: layout.titleContentGap,
   },

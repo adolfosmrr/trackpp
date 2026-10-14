@@ -1,5 +1,6 @@
 export {
   colors,
+  dotOpacity,
   fonts,
   gradients,
   layout,
