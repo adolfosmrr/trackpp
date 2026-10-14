@@ -3,6 +3,7 @@ import { colors, fonts, radii } from "../../../theme"
 
 import { GoogleIcon } from "../../../components/icons/GoogleIcon"
 import { MatrixTextMorph } from "../../../components/text/MatrixTextMorph"
+import { authTabMotion } from "../authTabMotion"
 
 type GoogleAuthButtonProps = {
   label: string
@@ -24,7 +25,11 @@ export function GoogleAuthButton({
       {loading ? (
         <Text style={styles.text}>Conectando...</Text>
       ) : (
-        <MatrixTextMorph text={label} style={styles.text} stepDuration={15} />
+        <MatrixTextMorph
+          stepDuration={authTabMotion.labelStep}
+          style={styles.text}
+          text={label}
+        />
       )}
       <View style={styles.iconContainer}>
         <GoogleIcon />

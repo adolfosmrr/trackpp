@@ -1,4 +1,4 @@
-import { useRef, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import {
   Alert,
   KeyboardAvoidingView,
@@ -10,8 +10,13 @@ import {
 } from "react-native"
 import { useIsFocused } from "@react-navigation/native"
 import type { NativeStackScreenProps } from "@react-navigation/native-stack"
+import Animated, {
+  useAnimatedStyle,
+  useReducedMotion,
+  useSharedValue,
+  withTiming,
+} from "react-native-reanimated"
 
-import { AppText } from "../../../components/text/AppText"
 import AnimatedText from "../../../components/text/AnimatedText"
 import { MatrixTextMorph } from "../../../components/text/MatrixTextMorph"
 import { GradientBackground } from "../../../components/visual/GradientBackground"
@@ -28,6 +33,12 @@ import { signInWithGoogle } from "../services/googleAuth"
 
 const LOGIN_GREETING = "¡Hola!\n¡Bienvenido de vuelta!"
 const REGISTER_GREETING = "¡Hola persona que aún no conozco!"
+const GREETING_OFFSCREEN = {
+  opacity: 0,
+  translateY: 16,
+  scale: 0.8,
+  rotate: 5,
+} as const
 
 type AuthProviderSectionProps = {
   divider: string
@@ -50,7 +61,11 @@ function AuthProviderSection({
     <View style={styles.googleSection}>
       <View style={styles.separator}>
         <View style={styles.line} />
-        <AppText style={styles.divider} variant="caption">{divider}</AppText>
+        <MatrixTextMorph
+          stepDuration={authTabMotion.labelStep}
+          style={[typography.caption, styles.divider]}
+          text={divider}
+        />
         <View style={styles.line} />
       </View>
       <GoogleAuthButton
@@ -74,10 +89,37 @@ type AuthScreenProps = NativeStackScreenProps<AuthStackParamList, "Auth">
 export function AuthScreen({ navigation }: AuthScreenProps) {
   const isFocused = useIsFocused()
   const appIsActive = useAppIsActive()
+  const reducedMotion = useReducedMotion() === true
   const [mode, setMode] = useState<AuthMode>("login")
   const [authLoading, setAuthLoading] = useState(false)
   const formRef = useRef<LoginFormHandle>(null)
+  const skipClip = useRef(true)
+  const clipHeight = useSharedValue(
+    typography.display.lineHeight * LOGIN_GREETING.split("\n").length,
+  )
   const [googleLoading, setGoogleLoading] = useState(false)
+
+  useEffect(() => {
+    const lines = (mode === "login" ? LOGIN_GREETING : REGISTER_GREETING).split("\n").length
+    const next = typography.display.lineHeight * lines
+    if (skipClip.current) {
+      skipClip.current = false
+      clipHeight.value = next
+      return
+    }
+    if (reducedMotion) {
+      clipHeight.value = next
+      return
+    }
+    clipHeight.value = withTiming(next, {
+      duration: authTabMotion.layout,
+      easing: mode === "login" ? authTabMotion.enterEasing : authTabMotion.exitEasing,
+    })
+  }, [clipHeight, mode, reducedMotion])
+
+  const clipStyle = useAnimatedStyle(() => ({
+    minHeight: clipHeight.value,
+  }))
 
   async function handleGoogleLogin() {
     try {
@@ -107,16 +149,7 @@ export function AuthScreen({ navigation }: AuthScreenProps) {
           keyboardShouldPersistTaps="handled"
           style={styles.avoider}
         >
-          <View
-            style={[
-              styles.authMessageClip,
-              {
-                minHeight:
-                  typography.display.lineHeight *
-                  (mode === "login" ? LOGIN_GREETING : REGISTER_GREETING).split("\n").length,
-              },
-            ]}
-          >
+          <Animated.View style={[styles.authMessageClip, clipStyle]}>
             <AnimatedText
               text={mode === "login" ? LOGIN_GREETING : REGISTER_GREETING}
               animationConfig={{
@@ -127,21 +160,17 @@ export function AuthScreen({ navigation }: AuthScreenProps) {
                 },
                 characterDelay: 15,
               }}
-              enterFrom={{
-                opacity: 0,
-                translateY: 16,
-                scale: 0.8,
-                rotate: 5,
-              }}
+              enterFrom={GREETING_OFFSCREEN}
               exitFrom={{
                 opacity: 1,
                 translateY: 0,
                 scale: 1,
                 rotate: 0,
               }}
+              exitTo={GREETING_OFFSCREEN}
               style={styles.authMessage}
             />
-          </View>
+          </Animated.View>
           <AuthToggle value={mode} onChange={setMode} />
           <View style={styles.formArea}>
             <LoginForm

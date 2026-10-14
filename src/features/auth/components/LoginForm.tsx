@@ -7,7 +7,6 @@ import {
   type LayoutChangeEvent,
 } from "react-native"
 import Animated, {
-  Easing,
   useAnimatedStyle,
   useReducedMotion,
   useSharedValue,
@@ -24,8 +23,6 @@ import { authTabMotion } from "../authTabMotion"
 import { AUTH_REDIRECT_URL } from "../services/authCallback"
 import { authErrorMessage } from "../services/authErrors"
 import { AuthEmailField } from "./AuthEmailField"
-
-const motionEasing = Easing.out(Easing.cubic)
 
 export type LoginFormHandle = {
   submit: () => void
@@ -62,8 +59,8 @@ export const LoginForm = forwardRef<LoginFormHandle, LoginFormProps>(
         return
       }
 
-      const fade = { duration: authTabMotion.fade, easing: motionEasing }
-      const layout = { duration: authTabMotion.layout, easing: motionEasing }
+      const exitTiming = { duration: authTabMotion.fade, easing: authTabMotion.exitEasing }
+      const enterTiming = { duration: authTabMotion.fade, easing: authTabMotion.enterEasing }
       if (reducedMotion) {
         const value = shown ? 1 : 0
         slot.value = value
@@ -74,18 +71,17 @@ export const LoginForm = forwardRef<LoginFormHandle, LoginFormProps>(
       }
 
       if (!shown) {
-        slot.value = withTiming(0, layout)
-        fieldEmail.value = withTiming(0, fade)
-        fieldPassword.value = withDelay(authTabMotion.stagger, withTiming(0, fade))
-        fieldForgot.value = withDelay(authTabMotion.stagger * 2, withTiming(0, fade))
+        slot.value = withTiming(0, { duration: authTabMotion.layout, easing: authTabMotion.exitEasing })
+        fieldEmail.value = withTiming(0, exitTiming)
+        fieldPassword.value = withDelay(authTabMotion.stagger, withTiming(0, exitTiming))
+        fieldForgot.value = withDelay(authTabMotion.stagger * 2, withTiming(0, exitTiming))
         return
       }
 
-      const revealDelay = slot.value < 0.05 ? authTabMotion.layout : 0
-      slot.value = withTiming(1, layout)
-      fieldEmail.value = withDelay(revealDelay, withTiming(1, fade))
-      fieldPassword.value = withDelay(revealDelay + authTabMotion.stagger, withTiming(1, fade))
-      fieldForgot.value = withDelay(revealDelay + authTabMotion.stagger * 2, withTiming(1, fade))
+      slot.value = withTiming(1, { duration: authTabMotion.layout, easing: authTabMotion.enterEasing })
+      fieldForgot.value = withTiming(1, enterTiming)
+      fieldPassword.value = withDelay(authTabMotion.stagger, withTiming(1, enterTiming))
+      fieldEmail.value = withDelay(authTabMotion.stagger * 2, withTiming(1, enterTiming))
     }, [fieldEmail, fieldForgot, fieldPassword, reducedMotion, shown, slot])
 
     function rememberHeight(event: LayoutChangeEvent) {

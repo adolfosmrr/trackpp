@@ -29,7 +29,6 @@ type AnimationConfig = {
   }
   characterDelay: number
   characterEnterDuration: number
-  characterExitDuration: number
 }
 
 type AnimatedTextProps = {
@@ -48,7 +47,6 @@ const DEFAULT_CONFIG: AnimationConfig = {
   spring: { damping: 15, stiffness: 210, mass: 1 },
   characterDelay: 15,
   characterEnterDuration: 360,
-  characterExitDuration: 220,
 }
 
 const DEFAULT_ENTER_FROM: AnimationParams = {
@@ -102,8 +100,7 @@ const Character = memo(function Character({
   exitTo,
   shouldAnimate,
 }: CharacterProps) {
-  const enterDelay = index * animationConfig.characterDelay
-  const exitDelay = index * (animationConfig.characterDelay * 0.5)
+  const characterDelay = index * animationConfig.characterDelay
 
   const entering = () => {
     "worklet"
@@ -123,23 +120,23 @@ const Character = memo(function Character({
         ],
       },
       animations: {
-        opacity: withDelay(enterDelay, withTiming(enterTo.opacity, timingConfig)),
+        opacity: withDelay(characterDelay, withTiming(enterTo.opacity, timingConfig)),
         transform: [
           {
             translateY: withDelay(
-              enterDelay,
+              characterDelay,
               withSpring(enterTo.translateY, animationConfig.spring)
             ),
           },
           {
             scale: withDelay(
-              enterDelay,
+              characterDelay,
               withSpring(enterTo.scale, animationConfig.spring)
             ),
           },
           {
             rotate: withDelay(
-              enterDelay,
+              characterDelay,
               withSpring(`${enterTo.rotate}deg`, animationConfig.spring)
             ),
           },
@@ -152,7 +149,7 @@ const Character = memo(function Character({
     "worklet"
 
     const timingConfig = {
-      duration: animationConfig.characterExitDuration,
+      duration: animationConfig.characterEnterDuration,
       easing: Easing.in(Easing.ease),
     }
 
@@ -166,21 +163,24 @@ const Character = memo(function Character({
         ],
       },
       animations: {
-        opacity: withDelay(exitDelay, withTiming(exitTo.opacity, timingConfig)),
+        opacity: withDelay(characterDelay, withTiming(exitTo.opacity, timingConfig)),
         transform: [
           {
             translateY: withDelay(
-              exitDelay,
-              withTiming(exitTo.translateY, timingConfig)
+              characterDelay,
+              withSpring(exitTo.translateY, animationConfig.spring)
             ),
           },
           {
-            scale: withDelay(exitDelay, withTiming(exitTo.scale, timingConfig)),
+            scale: withDelay(
+              characterDelay,
+              withSpring(exitTo.scale, animationConfig.spring)
+            ),
           },
           {
             rotate: withDelay(
-              exitDelay,
-              withTiming(`${exitTo.rotate}deg`, timingConfig)
+              characterDelay,
+              withSpring(`${exitTo.rotate}deg`, animationConfig.spring)
             ),
           },
         ],
