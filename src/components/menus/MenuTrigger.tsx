@@ -6,29 +6,50 @@ import {
   type AccessibilityActionInfo,
 } from "react-native"
 
-import { ChevronDownIcon } from "../../../components/icons/ChevronDownIcon"
-import { colors, fonts, layout, radii } from "../../../theme"
-import { SPACE_MENU_LABEL } from "./spaceMenu"
+import { ChevronDownIcon } from "../icons/ChevronDownIcon"
+import { FieldChevronIcon } from "../icons/FieldChevronIcon"
+import { fieldStyles } from "../inputs/TextField"
+import { colors, fonts, layout, radii } from "../../theme"
 
-type SpaceMenuTriggerProps = {
-  compact: boolean
+type MenuTriggerProps = {
+  accessibilityLabel: string
   label: string
+  variant: "space" | "field"
+  compact?: boolean
   accessible?: boolean
   accessibilityActions?: AccessibilityActionInfo[]
   onAccessibilityAction?: (event: AccessibilityActionEvent) => void
 }
 
-export function SpaceMenuTrigger({
-  compact,
+export function MenuTrigger({
+  accessibilityLabel,
   label,
+  variant,
+  compact = false,
   accessible = true,
   accessibilityActions,
   onAccessibilityAction,
-}: SpaceMenuTriggerProps) {
+}: MenuTriggerProps) {
+  if (variant === "field") {
+    return (
+      <View
+        accessibilityActions={accessibilityActions}
+        accessibilityLabel={accessible ? accessibilityLabel : undefined}
+        accessibilityRole={accessible ? "button" : undefined}
+        accessible={accessible}
+        onAccessibilityAction={onAccessibilityAction}
+        style={[fieldStyles.surface, fieldStyles.row, fieldStyles.pill]}
+      >
+        <Text numberOfLines={1} style={styles.fieldLabel}>{label}</Text>
+        <FieldChevronIcon />
+      </View>
+    )
+  }
+
   return (
     <View
       accessibilityActions={accessibilityActions}
-      accessibilityLabel={accessible ? SPACE_MENU_LABEL : undefined}
+      accessibilityLabel={accessible ? accessibilityLabel : undefined}
       accessibilityRole={accessible ? "button" : undefined}
       accessible={accessible}
       onAccessibilityAction={onAccessibilityAction}
@@ -43,6 +64,12 @@ export function SpaceMenuTrigger({
 }
 
 const styles = StyleSheet.create({
+  fieldLabel: {
+    color: colors.foreground,
+    flex: 1,
+    fontFamily: fonts.sans,
+    fontSize: 16,
+  },
   trigger: {
     alignItems: "center",
     flexDirection: "row",

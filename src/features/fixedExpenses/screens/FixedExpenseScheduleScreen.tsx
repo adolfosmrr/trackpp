@@ -6,11 +6,13 @@ import type { NativeStackScreenProps } from "@react-navigation/native-stack"
 import { Button } from "../../../components/buttons/Button"
 import { SheetScaffold } from "../../../components/layout/SheetScaffold"
 import { AppText } from "../../../components/text/AppText"
+import { ReminderMenuEditor } from "../components/ReminderMenuEditor"
 import { selectionToken } from "../../../navigation/selectionToken"
 import type { AppStackParamList } from "../../../navigation/types"
 import { colors, layout, radii } from "../../../theme"
 import {
   START_REMINDER_PRESETS,
+  chargeReminderLabel,
   normalizeStartReminderDays,
   parseDateInputValue,
   toDateInputValue,
@@ -45,14 +47,6 @@ export function FixedExpenseScheduleScreen({
         startReminderDays: normalizeStartReminderDays(startReminderDays),
       },
     }, { merge: true })
-  }
-
-  function toggleStartReminder(days: number) {
-    setStartReminderDays((current) =>
-      current.includes(days)
-        ? current.filter((value) => value !== days)
-        : [...current, days],
-    )
   }
 
   return (
@@ -123,24 +117,12 @@ export function FixedExpenseScheduleScreen({
 
       <View style={styles.block}>
         <AppText variant="sectionTitle">Avisos antes de que empiece</AppText>
-        <View style={styles.chips}>
-          {START_REMINDER_PRESETS.map((preset) => {
-            const selected = startReminderDays.includes(preset.days)
-            return (
-              <Pressable
-                key={preset.days}
-                accessibilityRole="checkbox"
-                accessibilityState={{ checked: selected }}
-                onPress={() => toggleStartReminder(preset.days)}
-                style={[styles.chip, selected && styles.chipSelected]}
-              >
-                <AppText tone={selected ? "onBrand" : "muted"} variant="caption">
-                  {preset.label}
-                </AppText>
-              </Pressable>
-            )
-          })}
-        </View>
+        <ReminderMenuEditor
+          days={startReminderDays}
+          labelFor={chargeReminderLabel}
+          onChange={(days) => setStartReminderDays(normalizeStartReminderDays(days))}
+          options={START_REMINDER_PRESETS}
+        />
       </View>
 
       <Button label="Listo" onPress={commit} tone="brand" />
@@ -203,21 +185,5 @@ const styles = StyleSheet.create({
     borderRadius: radii.pill,
     paddingHorizontal: 20,
     paddingVertical: 15,
-  },
-  chips: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 8,
-  },
-  chip: {
-    alignItems: "center",
-    backgroundColor: colors.control,
-    borderRadius: radii.pill,
-    justifyContent: "center",
-    minHeight: 36,
-    paddingHorizontal: 12,
-  },
-  chipSelected: {
-    backgroundColor: colors.brand,
   },
 })

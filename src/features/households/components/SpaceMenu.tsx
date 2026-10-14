@@ -1,22 +1,34 @@
-import type { ComponentType } from "react"
-import { Platform } from "react-native"
+import { NativeMenu } from "../../../components/menus/NativeMenu"
+import {
+  CREATE_SPACE_LABEL,
+  SPACE_MENU_LABEL,
+  type SpaceMenuProps,
+} from "./spaceMenu"
 
-import type { SpaceMenuProps } from "./spaceMenu"
-
-type SpaceMenuComponent = ComponentType<SpaceMenuProps>
-
-function readSpaceMenu(module: { SpaceMenu: SpaceMenuComponent }) {
-  return module.SpaceMenu
-}
-
-const Menu = readSpaceMenu(
-  Platform.OS === "ios"
-    ? require("./IosSpaceMenu")
-    : Platform.OS === "android"
-      ? require("./AndroidSpaceMenu")
-      : require("./WebSpaceMenu"),
-)
-
-export function SpaceMenu(props: SpaceMenuProps) {
-  return <Menu {...props} />
+export function SpaceMenu({ compact, label, items, onSelect, onCreate }: SpaceMenuProps) {
+  return (
+    <NativeMenu
+      accessibilityLabel={SPACE_MENU_LABEL}
+      compact={compact}
+      entries={[
+        ...items.map((item) => ({
+          id: item.id,
+          title: item.name,
+          subtitle: item.subtitle,
+          selected: item.selected,
+        })),
+        {
+          id: "create",
+          separatorBefore: items.length > 0,
+          title: CREATE_SPACE_LABEL,
+        },
+      ]}
+      label={label}
+      onSelect={(id) => {
+        if (id === "create") onCreate()
+        else onSelect(id)
+      }}
+      variant="space"
+    />
+  )
 }

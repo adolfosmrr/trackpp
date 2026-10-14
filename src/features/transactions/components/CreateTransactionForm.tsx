@@ -22,7 +22,7 @@ import { useHouseholdCategories } from "../../categories/hooks/useHouseholdCateg
 import { SegmentedToggle } from "../../../components/inputs/SegmentedToggle"
 import { FieldChevronIcon } from "../../../components/icons/FieldChevronIcon"
 import { useCreateLinkedTransactions } from "../hooks/useCreateLinkedTransactions"
-import { ChargeReminderEditor } from "../../fixedExpenses/components/ChargeReminderEditor"
+import { ReminderMenuEditor } from "../../fixedExpenses/components/ReminderMenuEditor"
 import { OptionChips } from "../../fixedExpenses/components/OptionChips"
 import { useCreateFixedExpense } from "../../fixedExpenses/hooks/useCreateFixedExpense"
 import { useUpdateFixedExpense } from "../../fixedExpenses/hooks/useUpdateFixedExpense"
@@ -39,6 +39,8 @@ import {
   loadFixedExpensePlan,
 } from "../../fixedExpenses/services/fixedExpensePlan"
 import {
+  CHARGE_REMINDER_PRESETS,
+  chargeReminderLabel,
   formatPlanDate,
   LEGACY_CHARGE_REMINDER_DAYS,
 } from "../../fixedExpenses/utils/reminders"
@@ -751,9 +753,11 @@ export function CreateTransactionForm({
               />
             </View>
           ) : null}
-          <ChargeReminderEditor
+          <ReminderMenuEditor
             days={chargeReminderDays ?? [...LEGACY_CHARGE_REMINDER_DAYS]}
+            labelFor={chargeReminderLabel}
             onChange={setChargeReminderDays}
+            options={CHARGE_REMINDER_PRESETS}
           />
           {isEditingFixedExpense ? (
             <AppText tone="muted" variant="caption">

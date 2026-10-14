@@ -23,6 +23,10 @@ import { useHouseholds } from "../../households/hooks/useHouseholds"
 
 import { useHouseholdStore } from "../../../store/householdStore"
 
+function displayName(name: string | null | undefined, lastName: string | null | undefined) {
+  return [name, lastName].filter((part) => part?.trim()).join(" ")
+}
+
 export function ProfileScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<AppStackParamList>>()
   const { user } = useAuth()
@@ -90,14 +94,14 @@ export function ProfileScreen() {
     <SheetScaffold onClose={close} title="Perfil">
       <View style={styles.header}>
         <ProfileAvatar
-          name={profile?.name}
+          name={displayName(profile?.name, profile?.last_name)}
           style={styles.avatar}
           uri={profile?.avatar_url}
           variant="title"
         />
 
         <AppText variant="title">
-          {profile?.name ?? "Usuario"}
+          {displayName(profile?.name, profile?.last_name) || "Usuario"}
         </AppText>
 
         <AppText tone="muted" variant="caption">

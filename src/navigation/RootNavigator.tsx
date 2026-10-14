@@ -6,12 +6,13 @@ import { colors, navigationTheme } from "../theme"
 import { AuthNavigator } from "./AuthNavigator"
 import { AppNavigator } from "./AppNavigator"
 import { useAuth } from "../features/auth/context/AuthContext"
+import { UpdatePasswordScreen } from "../features/auth/screens/UpdatePasswordScreen"
 import { syncDevMenuToolsButton } from "./devMenuToolsButton"
 import { navigationRef } from "./navigationRef"
 import { flushPendingNotificationNavigation } from "../features/notifications/services/notificationNavigation"
 
 export function RootNavigator() {
-  const { session, loading } = useAuth()
+  const { session, loading, passwordRecovery, clearPasswordRecovery } = useAuth()
 
   if (loading) {
     return (
@@ -31,7 +32,13 @@ export function RootNavigator() {
       }}
       onStateChange={syncDevMenuToolsButton}
     >
-      {session ? <AppNavigator /> : <AuthNavigator />}
+      {session && passwordRecovery ? (
+        <UpdatePasswordScreen onDone={clearPasswordRecovery} />
+      ) : session ? (
+        <AppNavigator />
+      ) : (
+        <AuthNavigator />
+      )}
     </NavigationContainer>
   )
 }

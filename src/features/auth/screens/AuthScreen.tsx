@@ -1,5 +1,14 @@
 import { useEffect, useRef, useState } from "react"
-import { Alert, AppState, Pressable, StyleSheet, View } from "react-native"
+import {
+  Alert,
+  AppState,
+  KeyboardAvoidingView,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  View,
+} from "react-native"
 import { useIsFocused } from "@react-navigation/native"
 import { colors, layout, typography } from "../../../theme"
 import { AppText } from "../../../components/text/AppText"
@@ -15,6 +24,7 @@ import {
 } from "../components/RegisterForm"
 import { PrimaryAuthButton } from "../components/PrimaryAuthButton"
 import { signInWithGoogle } from "../services/googleAuth"
+import { authErrorMessage } from "../services/authErrors"
 
 const LOGIN_GREETING = "¡Hola!\n¡Bienvenido de vuelta!"
 const REGISTER_GREETING = "¡Hola persona que aún no conozco!"
@@ -49,12 +59,7 @@ export function AuthScreen() {
       setGoogleLoading(true)
       await signInWithGoogle()
     } catch (error) {
-      const message =
-        error instanceof Error
-          ? error.message
-          : "No se pudo iniciar sesión con Google"
-
-      Alert.alert("Error", message)
+      Alert.alert("Error", authErrorMessage(error))
     } finally {
       setGoogleLoading(false)
     }
@@ -68,7 +73,15 @@ export function AuthScreen() {
         token="topSection"
       />
 
-      <View style={styles.content}>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
+        style={styles.avoider}
+      >
+      <ScrollView
+        contentContainerStyle={styles.content}
+        keyboardShouldPersistTaps="handled"
+        style={styles.avoider}
+      >
         <View
           style={[
             styles.authMessageClip,
@@ -143,7 +156,8 @@ export function AuthScreen() {
             </AppText>
           </Pressable>
         </View>
-      </View>
+      </ScrollView>
+      </KeyboardAvoidingView>
     </View>
   )
 }
@@ -154,8 +168,11 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background,
     justifyContent: 'center',
   },
-  content: {
+  avoider: {
     flex: 1,
+  },
+  content: {
+    flexGrow: 1,
     padding: layout.sheetPadding,
     gap: 16,
     zIndex: 1,

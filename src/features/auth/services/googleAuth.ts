@@ -1,21 +1,16 @@
 import * as WebBrowser from "expo-web-browser"
 
 import { supabase } from "../../../services/supabase"
+import {
+  AUTH_REDIRECT_URL,
+  claimAuthCode,
+  getCallbackParam,
+  releaseAuthCode,
+} from "./authCallback"
 
-const redirectTo = "gastosapp://auth/callback"
+const redirectTo = AUTH_REDIRECT_URL
 
 WebBrowser.maybeCompleteAuthSession()
-
-function getCallbackParam(url: URL, name: string) {
-  const queryValue = url.searchParams.get(name)
-
-  if (queryValue) {
-    return queryValue
-  }
-
-  const hash = url.hash.startsWith("#") ? url.hash.slice(1) : url.hash
-  return new URLSearchParams(hash).get(name)
-}
 
 export async function signInWithGoogle() {
   const { data, error } = await supabase.auth.signInWithOAuth({
@@ -95,16 +90,21 @@ export async function signInWithGoogle() {
   }
 
   console.log("[Google OAuth] Callback has code: true")
+  if (!claimAuthCode(code)) return
+
   console.log("[Google OAuth] Exchanging PKCE code")
 
   const { data: exchangeData, error: exchangeError } =
     await supabase.auth.exchangeCodeForSession(code)
 
   if (exchangeError) {
+    releaseAuthCode(code)
     console.log(
       "[Google OAuth] PKCE exchange error:",
       exchangeError.message
     )
+    const { data } = await supabase.auth.getSession()
+    if (data.session) return
     throw exchangeError
   }
 

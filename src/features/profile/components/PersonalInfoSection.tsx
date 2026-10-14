@@ -21,6 +21,7 @@ export function PersonalInfoSection({ profile, email }: PersonalInfoSectionProps
   const { user } = useAuth()
   const queryClient = useQueryClient()
   const [name, setName] = useState(profile.name ?? "")
+  const [lastName, setLastName] = useState(profile.last_name ?? "")
   const [alias, setAlias] = useState(profile.alias ?? "")
   const [birthDate, setBirthDate] = useState<Date | null>(parseDateInput(profile.birth_date))
   const [nextEmail, setNextEmail] = useState(email)
@@ -30,9 +31,10 @@ export function PersonalInfoSection({ profile, email }: PersonalInfoSectionProps
 
   useEffect(() => {
     setName(profile.name ?? "")
+    setLastName(profile.last_name ?? "")
     setAlias(profile.alias ?? "")
     setBirthDate(parseDateInput(profile.birth_date))
-  }, [profile.alias, profile.birth_date, profile.name])
+  }, [profile.alias, profile.birth_date, profile.last_name, profile.name])
 
   useEffect(() => {
     setNextEmail(email)
@@ -49,6 +51,7 @@ export function PersonalInfoSection({ profile, email }: PersonalInfoSectionProps
 
       await updateProfile(user.id, {
         name: name.trim() || null,
+        lastName: lastName.trim() || null,
         birthDate: birthDate ? toDateInput(birthDate) : null,
         alias: normalizeAlias(alias) || null,
       })
@@ -102,6 +105,13 @@ export function PersonalInfoSection({ profile, email }: PersonalInfoSectionProps
         onChangeText={setName}
         placeholder="Nombre"
         value={name}
+      />
+      <TextField
+        accessibilityLabel="Apellido"
+        autoCapitalize="words"
+        onChangeText={setLastName}
+        placeholder="Apellido"
+        value={lastName}
       />
       <FieldRow accessibilityLabel="Fecha de nacimiento" onPress={openBirthDate}>
         <AppText tone={birthDate ? "default" : "muted"} variant="subtitle">

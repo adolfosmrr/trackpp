@@ -1,8 +1,8 @@
 {
   "entry": [
     "index.ts!",
-    "src/features/households/components/IosSpaceMenu.tsx!",
-    "src/features/households/components/AndroidSpaceMenu.tsx!",
-    "src/features/households/components/WebSpaceMenu.tsx!"
+    "src/components/menus/IosNativeMenu.tsx!",
+    "src/components/menus/AndroidNativeMenu.tsx!",
+    "src/components/menus/WebNativeMenu.tsx!"
   ]
 }
