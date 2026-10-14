@@ -43,7 +43,7 @@ export const colors = {
   transparent: "transparent",
 } as const
 
-/** Resting and peak opacity of GradientBackground dots. */
+/** Multiplier on the dotted field. The pulse curve underneath stays as it was. */
 export const dotOpacity = 0.7
 
 export const spacing = {

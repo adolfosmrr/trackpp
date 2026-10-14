@@ -57,8 +57,8 @@ type FieldProps = {
 }
 
 const DOT_RADIUS = 1.15
-// Same ink as colors.foreground. Alpha is the shared dot opacity.
-const DOT_COLOR: DotField["color"] = [237 / 255, 239 / 255, 238 / 255, dotOpacity]
+// Same ink as colors.gridLine, a little stronger so a small dot still reads.
+const DOT_COLOR: DotField["color"] = [237 / 255, 239 / 255, 238 / 255, 0.2]
 const NO_DOTS: DotField = { spacing: 0, radius: 0, color: [0, 0, 0, 0] }
 
 const DRIFT_SPEED = 0.2
@@ -153,17 +153,19 @@ half4 main(float2 fragCoord) {
   float3 ink = dotColor.rgb;
   float inkAlpha = dotColor.a;
   if (dotMotion > 0.5) {
-    // energy 0 keeps the static dot. The pulse grows it and shifts the ink
-    // toward brand. Opacity stays on dotColor.a.
+    // energy 0 keeps the static dot (radius, edge, ink, alpha) computed above.
+    // A 0.3x floor made outer coverage smaller than a pixel and swapped in a
+    // dark green, so dots between patches vanished. The pulse peak is unchanged.
     float energy = dotEnergy(uv, aspect);
     float pulseRadius = dotRadius * 1.8;
     float pulseEdge = 1.4;
     inner = mix(inner, max(pulseRadius - pulseEdge, 0.0), energy);
     outer = mix(outer, pulseRadius + pulseEdge, energy);
     ink = mix(ink, float3(0.243137, 0.811765, 0.556863), energy);
+    inkAlpha = mix(inkAlpha, 1.0, energy);
   }
   float dotMask = (1.0 - smoothstep(inner, outer, gridDist)) * step(0.5, dotSpacing);
-  col = mix(col, ink, dotMask * inkAlpha);
+  col = mix(col, ink, dotMask * inkAlpha * ${dotOpacity});
   return half4(col, 1.0);
 }
 `)

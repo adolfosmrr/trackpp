@@ -99,11 +99,16 @@ function GlassSegmentedToggle<T extends string>({
   const progress = useSharedValue(selectedIndex)
   const trackWidth = useSharedValue(0)
   const didMount = useRef(false)
+  const animatedByGesture = useRef(false)
 
   useEffect(() => {
     if (!didMount.current) {
       didMount.current = true
       progress.value = selectedIndex
+      return
+    }
+    if (animatedByGesture.current) {
+      animatedByGesture.current = false
       return
     }
     progress.value = withSpring(selectedIndex, lensSpring)
@@ -112,6 +117,7 @@ function GlassSegmentedToggle<T extends string>({
   function commit(index: number) {
     const option = options[index]
     if (!option || option.value === value) return
+    animatedByGesture.current = true
     onChange(option.value)
   }
 
@@ -131,10 +137,8 @@ function GlassSegmentedToggle<T extends string>({
   })
 
   const pan = Gesture.Pan()
+    .activeOffsetX([-12, 12])
     .failOffsetY([-16, 16])
-    .onBegin((event) => {
-      progress.value = indexFromX(event.x, trackWidth.value, options.length)
-    })
     .onUpdate((event) => {
       progress.value = indexFromX(event.x, trackWidth.value, options.length)
     })
@@ -144,8 +148,16 @@ function GlassSegmentedToggle<T extends string>({
       runOnJS(commit)(next)
     })
 
+  const tap = Gesture.Tap()
+    .maxDistance(12)
+    .onEnd((event) => {
+      const next = Math.round(indexFromX(event.x, trackWidth.value, options.length))
+      progress.value = withSpring(next, lensSpring)
+      runOnJS(commit)(next)
+    })
+
   return (
-    <GestureDetector gesture={pan}>
+    <GestureDetector gesture={Gesture.Exclusive(pan, tap)}>
       <View
         accessibilityActions={[
           { name: "increment" },
