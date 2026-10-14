@@ -27,6 +27,42 @@ import { signInWithGoogle } from "../services/googleAuth"
 const LOGIN_GREETING = "¡Hola!\n¡Bienvenido de vuelta!"
 const REGISTER_GREETING = "¡Hola persona que aún no conozco!"
 
+type AuthProviderSectionProps = {
+  divider: string
+  footer: string
+  googleLabel: string
+  googleLoading: boolean
+  onFooter: () => void
+  onGoogle: () => void
+}
+
+function AuthProviderSection({
+  divider,
+  footer,
+  googleLabel,
+  googleLoading,
+  onFooter,
+  onGoogle,
+}: AuthProviderSectionProps) {
+  return (
+    <View style={styles.googleSection}>
+      <View style={styles.separator}>
+        <View style={styles.line} />
+        <AppText style={styles.divider} variant="caption">{divider}</AppText>
+        <View style={styles.line} />
+      </View>
+      <GoogleAuthButton
+        label={googleLabel}
+        loading={googleLoading}
+        onPress={onGoogle}
+      />
+      <Pressable onPress={onFooter}>
+        <AppText style={styles.link} variant="body">{footer}</AppText>
+      </Pressable>
+    </View>
+  )
+}
+
 type AuthScreenProps = NativeStackScreenProps<AuthStackParamList, "Auth">
 
 export function AuthScreen({ navigation }: AuthScreenProps) {
@@ -101,48 +137,34 @@ export function AuthScreen({ navigation }: AuthScreenProps) {
             />
           </View>
           <AuthToggle value={mode} onChange={setMode} />
-          {mode === "login" ? (
-            <>
-              <View style={styles.formArea}>
-                <LoginForm ref={formRef} onLoadingChange={setAuthLoading} />
-                <PrimaryAuthButton
-                  label="Ingresar"
-                  loading={authLoading}
-                  loadingLabel="Ingresando..."
-                  onPress={() => formRef.current?.submit()}
-                />
-              </View>
-              <View style={styles.googleSection}>
-                <View style={styles.separator}>
-                  <View style={styles.line} />
-                  <AppText tone="muted" variant="caption">O puedes</AppText>
-                  <View style={styles.line} />
-                </View>
-                <GoogleAuthButton
-                  label="Iniciar sesión con Google"
-                  loading={googleLoading}
-                  onPress={handleGoogleLogin}
-                />
-                <Pressable onPress={() => setMode("register")}>
-                  <AppText style={styles.link} variant="body">
-                    ¿No tienes cuenta? Regístrate
-                  </AppText>
-                </Pressable>
-              </View>
-            </>
-          ) : (
-            <View style={styles.registerActions}>
-              <PrimaryAuthButton
-                label="Crear cuenta"
-                onPress={() => navigation.navigate("SignUp")}
-              />
-              <GoogleAuthButton
-                label="Continuar con Google"
-                loading={googleLoading}
-                onPress={handleGoogleLogin}
-              />
-            </View>
-          )}
+          <View style={styles.formArea}>
+            {mode === "login" ? (
+              <LoginForm ref={formRef} onLoadingChange={setAuthLoading} />
+            ) : null}
+            <PrimaryAuthButton
+              label={mode === "login" ? "Ingresar" : "Crear cuenta"}
+              loading={mode === "login" && authLoading}
+              loadingLabel="Ingresando..."
+              onPress={() => {
+                if (mode === "login") formRef.current?.submit()
+                else navigation.navigate("SignUp")
+              }}
+            />
+          </View>
+          <AuthProviderSection
+            divider={mode === "login" ? "O puedes" : "O podés registrarte con"}
+            footer={mode === "login"
+              ? "¿No tienes cuenta? Regístrate"
+              : "¿Ya tienes cuenta? Inicia sesión"}
+            googleLabel={mode === "login"
+              ? "Iniciar sesión con Google"
+              : "Continuar con Google"}
+            googleLoading={googleLoading}
+            onFooter={() => setMode(mode === "login" ? "register" : "login")}
+            onGoogle={() => {
+              void handleGoogleLogin()
+            }}
+          />
         </ScrollView>
       </KeyboardAvoidingView>
     </View>
@@ -181,10 +203,6 @@ const styles = StyleSheet.create({
   formArea: {
     width: "100%",
   },
-  registerActions: {
-    gap: 16,
-    width: "100%",
-  },
   separator: {
     flexDirection: "row",
     justifyContent: "center",
@@ -196,6 +214,10 @@ const styles = StyleSheet.create({
     flex: 1,
     height: 0.5,
     backgroundColor: colors.border,
+  },
+  divider: {
+    color: "#FFFFFF",
+    fontFamily: typography.title.fontFamily,
   },
   link: {
     color: "#FFFFFF",

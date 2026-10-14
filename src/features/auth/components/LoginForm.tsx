@@ -11,6 +11,7 @@ import { AppText } from "../../../components/text/AppText"
 import { AuthEmailField } from "./AuthEmailField"
 
 import { supabase } from "../../../services/supabase"
+import { typography } from "../../../theme"
 import { AUTH_REDIRECT_URL } from "../services/authCallback"
 import { authErrorMessage } from "../services/authErrors"
 
@@ -113,6 +114,7 @@ const styles = StyleSheet.create({
     marginBottom: 20
   },
   forgot: {
-    textAlign: "right",
+    fontFamily: typography.title.fontFamily,
+    textAlign: "center",
   },
 })
