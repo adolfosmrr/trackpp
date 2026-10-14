@@ -2,6 +2,7 @@ import { Pressable, StyleSheet, Text } from "react-native"
 import { colors, fonts, radii } from "../../../theme"
 
 import { MatrixTextMorph } from "../../../components/text/MatrixTextMorph"
+import { authTabMotion } from "../authTabMotion"
 
 type PrimaryAuthButtonProps = {
   label: string
@@ -29,7 +30,7 @@ export function PrimaryAuthButton({
       ) : (
         <MatrixTextMorph
           text={label}
-          stepDuration={30}
+          stepDuration={authTabMotion.labelStep}
           style={styles.buttonText}
         />
       )}

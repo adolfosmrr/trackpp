@@ -13,9 +13,11 @@ import type { NativeStackScreenProps } from "@react-navigation/native-stack"
 
 import { AppText } from "../../../components/text/AppText"
 import AnimatedText from "../../../components/text/AnimatedText"
+import { MatrixTextMorph } from "../../../components/text/MatrixTextMorph"
 import { GradientBackground } from "../../../components/visual/GradientBackground"
 import type { AuthStackParamList } from "../../../navigation/types"
 import { colors, layout, typography } from "../../../theme"
+import { authTabMotion } from "../authTabMotion"
 import { AuthToggle, type AuthMode } from "../components/AuthToggle"
 import { GoogleAuthButton } from "../components/GoogleAuthButton"
 import { LoginForm, type LoginFormHandle } from "../components/LoginForm"
@@ -56,8 +58,12 @@ function AuthProviderSection({
         loading={googleLoading}
         onPress={onGoogle}
       />
-      <Pressable onPress={onFooter}>
-        <AppText style={styles.link} variant="body">{footer}</AppText>
+      <Pressable onPress={onFooter} style={styles.footerPress}>
+        <MatrixTextMorph
+          stepDuration={authTabMotion.labelStep}
+          style={styles.link}
+          text={footer}
+        />
       </Pressable>
     </View>
   )
@@ -138,9 +144,11 @@ export function AuthScreen({ navigation }: AuthScreenProps) {
           </View>
           <AuthToggle value={mode} onChange={setMode} />
           <View style={styles.formArea}>
-            {mode === "login" ? (
-              <LoginForm ref={formRef} onLoadingChange={setAuthLoading} />
-            ) : null}
+            <LoginForm
+              onLoadingChange={setAuthLoading}
+              ref={formRef}
+              shown={mode === "login"}
+            />
             <PrimaryAuthButton
               label={mode === "login" ? "Ingresar" : "Crear cuenta"}
               loading={mode === "login" && authLoading}
@@ -152,7 +160,7 @@ export function AuthScreen({ navigation }: AuthScreenProps) {
             />
           </View>
           <AuthProviderSection
-            divider={mode === "login" ? "O puedes" : "O podés registrarte con"}
+            divider={mode === "login" ? "O puedes" : "O puedes registrarte con"}
             footer={mode === "login"
               ? "¿No tienes cuenta? Regístrate"
               : "¿Ya tienes cuenta? Inicia sesión"}
@@ -218,6 +226,10 @@ const styles = StyleSheet.create({
   divider: {
     color: "#FFFFFF",
     fontFamily: typography.title.fontFamily,
+  },
+  footerPress: {
+    alignItems: "center",
+    width: "100%",
   },
   link: {
     color: "#FFFFFF",
