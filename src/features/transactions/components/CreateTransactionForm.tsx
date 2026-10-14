@@ -15,7 +15,6 @@ import { colors, fonts, layout } from "../../../theme"
 import { Gesture, GestureDetector, TextInput } from "react-native-gesture-handler"
 import { runOnJS, useSharedValue } from "react-native-reanimated"
 
-import { useAuth } from "../../auth/context/AuthContext"
 import { useHouseholds } from "../../households/hooks/useHouseholds"
 import { useHouseholdStore } from "../../../store/householdStore"
 import { useHouseholdCategories } from "../../categories/hooks/useHouseholdCategories"
@@ -33,10 +32,8 @@ import {
   type FixedExpenseFrequency,
 } from "../../fixedExpenses/utils/frequency"
 import {
-  expenseHasScheduleColumns,
   persistFixedExpensePlan,
   planFromExpense,
-  loadFixedExpensePlan,
 } from "../../fixedExpenses/services/fixedExpensePlan"
 import {
   CHARGE_REMINDER_PRESETS,
@@ -113,7 +110,7 @@ export function CreateTransactionForm({
     editingFixedExpense?.auto_debit_source ?? null
   )
   const seededPlan = editingFixedExpense
-    ? planFromExpense(editingFixedExpense, undefined)
+    ? planFromExpense(editingFixedExpense)
     : null
   const [startsOn, setStartsOn] = useState<string | null>(seededPlan?.startsOn ?? null)
   const [endsOn, setEndsOn] = useState<string | null>(seededPlan?.endsOn ?? null)
@@ -123,13 +120,7 @@ export function CreateTransactionForm({
   const [chargeReminderDays, setChargeReminderDays] = useState<number[] | null>(
     editingFixedExpense ? seededPlan?.chargeReminderDays ?? null : []
   )
-  const needsLocalPlan = Boolean(
-    editingFixedExpense && !expenseHasScheduleColumns(editingFixedExpense)
-  )
-  const planHydrated = useRef(!needsLocalPlan)
-  const [planLoaded, setPlanLoaded] = useState(!needsLocalPlan)
   const amountInputRef = useRef<NativeTextInput>(null)
-  const { user } = useAuth()
   const selectedHouseholdId = useHouseholdStore(
     (state) => state.selectedHouseholdId
   )
@@ -155,23 +146,6 @@ export function CreateTransactionForm({
     return () => interaction.cancel()
   }, [isEditingFixedExpense])
 
-  useEffect(() => {
-    if (!editingFixedExpense || !user || !needsLocalPlan || planHydrated.current) return
-    let cancelled = false
-    void loadFixedExpensePlan(user.id, editingFixedExpense.id).then((local) => {
-      if (cancelled || planHydrated.current) return
-      planHydrated.current = true
-      const plan = planFromExpense(editingFixedExpense, local)
-      setStartsOn(plan.startsOn)
-      setEndsOn(plan.endsOn)
-      setStartReminderDays(plan.startReminderDays)
-      setChargeReminderDays(plan.chargeReminderDays ?? [...LEGACY_CHARGE_REMINDER_DAYS])
-      setPlanLoaded(true)
-    })
-    return () => {
-      cancelled = true
-    }
-  }, [editingFixedExpense, needsLocalPlan, user])
   const fixedCategoryHouseholdId = editingFixedExpense?.household_id ?? selectedHouseholdId
   const primaryTarget =
     targets.find((target) => target.householdId === selectedHouseholdId) ??
@@ -334,11 +308,9 @@ export function CreateTransactionForm({
   useEffect(() => {
     const selection = route.params?.scheduleSelection
     if (!selection) return
-    planHydrated.current = true
     setStartsOn(selection.startsOn)
     setEndsOn(selection.endsOn)
     setStartReminderDays(selection.startReminderDays)
-    setPlanLoaded(true)
     navigation.setParams({ scheduleSelection: undefined })
   }, [navigation, route.params?.scheduleSelection])
 
@@ -484,9 +456,9 @@ export function CreateTransactionForm({
           await setLastCategoryId(fixedCategoryHouseholdId, "fixed", fixedCategoryId)
         }
         await setLastEntryMode("fixed")
-        if (user && savedExpenseId) {
+        if (savedExpenseId) {
           try {
-            await persistFixedExpensePlan(user.id, savedExpenseId, {
+            await persistFixedExpensePlan(savedExpenseId, {
               startsOn,
               endsOn,
               chargeReminderDays: chargeReminderDays ?? [...LEGACY_CHARGE_REMINDER_DAYS],
@@ -801,9 +773,9 @@ export function CreateTransactionForm({
       )}
 
       <Button
-        disabled={!planLoaded || (isEditingFixedExpense
+        disabled={isEditingFixedExpense
           ? updateFixedExpenseMutation.isPending
-          : createTransactionMutation.isPending || createFixedExpenseMutation.isPending)}
+          : createTransactionMutation.isPending || createFixedExpenseMutation.isPending}
         label={(
           isEditingFixedExpense
             ? updateFixedExpenseMutation.isPending

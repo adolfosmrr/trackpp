@@ -1,8 +1,14 @@
-import { forwardRef, useEffect, useImperativeHandle, useState } from "react"
-import { Alert, Platform, Pressable, StyleSheet, View } from "react-native"
+import { forwardRef, useEffect, useImperativeHandle, useState, type ReactNode } from "react"
+import { Alert, Platform, Pressable, StyleSheet } from "react-native"
 import DateTimePicker, { DateTimePickerAndroid } from "@react-native-community/datetimepicker"
-import Animated, { FadeInDown, FadeOut, useReducedMotion } from "react-native-reanimated"
+import Animated, {
+  FadeIn,
+  FadeOut,
+  LinearTransition,
+  useReducedMotion,
+} from "react-native-reanimated"
 
+import { SymbolIcon } from "../../../components/icons/SymbolIcon"
 import { TextField } from "../../../components/inputs/TextField"
 import { AppText } from "../../../components/text/AppText"
 import { supabase } from "../../../services/supabase"
@@ -18,9 +24,13 @@ type RegisterFormProps = {
   onLoadingChange: (loading: boolean) => void
 }
 
+function detailMotion(reducedMotion: boolean) {
+  return reducedMotion ? undefined : LinearTransition.duration(280)
+}
+
 export const RegisterForm = forwardRef<RegisterFormHandle, RegisterFormProps>(
   function RegisterForm({ onLoadingChange }, ref) {
-    const reducedMotion = useReducedMotion()
+    const reducedMotion = useReducedMotion() === true
     const [email, setEmail] = useState("")
     const [password, setPassword] = useState("")
     const [repeatPassword, setRepeatPassword] = useState("")
@@ -30,6 +40,7 @@ export const RegisterForm = forwardRef<RegisterFormHandle, RegisterFormProps>(
     const [pickerOpen, setPickerOpen] = useState(false)
     const [loading, setLoading] = useState(false)
     const revealDetails = password.length > 0
+    const layout = detailMotion(reducedMotion)
 
     useImperativeHandle(ref, () => ({ submit: handleRegister }), [
       birthDate,
@@ -112,72 +123,118 @@ export const RegisterForm = forwardRef<RegisterFormHandle, RegisterFormProps>(
     }
 
     return (
-      <View style={styles.container}>
-        <View style={styles.inputsContainer}>
-          <TextField
-            autoCapitalize="none"
-            keyboardType="email-address"
-            onChangeText={setEmail}
-            placeholder="Tu correo va acá"
-            value={email}
-          />
-          <TextField
-            onChangeText={setPassword}
-            placeholder="Y tu contraseña acá"
-            secureTextEntry
-            value={password}
-          />
-          {revealDetails ? (
-            <Animated.View
-              entering={reducedMotion ? undefined : FadeInDown.duration(280)}
-              exiting={reducedMotion ? undefined : FadeOut.duration(180)}
-              style={styles.details}
-            >
+      <Animated.View layout={layout} style={styles.inputsContainer}>
+        <TextField
+          autoCapitalize="none"
+          keyboardType="email-address"
+          onChangeText={setEmail}
+          placeholder="Tu correo va acá"
+          value={email}
+        />
+        <TextField
+          onChangeText={setPassword}
+          placeholder="Y tu contraseña acá"
+          secureTextEntry
+          value={password}
+        />
+        {revealDetails ? (
+          <>
+            <DetailField index={0} reducedMotion={reducedMotion}>
               <TextField
                 onChangeText={setRepeatPassword}
                 placeholder="Repetir contraseña"
                 secureTextEntry
+                trailing={repeatPassword.length > 0 ? (
+                  <PasswordMatchIcon matches={repeatPassword === password} />
+                ) : null}
                 value={repeatPassword}
               />
+            </DetailField>
+            <DetailField index={1} reducedMotion={reducedMotion}>
               <TextField
                 autoCapitalize="words"
                 onChangeText={setFirstName}
                 placeholder="Nombre"
                 value={firstName}
               />
+            </DetailField>
+            <DetailField index={2} reducedMotion={reducedMotion}>
               <TextField
                 autoCapitalize="words"
                 onChangeText={setLastName}
                 placeholder="Apellido"
                 value={lastName}
               />
+            </DetailField>
+            <DetailField index={3} reducedMotion={reducedMotion}>
               <Pressable accessibilityRole="button" onPress={openBirthDate} style={styles.dateRow}>
                 <AppText tone={birthDate ? "default" : "muted"} variant="subtitle">
                   {birthDate ? formatBirthDate(birthDate) : "Fecha de nacimiento"}
                 </AppText>
               </Pressable>
               {pickerOpen && Platform.OS === "ios" ? (
-                <DateTimePicker
-                  accentColor={colors.brand}
-                  display="spinner"
-                  locale="es-AR"
-                  maximumDate={new Date()}
-                  minimumDate={new Date(1900, 0, 1)}
-                  mode="date"
-                  onValueChange={(_event, date) => {
-                    if (date) setBirthDate(date)
-                  }}
-                  themeVariant="dark"
-                  value={birthDate ?? new Date(2000, 0, 1)}
-                />
+                <Animated.View
+                  entering={reducedMotion ? undefined : FadeIn.duration(220)}
+                  exiting={reducedMotion ? undefined : FadeOut.duration(160)}
+                  layout={layout}
+                  style={styles.pickerCard}
+                >
+                  <DateTimePicker
+                    accentColor={colors.brand}
+                    display="spinner"
+                    locale="es-AR"
+                    maximumDate={new Date()}
+                    minimumDate={new Date(1900, 0, 1)}
+                    mode="date"
+                    onValueChange={(_event, date) => {
+                      if (date) setBirthDate(date)
+                    }}
+                    style={styles.picker}
+                    themeVariant="dark"
+                    value={birthDate ?? new Date(2000, 0, 1)}
+                  />
+                </Animated.View>
               ) : null}
-            </Animated.View>
-          ) : null}
-        </View>
-      </View>
+            </DetailField>
+          </>
+        ) : null}
+      </Animated.View>
     )
   },
 )
+
+function DetailField({
+  children,
+  index,
+  reducedMotion,
+}: {
+  children: ReactNode
+  index: number
+  reducedMotion: boolean
+}) {
+  return (
+    <Animated.View
+      entering={reducedMotion ? undefined : FadeIn.duration(280).delay(index * 70)}
+      exiting={reducedMotion ? undefined : FadeOut.duration(160)}
+      layout={detailMotion(reducedMotion)}
+      style={styles.detailItem}
+    >
+      {children}
+    </Animated.View>
+  )
+}
+
+function PasswordMatchIcon({ matches }: { matches: boolean }) {
+  return (
+    <SymbolIcon
+      color={matches ? colors.brand : colors.destructive}
+      fallback={matches ? "✓" : "×"}
+      name={matches
+        ? { ios: "checkmark", android: "check", web: "check" }
+        : { ios: "xmark", android: "close", web: "close" }}
+    />
+  )
+}
 
 function registerProblem(input: {
   email: string
@@ -214,21 +271,29 @@ function formatBirthDate(value: Date) {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    width: "100%",
-    justifyContent: "center",
-  },
   inputsContainer: {
     gap: 10,
     marginBottom: 20,
+    width: "100%",
   },
-  details: {
+  detailItem: {
     gap: 10,
+    width: "100%",
   },
   dateRow: {
     backgroundColor: colors.field,
     borderRadius: radii.pill,
     paddingHorizontal: 20,
     paddingVertical: 15,
+  },
+  pickerCard: {
+    backgroundColor: colors.field,
+    borderRadius: radii.lg,
+    overflow: "hidden",
+    width: "100%",
+  },
+  picker: {
+    backgroundColor: colors.field,
+    width: "100%",
   },
 })

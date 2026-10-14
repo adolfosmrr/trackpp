@@ -1,7 +1,8 @@
-import { forwardRef, type ComponentProps, type ForwardedRef } from "react"
+import { forwardRef, type ComponentProps, type ForwardedRef, type ReactNode } from "react"
 import {
   Pressable,
   StyleSheet,
+  View,
   type PressableProps,
   type StyleProp,
   type TextInput as NativeTextInput,
@@ -15,6 +16,7 @@ import { colors, fonts, radii } from "../../theme"
 
 type TextFieldProps = TextInputProps & {
   style?: StyleProp<TextStyle>
+  trailing?: ReactNode
 }
 
 type FieldRowProps = Omit<PressableProps, "style"> & {
@@ -26,9 +28,10 @@ export const TextField = forwardRef<NativeTextInput, TextFieldProps>(
     multiline,
     placeholderTextColor,
     style,
+    trailing,
     ...props
   }, ref) {
-    return (
+    const input = (
       <TextInput
         {...props}
         multiline={multiline}
@@ -37,11 +40,23 @@ export const TextField = forwardRef<NativeTextInput, TextFieldProps>(
         style={[
           fieldStyles.surface,
           fieldStyles.text,
+          trailing ? fieldStyles.trailingInput : null,
           style,
           multiline ? fieldStyles.multiline : null,
           multiline ? fieldStyles.multilineRadius : fieldStyles.pill,
         ]}
       />
+    )
+
+    if (!trailing) return input
+
+    return (
+      <View style={fieldStyles.trailingHost}>
+        {input}
+        <View pointerEvents="none" style={fieldStyles.trailing}>
+          {trailing}
+        </View>
+      </View>
     )
   },
 )
@@ -86,5 +101,19 @@ export const fieldStyles = StyleSheet.create({
   },
   multilineRadius: {
     borderRadius: radii.lg,
+  },
+  trailingHost: {
+    justifyContent: "center",
+    width: "100%",
+  },
+  trailingInput: {
+    paddingRight: 48,
+  },
+  trailing: {
+    bottom: 0,
+    justifyContent: "center",
+    position: "absolute",
+    right: 20,
+    top: 0,
   },
 })

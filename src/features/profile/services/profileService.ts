@@ -5,7 +5,7 @@ import { supabase } from "../../../services/supabase"
 export type Profile = {
   id: string
   name: string | null
-  last_name?: string | null
+  last_name: string | null
   avatar_url: string | null
   birth_date: string | null
   alias: string | null
@@ -20,10 +20,6 @@ type ProfileUpdate = {
   lastName: string | null
   birthDate: string | null
   alias: string | null
-}
-
-type ProfileWrite = ProfileUpdate & {
-  id?: string
 }
 
 export async function getProfile(userId: string) {
@@ -63,7 +59,7 @@ export async function applySignupProfile(user: User) {
   if (
     existing &&
     existing.name === name &&
-    (existing.last_name ?? null) === lastName &&
+    existing.last_name === lastName &&
     existing.birth_date === birthDate
   ) {
     return
@@ -86,53 +82,20 @@ async function writeProfile(
   input: ProfileUpdate,
   mode: "update" | "insert",
 ) {
-  const withLastName = await sendProfile(userId, input, mode, true)
-  if (withLastName.ok) return withLastName.profile
-  if (!isMissingLastName(withLastName.error)) throw withLastName.error
-
-  const fallback = await sendProfile(userId, {
-    ...input,
-    name: input.lastName
-      ? [input.name, input.lastName].filter((part) => part?.trim()).join(" ")
-      : input.name,
-    lastName: null,
-  }, mode, false)
-  if (fallback.ok) return fallback.profile
-  throw fallback.error
-}
-
-async function sendProfile(
-  userId: string,
-  input: ProfileUpdate,
-  mode: "update" | "insert",
-  includeLastName: boolean,
-): Promise<{ ok: true; profile: Profile } | { ok: false; error: unknown }> {
-  const row: ProfileWrite = {
-    name: input.name,
-    birthDate: input.birthDate,
-    alias: input.alias,
-    lastName: input.lastName,
-  }
   const payload = {
-    name: row.name,
-    birth_date: row.birthDate,
-    alias: row.alias,
+    name: input.name,
+    last_name: input.lastName,
+    birth_date: input.birthDate,
+    alias: input.alias,
     updated_at: new Date().toISOString(),
-    ...(includeLastName ? { last_name: row.lastName } : {}),
     ...(mode === "insert" ? { id: userId } : {}),
   }
   const query = mode === "insert"
     ? supabase.from("profiles").insert(payload).select("*").single()
     : supabase.from("profiles").update(payload).eq("id", userId).select("*").single()
   const { data, error } = await query
-  if (error) return { ok: false, error }
-  return { ok: true, profile: data as Profile }
-}
-
-function isMissingLastName(error: unknown) {
-  const code = errorCode(error)
-  const message = error instanceof Error ? error.message.toLowerCase() : ""
-  return (code === "PGRST204" || code === "42703") && message.includes("last_name")
+  if (error) throw error
+  return data as Profile
 }
 
 function errorCode(error: unknown) {

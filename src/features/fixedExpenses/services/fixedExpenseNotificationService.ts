@@ -2,7 +2,6 @@ import * as Notifications from "expo-notifications"
 import { Platform } from "react-native"
 
 import {
-  loadFixedExpensePlans,
   planFromExpense,
   type FixedExpensePlan,
 } from "./fixedExpensePlan"
@@ -116,12 +115,8 @@ export async function syncFixedExpenseNotifications({
     )
   }
 
-  const storedPlans = await loadFixedExpensePlans(userId)
   const plans = new Map(
-    fixedExpenses.map((expense) => [
-      expense.id,
-      planFromExpense(expense, storedPlans[expense.id]),
-    ]),
+    fixedExpenses.map((expense) => [expense.id, planFromExpense(expense)]),
   )
   const legacyPlan: FixedExpensePlan = {
     startsOn: null,

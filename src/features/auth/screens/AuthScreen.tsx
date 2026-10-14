@@ -9,6 +9,7 @@ import {
   StyleSheet,
   View,
 } from "react-native"
+import { useSafeAreaInsets } from "react-native-safe-area-context"
 import { useIsFocused } from "@react-navigation/native"
 import { colors, layout, typography } from "../../../theme"
 import { AppText } from "../../../components/text/AppText"
@@ -43,6 +44,7 @@ function useAppIsActive() {
 }
 
 export function AuthScreen() {
+  const insets = useSafeAreaInsets()
   const isFocused = useIsFocused()
   const appIsActive = useAppIsActive()
   const [mode, setMode] = useState<AuthMode>("login")
@@ -78,7 +80,13 @@ export function AuthScreen() {
         style={styles.avoider}
       >
       <ScrollView
-        contentContainerStyle={styles.content}
+        contentContainerStyle={[
+          styles.content,
+          {
+            paddingBottom: insets.bottom + layout.sheetPadding,
+            paddingTop: insets.top + layout.sheetPadding,
+          },
+        ]}
         keyboardShouldPersistTaps="handled"
         style={styles.avoider}
       >
@@ -166,18 +174,17 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.background,
-    justifyContent: 'center',
   },
   avoider: {
     flex: 1,
   },
   content: {
     flexGrow: 1,
-    padding: layout.sheetPadding,
+    paddingHorizontal: layout.sheetPadding,
     gap: 16,
     zIndex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "flex-start",
+    alignItems: "center",
   },
   authMessage: {
     ...typography.display,
