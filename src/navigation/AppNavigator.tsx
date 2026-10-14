@@ -18,6 +18,7 @@ import {
 import { InviteMemberScreen } from "../features/households/screens/InviteMemberScreen"
 import { AiConversationScreen } from "../features/ai/screens/AiConversationScreen"
 import { FixedExpenseHistoryScreen } from "../features/fixedExpenses/screens/FixedExpenseHistoryScreen"
+import { FixedExpenseScheduleScreen } from "../features/fixedExpenses/screens/FixedExpenseScheduleScreen"
 import { PayFixedExpensePeriodScreen } from "../features/fixedExpenses/screens/PayFixedExpensePeriodScreen"
 import { CorrectFixedExpensePaymentScreen } from "../features/fixedExpenses/screens/CorrectFixedExpensePaymentScreen"
 import { PendingChargeScreen } from "../features/pendingCharges/screens/PendingChargeScreen"
@@ -114,6 +115,11 @@ export function AppNavigator() {
         name="CreateMovement"
         component={CreateMovementScreen}
         options={formSheetOptions("fitToContents")}
+      />
+      <Stack.Screen
+        name="FixedExpenseSchedule"
+        component={FixedExpenseScheduleScreen}
+        options={formSheetOptions([0.92])}
       />
       <Stack.Screen
         name="CategoryPicker"

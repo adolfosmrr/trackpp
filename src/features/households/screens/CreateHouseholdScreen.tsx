@@ -42,6 +42,18 @@ export function CreateHouseholdScreen({ navigation, route }: CreateHouseholdScre
     navigation.setParams({ currencySelection: undefined })
   }, [navigation, route.params?.currencySelection])
 
+  function finishCreatedHousehold(householdId: string) {
+    const pickerParams = route.params?.householdPicker
+    if (route.params?.returnToHouseholdPicker && pickerParams) {
+      navigation.popTo("HouseholdPicker", {
+        ...pickerParams,
+        createdHouseholdId: householdId,
+      }, { merge: true })
+      return
+    }
+    navigation.goBack()
+  }
+
   async function handleCreate() {
     const cleanName = name.trim()
     if (!cleanName) {
@@ -57,7 +69,11 @@ export function CreateHouseholdScreen({ navigation, route }: CreateHouseholdScre
         type: kind,
         currency: currency.code,
       })
-      setSelectedHouseholdId(household.id)
+      const pickerParams = route.params?.householdPicker
+      const returnToPicker = route.params?.returnToHouseholdPicker === true && pickerParams
+      if (!returnToPicker) {
+        setSelectedHouseholdId(household.id)
+      }
 
       if (kind === "couple" && email) {
         try {
@@ -70,12 +86,12 @@ export function CreateHouseholdScreen({ navigation, route }: CreateHouseholdScre
             "Espacio creado",
             `${message} Podés invitar desde el perfil.`,
           )
-          navigation.goBack()
+          finishCreatedHousehold(household.id)
           return
         }
       }
 
-      navigation.goBack()
+      finishCreatedHousehold(household.id)
     } catch (error) {
       const message = error instanceof Error
         ? error.message

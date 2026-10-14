@@ -108,8 +108,6 @@ export function TransactionsMovementsSection({
 const styles = StyleSheet.create({
   section: {
     backgroundColor: colors.transparent,
-    borderTopColor: colors.border,
-    borderTopWidth: 1,
     marginHorizontal: 0,
     marginTop: layout.belowTopSection,
   },

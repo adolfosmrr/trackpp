@@ -22,6 +22,10 @@ export type FixedExpense = {
   created_at: string
   updated_at: string
   category: FixedExpenseCategory | null
+  starts_on?: string | null
+  ends_on?: string | null
+  charge_reminder_days?: number[] | null
+  start_reminder_days?: number[]
 }
 
 export type FixedExpenseInput = {

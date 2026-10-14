@@ -28,10 +28,18 @@ export type HouseholdSelection = {
   householdIds: string[]
 }
 
+export type FixedExpenseScheduleSelection = {
+  token: string
+  startsOn: string | null
+  endsOn: string | null
+  startReminderDays: number[]
+}
+
 export type CreateMovementParams = {
   request?: TransactionSheetRequest
   categorySelection?: CategorySelection
   householdSelection?: HouseholdSelection
+  scheduleSelection?: FixedExpenseScheduleSelection
 }
 
 export type CategoryPickerParams =
@@ -64,6 +72,7 @@ export type HouseholdPickerParams =
       selectedHouseholdIds: string[]
       selectionMode: "multiple"
       title: string
+      createdHouseholdId?: string
     }
   | {
       returnTo: "PendingCharge"
@@ -71,6 +80,7 @@ export type HouseholdPickerParams =
       selectedHouseholdIds: string[]
       selectionMode: "single"
       title: string
+      createdHouseholdId?: string
     }
 
 export type BudgetEditorParams = {
@@ -87,7 +97,16 @@ export type CurrencySelection = {
 
 export type AppStackParamList = {
   Main: NavigatorScreenParams<MainTabsParamList> | undefined
-  CreateHousehold: { currencySelection?: CurrencySelection } | undefined
+  CreateHousehold: {
+    currencySelection?: CurrencySelection
+    returnToHouseholdPicker?: boolean
+    householdPicker?: HouseholdPickerParams
+  } | undefined
+  FixedExpenseSchedule: {
+    startsOn: string | null
+    endsOn: string | null
+    startReminderDays: number[]
+  }
   CurrencyPicker: { selectedCode: string; selectedCountry: string }
   InviteMember: undefined
   Invitations: undefined

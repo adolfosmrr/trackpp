@@ -1,25 +1,28 @@
 import { useEffect, useRef, useState } from "react"
 import {
   Alert,
+  InteractionManager,
   StyleSheet,
   Switch,
-  TextInput,
   View,
+  type TextInput as NativeTextInput,
 } from "react-native"
 import type { NativeStackScreenProps } from "@react-navigation/native-stack"
 import { Button } from "../../../components/buttons/Button"
 import { FieldRow, TextField, fieldStyles } from "../../../components/inputs/TextField"
 import { AppText } from "../../../components/text/AppText"
 import { colors, fonts, layout } from "../../../theme"
-import { Gesture, GestureDetector } from "react-native-gesture-handler"
+import { Gesture, GestureDetector, TextInput } from "react-native-gesture-handler"
 import { runOnJS, useSharedValue } from "react-native-reanimated"
 
+import { useAuth } from "../../auth/context/AuthContext"
 import { useHouseholds } from "../../households/hooks/useHouseholds"
 import { useHouseholdStore } from "../../../store/householdStore"
 import { useHouseholdCategories } from "../../categories/hooks/useHouseholdCategories"
 import { SegmentedToggle } from "../../../components/inputs/SegmentedToggle"
 import { FieldChevronIcon } from "../../../components/icons/FieldChevronIcon"
 import { useCreateLinkedTransactions } from "../hooks/useCreateLinkedTransactions"
+import { ChargeReminderEditor } from "../../fixedExpenses/components/ChargeReminderEditor"
 import { OptionChips } from "../../fixedExpenses/components/OptionChips"
 import { useCreateFixedExpense } from "../../fixedExpenses/hooks/useCreateFixedExpense"
 import { useUpdateFixedExpense } from "../../fixedExpenses/hooks/useUpdateFixedExpense"
@@ -29,6 +32,16 @@ import {
   type AutoDebitSource,
   type FixedExpenseFrequency,
 } from "../../fixedExpenses/utils/frequency"
+import {
+  expenseHasScheduleColumns,
+  persistFixedExpensePlan,
+  planFromExpense,
+  loadFixedExpensePlan,
+} from "../../fixedExpenses/services/fixedExpensePlan"
+import {
+  formatPlanDate,
+  LEGACY_CHARGE_REMINDER_DAYS,
+} from "../../fixedExpenses/utils/reminders"
 import {
   getLastCategoryId,
   setLastCategoryId,
@@ -97,6 +110,24 @@ export function CreateTransactionForm({
   const [autoDebitSource, setAutoDebitSource] = useState<AutoDebitSource | null>(
     editingFixedExpense?.auto_debit_source ?? null
   )
+  const seededPlan = editingFixedExpense
+    ? planFromExpense(editingFixedExpense, undefined)
+    : null
+  const [startsOn, setStartsOn] = useState<string | null>(seededPlan?.startsOn ?? null)
+  const [endsOn, setEndsOn] = useState<string | null>(seededPlan?.endsOn ?? null)
+  const [startReminderDays, setStartReminderDays] = useState<number[]>(
+    seededPlan?.startReminderDays ?? []
+  )
+  const [chargeReminderDays, setChargeReminderDays] = useState<number[] | null>(
+    editingFixedExpense ? seededPlan?.chargeReminderDays ?? null : []
+  )
+  const needsLocalPlan = Boolean(
+    editingFixedExpense && !expenseHasScheduleColumns(editingFixedExpense)
+  )
+  const planHydrated = useRef(!needsLocalPlan)
+  const [planLoaded, setPlanLoaded] = useState(!needsLocalPlan)
+  const amountInputRef = useRef<NativeTextInput>(null)
+  const { user } = useAuth()
   const selectedHouseholdId = useHouseholdStore(
     (state) => state.selectedHouseholdId
   )
@@ -113,6 +144,32 @@ export function CreateTransactionForm({
   const { data: memberships } = useHouseholds()
   const isEditingFixedExpense = Boolean(editingFixedExpense)
   const isFixedMode = mode === "fixed"
+
+  useEffect(() => {
+    if (isEditingFixedExpense) return
+    const interaction = InteractionManager.runAfterInteractions(() => {
+      amountInputRef.current?.focus()
+    })
+    return () => interaction.cancel()
+  }, [isEditingFixedExpense])
+
+  useEffect(() => {
+    if (!editingFixedExpense || !user || !needsLocalPlan || planHydrated.current) return
+    let cancelled = false
+    void loadFixedExpensePlan(user.id, editingFixedExpense.id).then((local) => {
+      if (cancelled || planHydrated.current) return
+      planHydrated.current = true
+      const plan = planFromExpense(editingFixedExpense, local)
+      setStartsOn(plan.startsOn)
+      setEndsOn(plan.endsOn)
+      setStartReminderDays(plan.startReminderDays)
+      setChargeReminderDays(plan.chargeReminderDays ?? [...LEGACY_CHARGE_REMINDER_DAYS])
+      setPlanLoaded(true)
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [editingFixedExpense, needsLocalPlan, user])
   const fixedCategoryHouseholdId = editingFixedExpense?.household_id ?? selectedHouseholdId
   const primaryTarget =
     targets.find((target) => target.householdId === selectedHouseholdId) ??
@@ -272,6 +329,17 @@ export function CreateTransactionForm({
     navigation.setParams({ householdSelection: undefined })
   }, [navigation, route.params?.householdSelection])
 
+  useEffect(() => {
+    const selection = route.params?.scheduleSelection
+    if (!selection) return
+    planHydrated.current = true
+    setStartsOn(selection.startsOn)
+    setEndsOn(selection.endsOn)
+    setStartReminderDays(selection.startReminderDays)
+    setPlanLoaded(true)
+    navigation.setParams({ scheduleSelection: undefined })
+  }, [navigation, route.params?.scheduleSelection])
+
   function handleModeChange(newMode: CreateMovementMode) {
     setMode(newMode)
     void setLastEntryMode(newMode)
@@ -312,9 +380,12 @@ export function CreateTransactionForm({
     handleModeChange(nextMode)
   }
 
-  const nativeGesture = Gesture.Native().shouldCancelWhenOutside(false)
+  const nativeGesture = Gesture.Native()
+    .shouldCancelWhenOutside(false)
+    .cancelsTouchesInView(false)
   const modeGesture = Gesture.Pan()
     .simultaneousWithExternalGesture(nativeGesture)
+    .cancelsTouchesInView(false)
     .enabled(!isEditingFixedExpense)
     .activeOffsetX([
       -MODE_GESTURE_ACTIVATION_DISTANCE,
@@ -377,12 +448,13 @@ export function CreateTransactionForm({
       }
 
       try {
+        let savedExpenseId = editingFixedExpense?.id
         if (isEditingFixedExpense && editingFixedExpense) {
           if (request.kind !== "edit-fixed") {
             throw new Error("Falta el período del gasto fijo que se está editando.")
           }
 
-          await updateFixedExpenseMutation.mutateAsync({
+          const updated = await updateFixedExpenseMutation.mutateAsync({
             fixedExpenseId: editingFixedExpense.id,
             period: request.period,
             name: title.trim(),
@@ -393,8 +465,9 @@ export function CreateTransactionForm({
             isActive: editingFixedExpense.is_active,
             ...fixedSchedule,
           })
+          savedExpenseId = updated.id
         } else {
-          await createFixedExpenseMutation.mutateAsync({
+          const created = await createFixedExpenseMutation.mutateAsync({
             name: title.trim(),
             amount: parsedAmount,
             categoryId: fixedCategoryId,
@@ -403,11 +476,27 @@ export function CreateTransactionForm({
             isActive: true,
             ...fixedSchedule,
           })
+          savedExpenseId = created.id
         }
         if (fixedCategoryHouseholdId) {
           await setLastCategoryId(fixedCategoryHouseholdId, "fixed", fixedCategoryId)
         }
         await setLastEntryMode("fixed")
+        if (user && savedExpenseId) {
+          try {
+            await persistFixedExpensePlan(user.id, savedExpenseId, {
+              startsOn,
+              endsOn,
+              chargeReminderDays: chargeReminderDays ?? [...LEGACY_CHARGE_REMINDER_DAYS],
+              startReminderDays,
+            })
+          } catch (error) {
+            const message = error instanceof Error
+              ? error.message
+              : "No se pudo guardar la programación."
+            Alert.alert("Gasto guardado", message)
+          }
+        }
         navigation.goBack()
       } catch (error) {
         const message = error instanceof Error
@@ -484,6 +573,14 @@ export function CreateTransactionForm({
       householdName,
       entryType: "expense",
       selectedCategoryId: fixedCategoryId,
+    })
+  }
+
+  function openSchedule() {
+    navigation.navigate("FixedExpenseSchedule", {
+      startsOn,
+      endsOn,
+      startReminderDays,
     })
   }
 
@@ -572,6 +669,7 @@ export function CreateTransactionForm({
         autoFocus={!isEditingFixedExpense}
         placeholder="Monto"
         keyboardType="decimal-pad"
+        ref={amountInputRef}
         value={amount}
         onChangeText={setAmount}
       />
@@ -595,6 +693,21 @@ export function CreateTransactionForm({
               onChangeText={setChargeDay}
             />
           </View>
+          <FieldRow accessibilityLabel="Programar gasto fijo" onPress={openSchedule}>
+            <AppText style={styles.fieldLabel} variant="subtitle">Programar</AppText>
+            <View style={styles.fieldValueGroup}>
+              <AppText
+                ellipsizeMode="tail"
+                numberOfLines={1}
+                style={styles.fieldValue}
+                tone="muted"
+                variant="subtitle"
+              >
+                {scheduleLabel(startsOn, endsOn, startReminderDays)}
+              </AppText>
+              <FieldChevronIcon />
+            </View>
+          </FieldRow>
           <View style={[fieldStyles.surface, fieldStyles.row, fieldStyles.pill]}>
             <AppText tone="muted" variant="subtitle">Día de vencimiento</AppText>
             <TextInput
@@ -638,6 +751,10 @@ export function CreateTransactionForm({
               />
             </View>
           ) : null}
+          <ChargeReminderEditor
+            days={chargeReminderDays ?? [...LEGACY_CHARGE_REMINDER_DAYS]}
+            onChange={setChargeReminderDays}
+          />
           {isEditingFixedExpense ? (
             <AppText tone="muted" variant="caption">
               Si cambiás el monto, el nuevo rige desde este período. Los anteriores quedan igual.
@@ -680,9 +797,9 @@ export function CreateTransactionForm({
       )}
 
       <Button
-        disabled={isEditingFixedExpense
+        disabled={!planLoaded || (isEditingFixedExpense
           ? updateFixedExpenseMutation.isPending
-          : createTransactionMutation.isPending || createFixedExpenseMutation.isPending}
+          : createTransactionMutation.isPending || createFixedExpenseMutation.isPending)}
         label={(
           isEditingFixedExpense
             ? updateFixedExpenseMutation.isPending
@@ -701,6 +818,26 @@ export function CreateTransactionForm({
   )
 }
 
+function scheduleLabel(
+  startsOn: string | null,
+  endsOn: string | null,
+  startReminderDays: number[],
+) {
+  const dates = startsOn && endsOn
+    ? `${formatPlanDate(startsOn)} – ${formatPlanDate(endsOn)}`
+    : startsOn
+      ? formatPlanDate(startsOn)
+      : endsOn
+        ? `Hasta ${formatPlanDate(endsOn)}`
+        : ""
+  const alerts = startReminderDays.length === 0
+    ? ""
+    : startReminderDays.length === 1
+      ? "1 aviso"
+      : `${startReminderDays.length} avisos`
+  return [dates, alerts].filter((part) => part.length > 0).join(" · ")
+}
+
 function isValidDay(value: number) {
   return Number.isInteger(value) && value >= 1 && value <= 31
 }
@@ -715,7 +852,6 @@ const styles = StyleSheet.create({
     color: colors.foreground,
     fontFamily: fonts.monoMedium,
     fontSize: 16,
-    lineHeight: 16,
     minWidth: 32,
     padding: 0,
     textAlign: "right",

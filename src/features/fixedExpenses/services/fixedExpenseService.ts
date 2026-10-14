@@ -272,7 +272,32 @@ function parseFixedExpense(value: unknown): FixedExpense {
     throw new Error("La API devolvió un gasto fijo incompleto.")
   }
 
-  return fixedExpense as FixedExpense
+  const parsed = fixedExpense as FixedExpense
+  assignSchedule(value, parsed)
+  return parsed
+}
+
+function assignSchedule(value: Record<string, unknown>, expense: FixedExpense) {
+  if ("starts_on" in value) expense.starts_on = optionalDate(value.starts_on)
+  if ("ends_on" in value) expense.ends_on = optionalDate(value.ends_on)
+  if ("charge_reminder_days" in value) {
+    expense.charge_reminder_days = optionalDayList(value.charge_reminder_days)
+  }
+  if ("start_reminder_days" in value) {
+    expense.start_reminder_days = optionalDayList(value.start_reminder_days) ?? []
+  }
+}
+
+function optionalDate(value: unknown) {
+  if (typeof value !== "string" || value.length < 10) return null
+  return value.slice(0, 10)
+}
+
+function optionalDayList(value: unknown) {
+  if (!Array.isArray(value)) return null
+  return value.filter((item): item is number =>
+    typeof item === "number" && Number.isInteger(item)
+  )
 }
 
 function parseCategory(value: unknown): FixedExpense["category"] {
