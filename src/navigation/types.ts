@@ -43,6 +43,7 @@ type FixedExpenseScheduleSelection = {
 
 type ImportMovementsParams = {
   entryType: "expense" | "income"
+  householdId: string
   targets: LinkedTransactionTarget[]
   items: ScreenshotMovement[]
   duplicates: ScreenshotMovement[]

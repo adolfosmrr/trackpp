@@ -21,7 +21,10 @@ class ScreenshotImportError extends Error {
   }
 }
 
-export async function pickAndImportScreenshots(householdId: string) {
+export async function pickAndImportScreenshots(
+  householdId: string,
+  type: ScreenshotMovement["type"],
+) {
   let picked: ImagePicker.ImagePickerResult
   try {
     picked = await ImagePicker.launchImageLibraryAsync({
@@ -50,7 +53,7 @@ export async function pickAndImportScreenshots(householdId: string) {
 
   const body = await apiFetch<unknown>("/ai/screenshot-movements", {
     method: "POST",
-    body: JSON.stringify({ householdId, images }),
+    body: JSON.stringify({ householdId, type, images }),
   })
 
   return {
@@ -172,6 +175,11 @@ function parseMovement(value: unknown): ScreenshotMovement | null {
   const amount = typeof value.amount === "number" ? value.amount : Number(value.amount)
   if (!Number.isFinite(amount) || amount <= 0) return null
 
+  const categoryId = typeof value.categoryId === "string"
+    && isUuid(value.categoryId.trim().toLowerCase())
+    ? value.categoryId.trim().toLowerCase()
+    : null
+
   return {
     title,
     amount,
@@ -179,7 +187,12 @@ function parseMovement(value: unknown): ScreenshotMovement | null {
     date: value.date,
     time,
     type: value.type,
+    categoryId,
   }
+}
+
+function isUuid(value: string) {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(value)
 }
 
 function releaseNative(resource: { release: () => void } | null) {

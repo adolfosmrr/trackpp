@@ -535,10 +535,6 @@ export function CreateTransactionForm({
       Alert.alert("Error", "Selecciona al menos un espacio.")
       return
     }
-    if (targets.some((target) => !target.categoryId)) {
-      Alert.alert("Error", "Selecciona una categoría para cada espacio.")
-      return
-    }
     if (!memberships) {
       Alert.alert("Error", "No se pudieron cargar tus espacios.")
       return
@@ -565,14 +561,11 @@ export function CreateTransactionForm({
 
     setReadingScreenshots(true)
     try {
-      const outcome = await pickAndImportScreenshots(householdId)
+      const outcome = await pickAndImportScreenshots(householdId, type)
       if (outcome.status === "canceled") return
-      if (outcome.result.items.length === 0 && outcome.result.duplicates.length === 0) {
-        Alert.alert("Error", "No pude leer la imagen.")
-        return
-      }
       navigation.navigate("ImportMovements", {
         entryType: type,
+        householdId,
         targets: targets.map((target) => ({ ...target })),
         items: outcome.result.items,
         duplicates: outcome.result.duplicates,
@@ -831,21 +824,28 @@ export function CreateTransactionForm({
             {additionalTargets.map(renderCategoryField)}
           </View>
 
-          <FieldRow
-            accessibilityLabel="Cargar movimientos desde capturas"
-            disabled={readingScreenshots || createTransactionMutation.isPending}
-            onPress={() => {
-              void handleImportScreenshots()
-            }}
-          >
-            <AppText style={styles.fieldLabel} variant="subtitle">Desde captura</AppText>
-            <View style={styles.fieldValueGroup}>
-              <AppText tone="muted" variant="subtitle">
-                {readingScreenshots ? "Leyendo..." : "Leer lista"}
-              </AppText>
-              <FieldChevronIcon />
-            </View>
-          </FieldRow>
+          <View style={styles.captureBlock}>
+            <AppText tone="muted" variant="caption">
+              {type === "income"
+                ? "Tacha en la captura los movimientos que no son ingresos."
+                : "Tacha en la captura los movimientos que no son gastos."}
+            </AppText>
+            <FieldRow
+              accessibilityLabel="Cargar movimientos desde capturas"
+              disabled={readingScreenshots || createTransactionMutation.isPending}
+              onPress={() => {
+                void handleImportScreenshots()
+              }}
+            >
+              <AppText style={styles.fieldLabel} variant="subtitle">Desde captura</AppText>
+              <View style={styles.fieldValueGroup}>
+                <AppText tone="muted" variant="subtitle">
+                  {readingScreenshots ? "Leyendo..." : "Leer lista"}
+                </AppText>
+                <FieldChevronIcon />
+              </View>
+            </FieldRow>
+          </View>
         </>
       )}
 
@@ -900,6 +900,7 @@ const styles = StyleSheet.create({
     gap: layout.titleContentGap,
   },
   fieldsStack: { gap: layout.titleContentGap },
+  captureBlock: { gap: 8 },
   targetsSection: { gap: layout.titleContentGap },
   dayInput: {
     color: colors.foreground,

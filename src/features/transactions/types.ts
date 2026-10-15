@@ -110,6 +110,7 @@ export type ScreenshotMovement = {
   date: string
   time: string | null
   type: TransactionType
+  categoryId: string | null
 }
 
 export type ScreenshotImportResult = {
