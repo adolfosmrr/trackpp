@@ -1,7 +1,12 @@
 import type { NavigatorScreenParams } from "@react-navigation/native"
 
 import type { BudgetSheetRequest } from "../features/budgets/types"
-import type { TransactionFilters, TransactionSheetRequest } from "../features/transactions/types"
+import type {
+  LinkedTransactionTarget,
+  ScreenshotMovement,
+  TransactionFilters,
+  TransactionSheetRequest,
+} from "../features/transactions/types"
 
 export type AuthStackParamList = {
   Auth: undefined
@@ -34,6 +39,14 @@ type FixedExpenseScheduleSelection = {
   startsOn: string | null
   endsOn: string | null
   startReminderDays: number[]
+}
+
+type ImportMovementsParams = {
+  entryType: "expense" | "income"
+  householdId: string
+  targets: LinkedTransactionTarget[]
+  items: ScreenshotMovement[]
+  duplicates: ScreenshotMovement[]
 }
 
 export type CreateMovementParams = {
@@ -122,6 +135,7 @@ export type AppStackParamList = {
     householdSelection?: HouseholdSelection
   }
   CreateMovement: CreateMovementParams
+  ImportMovements: ImportMovementsParams
   CategoryPicker: CategoryPickerParams
   HouseholdPicker: HouseholdPickerParams
   TransactionFilters: { filters: TransactionFilters }

@@ -1,4 +1,5 @@
 import { supabase } from "../../../services/supabase"
+import { parseClockTime } from "../../../utils/localDate"
 
 import type {
   CreateLinkedTransactionsInput,
@@ -51,6 +52,7 @@ export async function getTransactions(
 
     return {
       ...transaction,
+      transaction_time: parseClockTime(transaction.transaction_time),
       fixedExpensePayment: payment,
     }
   }) as Transaction[]
@@ -75,6 +77,7 @@ export async function createLinkedTransactions(
         householdId: target.householdId,
         categoryId: target.categoryId,
       })),
+      p_transaction_time: parseClockTime(input.transactionTime),
     }
   )
 
@@ -151,6 +154,7 @@ function parseTransactionRpcResult(
     category: parseCategory(value.category),
     creator: parseCreator(value.creator),
     transaction_date: transactionDate,
+    transaction_time: parseClockTime(value.transaction_time),
     created_at: createdAt,
     updated_at: updatedAt,
     fixedExpensePayment: null,

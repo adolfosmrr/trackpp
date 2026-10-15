@@ -11,8 +11,26 @@ export function parseLocalDate(value: string | null | undefined) {
   const year = Number(match[1])
   const month = Number(match[2])
   const day = Number(match[3])
-  if (!Number.isInteger(year) || month < 1 || month > 12 || day < 1 || day > 31) return null
-  return new Date(year, month - 1, day)
+  const date = new Date(year, month - 1, day)
+  if (
+    date.getFullYear() !== year ||
+    date.getMonth() !== month - 1 ||
+    date.getDate() !== day
+  ) {
+    return null
+  }
+  return date
+}
+
+export function parseClockTime(value: unknown) {
+  if (typeof value !== "string") return null
+  const match = /^(\d{2}):(\d{2})(?::(\d{2}))?(?:\.\d+)?$/.exec(value.trim())
+  if (!match) return null
+  const hours = Number(match[1])
+  const minutes = Number(match[2])
+  const seconds = Number(match[3] ?? "0")
+  if (hours > 23 || minutes > 59 || seconds > 59) return null
+  return `${match[1]}:${match[2]}:${String(seconds).padStart(2, "0")}`
 }
 
 export function formatLongDate(value: Date) {
