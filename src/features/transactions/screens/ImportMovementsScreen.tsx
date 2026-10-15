@@ -76,8 +76,32 @@ export function ImportMovementsScreen({ navigation, route }: ImportMovementsScre
   useEffect(() => {
     if (!currency || seeded.current) return
     seeded.current = true
-    setDrafts(insertable.map(toDraft))
-  }, [currency, insertable])
+    const fallbackCategoryId = targets.find((target) => target.householdId === householdId)?.categoryId ?? null
+    setDrafts(insertable.map((item, index) => toDraft(item, index, fallbackCategoryId)))
+  }, [currency, householdId, insertable, targets])
+
+  useEffect(() => {
+    const categories = categoriesQuery.data
+    if (!categories) return
+    setDrafts((current) => {
+      if (!current) return current
+      let changed = false
+      const next = current.map((draft) => {
+        if (!draft.categoryId) return draft
+        const match = categories.find((category) =>
+          category.id.toLowerCase() === draft.categoryId?.toLowerCase(),
+        )
+        if (!match) {
+          changed = true
+          return { ...draft, categoryId: null }
+        }
+        if (match.id === draft.categoryId) return draft
+        changed = true
+        return { ...draft, categoryId: match.id }
+      })
+      return changed ? next : current
+    })
+  }, [categoriesQuery.data])
 
   function updateDraft(key: string, patch: Partial<Pick<DraftMovement, "title" | "amount" | "date" | "categoryId">>) {
     setDrafts((current) => current?.map((draft) => (
@@ -93,8 +117,11 @@ export function ImportMovementsScreen({ navigation, route }: ImportMovementsScre
   async function handleConfirm() {
     if (saveLock.current || !drafts || drafts.length === 0) return
     const ready: ReadyMovement[] = []
+    const categoryIds = categoriesQuery.data
+      ? new Set(categoriesQuery.data.map((category) => category.id))
+      : null
     for (const draft of drafts) {
-      const next = prepareDraft(draft)
+      const next = prepareDraft(draft, categoryIds)
       if ("error" in next) {
         Alert.alert("Error", next.error)
         return
@@ -182,6 +209,7 @@ export function ImportMovementsScreen({ navigation, route }: ImportMovementsScre
                   categoriesError={categoriesQuery.isError && !categoriesQuery.data}
                   categoriesLoading={categoriesQuery.isLoading && !categoriesQuery.data}
                   draft={draft}
+                  entryType={entryType}
                   key={draft.key}
                   onChange={(patch) => updateDraft(draft.key, patch)}
                   onRemove={() => removeDraft(draft.key)}
@@ -219,6 +247,7 @@ function EditableMovement({
   categoriesError,
   categoriesLoading,
   draft,
+  entryType,
   onChange,
   onCloseDate,
   onOpenDate,
@@ -229,6 +258,7 @@ function EditableMovement({
   categoriesError: boolean
   categoriesLoading: boolean
   draft: DraftMovement
+  entryType: "expense" | "income"
   onChange: (patch: Partial<Pick<DraftMovement, "title" | "amount" | "date" | "categoryId">>) => void
   onCloseDate: () => void
   onOpenDate: () => void
@@ -269,6 +299,12 @@ function EditableMovement({
         <AppText tone="muted" variant="caption">Cargando categorías...</AppText>
       ) : categoriesError ? (
         <AppText tone="muted" variant="caption">No se pudieron cargar las categorías.</AppText>
+      ) : categories && categories.length === 0 ? (
+        <AppText tone="muted" variant="caption">
+          {entryType === "expense"
+            ? "Este espacio no tiene categorías de gasto."
+            : "Este espacio no tiene categorías de ingreso."}
+        </AppText>
       ) : (
         <NativeMenu
           accessibilityLabel="Categoría"
@@ -432,7 +468,11 @@ function MovementRow({
   )
 }
 
-function toDraft(item: ScreenshotMovement, index: number): DraftMovement {
+function toDraft(
+  item: ScreenshotMovement,
+  index: number,
+  fallbackCategoryId: string | null,
+): DraftMovement {
   return {
     key: String(index),
     title: item.title,
@@ -440,11 +480,14 @@ function toDraft(item: ScreenshotMovement, index: number): DraftMovement {
     date: item.date,
     time: item.time,
     currency: item.currency,
-    categoryId: item.categoryId,
+    categoryId: item.categoryId ?? fallbackCategoryId,
   }
 }
 
-function prepareDraft(draft: DraftMovement): { movement: ReadyMovement } | { error: string } {
+function prepareDraft(
+  draft: DraftMovement,
+  categoryIds: ReadonlySet<string> | null,
+): { movement: ReadyMovement } | { error: string } {
   const title = draft.title.trim()
   if (!title) return { error: "Escribe un nombre para cada movimiento." }
 
@@ -455,7 +498,9 @@ function prepareDraft(draft: DraftMovement): { movement: ReadyMovement } | { err
   if (!parsedDate || toLocalDateString(parsedDate) !== draft.date) {
     return { error: "Elige una fecha válida." }
   }
-  if (!draft.categoryId) return { error: "Elige una categoría para cada movimiento." }
+  if (!draft.categoryId || (categoryIds && !categoryIds.has(draft.categoryId))) {
+    return { error: "Elige una categoría para cada movimiento." }
+  }
 
   return {
     movement: {
