@@ -61,8 +61,12 @@ export async function getDashboard(
     throw error
   }
 
-  const transactions =
-    data as Transaction[]
+  const transactions = (data ?? []).map((transaction) => ({
+    ...transaction,
+    transaction_time: typeof transaction.transaction_time === "string"
+      ? transaction.transaction_time
+      : null,
+  })) as Transaction[]
 
   const income = transactions
     .filter(

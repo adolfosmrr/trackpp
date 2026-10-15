@@ -21,6 +21,10 @@ import { useHouseholdCategories } from "../../categories/hooks/useHouseholdCateg
 import { SegmentedToggle } from "../../../components/inputs/SegmentedToggle"
 import { FieldChevronIcon } from "../../../components/icons/FieldChevronIcon"
 import { useCreateLinkedTransactions } from "../hooks/useCreateLinkedTransactions"
+import {
+  pickAndImportScreenshots,
+  screenshotImportErrorMessage,
+} from "../services/screenshotImport"
 import { ReminderMenuEditor } from "../../fixedExpenses/components/ReminderMenuEditor"
 import { OptionChips } from "../../fixedExpenses/components/OptionChips"
 import { useCreateFixedExpense } from "../../fixedExpenses/hooks/useCreateFixedExpense"
@@ -131,6 +135,7 @@ export function CreateTransactionForm({
   )
   const [selectedCategoriesByHousehold, setSelectedCategoriesByHousehold] =
     useState<Record<string, SelectedCategoryDisplay>>({})
+  const [readingScreenshots, setReadingScreenshots] = useState(false)
   const createTransactionMutation = useCreateLinkedTransactions()
   const createFixedExpenseMutation = useCreateFixedExpense()
   const updateFixedExpenseMutation = useUpdateFixedExpense()
@@ -523,6 +528,57 @@ export function CreateTransactionForm({
     }
   }
 
+  async function handleImportScreenshots() {
+    if (readingScreenshots || isFixedMode || isEditingFixedExpense) return
+    if (targets.length === 0) {
+      Alert.alert("Error", "Selecciona al menos un espacio.")
+      return
+    }
+    if (targets.some((target) => !target.categoryId)) {
+      Alert.alert("Error", "Selecciona una categoría para cada espacio.")
+      return
+    }
+
+    const currencies = new Set(
+      targets.map((target) => {
+        const currency = memberships?.find(
+          (membership) => membership.household_id === target.householdId,
+        )?.household.currency
+        return (currency || "ARS").trim().toUpperCase()
+      }),
+    )
+    if (currencies.size > 1) {
+      Alert.alert("Error", "Elige espacios que usen la misma moneda.")
+      return
+    }
+
+    const householdId = primaryTarget?.householdId
+    if (!householdId) {
+      Alert.alert("Error", "Selecciona al menos un espacio.")
+      return
+    }
+
+    setReadingScreenshots(true)
+    try {
+      const outcome = await pickAndImportScreenshots(householdId)
+      if (outcome.status === "canceled") return
+      if (outcome.result.items.length === 0 && outcome.result.duplicates.length === 0) {
+        Alert.alert("Error", "No pude leer la imagen.")
+        return
+      }
+      navigation.navigate("ImportMovements", {
+        entryType: type,
+        targets: targets.map((target) => ({ ...target })),
+        items: outcome.result.items,
+        duplicates: outcome.result.duplicates,
+      })
+    } catch (error) {
+      Alert.alert("Error", screenshotImportErrorMessage(error))
+    } finally {
+      setReadingScreenshots(false)
+    }
+  }
+
   function openCategorySelector(householdId: string) {
     const householdName = memberships?.find(
       (membership) => membership.household_id === householdId,
@@ -769,13 +825,29 @@ export function CreateTransactionForm({
           <View style={styles.targetsSection}>
             {additionalTargets.map(renderCategoryField)}
           </View>
+
+          <FieldRow
+            accessibilityLabel="Cargar movimientos desde capturas"
+            disabled={readingScreenshots || createTransactionMutation.isPending}
+            onPress={() => {
+              void handleImportScreenshots()
+            }}
+          >
+            <AppText style={styles.fieldLabel} variant="subtitle">Desde captura</AppText>
+            <View style={styles.fieldValueGroup}>
+              <AppText tone="muted" variant="subtitle">
+                {readingScreenshots ? "Leyendo..." : "Leer lista"}
+              </AppText>
+              <FieldChevronIcon />
+            </View>
+          </FieldRow>
         </>
       )}
 
       <Button
-        disabled={isEditingFixedExpense
+        disabled={readingScreenshots || (isEditingFixedExpense
           ? updateFixedExpenseMutation.isPending
-          : createTransactionMutation.isPending || createFixedExpenseMutation.isPending}
+          : createTransactionMutation.isPending || createFixedExpenseMutation.isPending)}
         label={(
           isEditingFixedExpense
             ? updateFixedExpenseMutation.isPending

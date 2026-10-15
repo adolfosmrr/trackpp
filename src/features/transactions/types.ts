@@ -82,6 +82,7 @@ export type Transaction = {
   category: TransactionCategory | null
   creator: TransactionCreator | null
   transaction_date: string
+  transaction_time: string | null
   created_at: string
   updated_at: string
   fixedExpensePayment: FixedExpensePaymentReference | null
@@ -98,5 +99,20 @@ export type CreateLinkedTransactionsInput = {
   description?: string
   amount: number
   transactionDate?: string
+  transactionTime?: string | null
   targets: LinkedTransactionTarget[]
+}
+
+export type ScreenshotMovement = {
+  title: string
+  amount: number
+  currency: string
+  date: string
+  time: string | null
+  type: TransactionType
+}
+
+export type ScreenshotImportResult = {
+  items: ScreenshotMovement[]
+  duplicates: ScreenshotMovement[]
 }
