@@ -1,4 +1,9 @@
-import { ImageManipulator, SaveFormat } from "expo-image-manipulator"
+import {
+  ImageManipulator,
+  SaveFormat,
+  type ImageManipulatorContext,
+  type ImageRef,
+} from "expo-image-manipulator"
 import * as ImagePicker from "expo-image-picker"
 
 import { ApiError, apiFetch } from "../../../services/api"
@@ -21,8 +26,10 @@ export async function pickAndImportScreenshots(householdId: string) {
     picked = await ImagePicker.launchImageLibraryAsync({
       allowsMultipleSelection: true,
       mediaTypes: ["images"],
+      orderedSelection: true,
       quality: 1,
       selectionLimit: SELECTION_LIMIT,
+      shouldDownloadFromNetwork: true,
     })
   } catch (error) {
     if (isMissingNativeModule(error)) {
@@ -75,18 +82,31 @@ export function screenshotImportErrorMessage(error: unknown) {
 }
 
 async function compressScreenshot(asset: ImagePicker.ImagePickerAsset) {
+  let context: ImageManipulatorContext | null = null
+  let measured: ImageRef | null = null
+  let rendered: ImageRef | null = null
   try {
-    const context = ImageManipulator.manipulate(asset.uri)
-    const largest = Math.max(asset.width, asset.height)
-    if (asset.width > 0 && asset.height > 0 && largest > MAX_EDGE) {
-      const scale = MAX_EDGE / largest
-      context.resize({
-        width: Math.max(1, Math.round(asset.width * scale)),
-        height: Math.max(1, Math.round(asset.height * scale)),
-      })
+    context = ImageManipulator.manipulate(asset.uri)
+    let width = asset.width
+    let height = asset.height
+    if (width <= 0 || height <= 0) {
+      measured = await context.renderAsync()
+      width = measured.width
+      height = measured.height
     }
 
-    const rendered = await context.renderAsync()
+    const largest = Math.max(width, height)
+    if (width > 0 && height > 0 && largest > MAX_EDGE) {
+      const scale = MAX_EDGE / largest
+      context.resize({
+        width: Math.max(1, Math.round(width * scale)),
+        height: Math.max(1, Math.round(height * scale)),
+      })
+      rendered = await context.renderAsync()
+    } else {
+      rendered = measured ?? (await context.renderAsync())
+    }
+
     const saved = await rendered.saveAsync({
       base64: true,
       compress: JPEG_COMPRESS,
@@ -107,6 +127,10 @@ async function compressScreenshot(asset: ImagePicker.ImagePickerAsset) {
       throw new ScreenshotImportError("NATIVE_BUILD_REQUIRED")
     }
     throw new ScreenshotImportError("IMAGE_UNREADABLE")
+  } finally {
+    if (rendered && rendered !== measured) releaseNative(rendered)
+    releaseNative(measured)
+    releaseNative(context)
   }
 }
 
@@ -130,23 +154,62 @@ function parseImportResult(value: unknown): ScreenshotImportResult {
 function parseMovement(value: unknown): ScreenshotMovement | null {
   if (!isRecord(value)) return null
   if (value.type !== "expense" && value.type !== "income") return null
-  if (typeof value.title !== "string" || !value.title.trim()) return null
-  if (typeof value.currency !== "string" || !/^[A-Za-z]{3}$/.test(value.currency)) return null
-  if (typeof value.date !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(value.date)) return null
-  if (value.time !== null && (typeof value.time !== "string" || !/^\d{2}:\d{2}:\d{2}$/.test(value.time))) {
-    return null
-  }
+  if (typeof value.title !== "string") return null
+  const title = value.title.trim()
+  if (!title) return null
+  if (typeof value.currency !== "string") return null
+  const currency = value.currency.trim().toUpperCase()
+  if (!/^[A-Z]{3}$/.test(currency)) return null
+  if (typeof value.date !== "string" || !isIsoDate(value.date)) return null
+  const time = parseClockTime(value.time)
+  if (time === undefined) return null
 
   const amount = typeof value.amount === "number" ? value.amount : Number(value.amount)
   if (!Number.isFinite(amount) || amount <= 0) return null
 
   return {
-    title: value.title,
+    title,
     amount,
-    currency: value.currency.toUpperCase(),
+    currency,
     date: value.date,
-    time: value.time,
+    time,
     type: value.type,
+  }
+}
+
+function parseClockTime(value: unknown) {
+  if (value === null) return null
+  if (typeof value !== "string" || !isClockTime(value)) return undefined
+  return value
+}
+
+function isClockTime(value: string) {
+  const match = /^(\d{2}):(\d{2}):(\d{2})$/.exec(value)
+  if (!match) return false
+  const hours = Number(match[1])
+  const minutes = Number(match[2])
+  const seconds = Number(match[3])
+  return hours < 24 && minutes < 60 && seconds < 60
+}
+
+function isIsoDate(value: string) {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value)
+  if (!match) return false
+  const year = Number(match[1])
+  const month = Number(match[2])
+  const day = Number(match[3])
+  const date = new Date(year, month - 1, day)
+  return date.getFullYear() === year
+    && date.getMonth() === month - 1
+    && date.getDate() === day
+}
+
+function releaseNative(resource: { release: () => void } | null) {
+  if (!resource) return
+  try {
+    resource.release()
+  } catch {
+    // The bitmap is already being discarded.
   }
 }
 

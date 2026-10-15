@@ -35,6 +35,10 @@ export function currencyChoiceLabel(option: CurrencyOption) {
   return `${option.country} • ${option.currency} (${option.code})`
 }
 
+export function spaceCurrencyCode(currency: string | null | undefined) {
+  return (currency ?? "").trim().toUpperCase() || "ARS"
+}
+
 function normalizeSearchText(value: string) {
   return value.normalize("NFD").replace(/\p{M}/gu, "").toLocaleLowerCase("es")
 }

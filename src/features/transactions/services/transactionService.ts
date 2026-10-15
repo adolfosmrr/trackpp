@@ -76,7 +76,7 @@ export async function createLinkedTransactions(
         householdId: target.householdId,
         categoryId: target.categoryId,
       })),
-      ...(input.transactionTime !== undefined
+      ...(typeof input.transactionTime === "string" && input.transactionTime.length > 0
         ? { p_transaction_time: input.transactionTime }
         : {}),
     }

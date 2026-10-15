@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { ActivityIndicator, Alert, StyleSheet, Text, View } from "react-native"
 import type { NativeStackScreenProps } from "@react-navigation/native-stack"
 
@@ -8,6 +8,7 @@ import { AppText } from "../../../components/text/AppText"
 import type { AppStackParamList } from "../../../navigation/types"
 import { colors, fonts, layout, radii } from "../../../theme"
 import { formatMoney } from "../../../utils/formatMoney"
+import { spaceCurrencyCode } from "../../households/data/currencies"
 import { useHouseholds } from "../../households/hooks/useHouseholds"
 import { setLastCategoryId, setLastEntryMode } from "../services/entryPreferences"
 import { formatTransactionDate } from "../utils/transactionFilters"
@@ -22,16 +23,25 @@ export function ImportMovementsScreen({ navigation, route }: ImportMovementsScre
   const memberships = householdsQuery.data
   const createTransactionMutation = useCreateLinkedTransactions()
   const [savedCount, setSavedCount] = useState(0)
+  const [saving, setSaving] = useState(false)
+  const saveLock = useRef(false)
+  const alive = useRef(true)
   const currency = sharedCurrency(targets, memberships)
   const insertable = currency
     ? items.filter((item) => item.type === entryType && sameCurrency(item.currency, currency))
     : []
   const heldBack = items.filter((item) => !insertable.includes(item))
   const pending = insertable.slice(savedCount)
-  const saving = createTransactionMutation.isPending
+
+  useEffect(() => {
+    alive.current = true
+    return () => {
+      alive.current = false
+    }
+  }, [])
 
   async function handleConfirm() {
-    if (saving || pending.length === 0) return
+    if (saveLock.current || pending.length === 0) return
     const readyTargets = targets.flatMap((target) =>
       target.categoryId
         ? [{ householdId: target.householdId, categoryId: target.categoryId }]
@@ -42,30 +52,38 @@ export function ImportMovementsScreen({ navigation, route }: ImportMovementsScre
       return
     }
 
+    saveLock.current = true
+    setSaving(true)
     let saved = savedCount
-    for (const item of pending) {
-      try {
-        await createTransactionMutation.mutateAsync({
-          type: item.type,
-          title: item.title,
-          amount: item.amount,
-          transactionDate: item.date,
-          transactionTime: item.time,
-          targets: readyTargets,
-        })
-        saved += 1
-        setSavedCount(saved)
-      } catch {
-        Alert.alert("Error", partialSaveMessage(saved))
-        return
+    try {
+      for (const item of pending) {
+        if (!alive.current) return
+        try {
+          await createTransactionMutation.mutateAsync({
+            type: item.type,
+            title: item.title,
+            amount: item.amount,
+            transactionDate: item.date,
+            transactionTime: item.time,
+            targets: readyTargets,
+          })
+          saved += 1
+          if (alive.current) setSavedCount(saved)
+        } catch (error) {
+          if (alive.current) Alert.alert("Error", saveErrorMessage(error, saved))
+          return
+        }
       }
-    }
 
-    await Promise.all(
-      readyTargets.map((target) => setLastCategoryId(target.householdId, entryType, target.categoryId)),
-    )
-    await setLastEntryMode(entryType)
-    navigation.popToTop()
+      await Promise.all(
+        readyTargets.map((target) => setLastCategoryId(target.householdId, entryType, target.categoryId)),
+      )
+      await setLastEntryMode(entryType)
+      if (alive.current) navigation.popToTop()
+    } finally {
+      saveLock.current = false
+      if (alive.current) setSaving(false)
+    }
   }
 
   return (
@@ -184,12 +202,11 @@ function sharedCurrency(
   if (!memberships || targets.length === 0) return null
 
   const codes = targets.map((target) =>
-    memberships.find((membership) => membership.household_id === target.householdId)
-      ?.household.currency
-      ?.trim()
-      .toUpperCase() ?? "",
+    spaceCurrencyCode(
+      memberships.find((membership) => membership.household_id === target.householdId)
+        ?.household.currency,
+    ),
   )
-  if (codes.some((code) => code.length === 0)) return null
 
   const unique = new Set(codes)
   if (unique.size !== 1) return null
@@ -220,6 +237,22 @@ function partialSaveMessage(saved: number) {
   if (saved === 0) return "No se pudo guardar el movimiento."
   if (saved === 1) return "Se guardó 1 movimiento. No se pudo guardar el resto."
   return `Se guardaron ${saved} movimientos. No se pudo guardar el resto.`
+}
+
+function saveErrorMessage(error: unknown, saved: number) {
+  if (!isMissingTransactionTime(error)) return partialSaveMessage(saved)
+  const detail = "Falta actualizar la base para guardar la hora."
+  if (saved === 0) return detail
+  return `${partialSaveMessage(saved)} ${detail}`
+}
+
+function isMissingTransactionTime(error: unknown) {
+  if (typeof error !== "object" || error === null) return false
+  if (!("code" in error) || !("message" in error)) return false
+  const { code, message } = error
+  return code === "PGRST202"
+    && typeof message === "string"
+    && message.includes("p_transaction_time")
 }
 
 const styles = StyleSheet.create({

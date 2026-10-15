@@ -15,6 +15,7 @@ import { colors, fonts, layout } from "../../../theme"
 import { Gesture, GestureDetector, TextInput } from "react-native-gesture-handler"
 import { runOnJS, useSharedValue } from "react-native-reanimated"
 
+import { spaceCurrencyCode } from "../../households/data/currencies"
 import { useHouseholds } from "../../households/hooks/useHouseholds"
 import { useHouseholdStore } from "../../../store/householdStore"
 import { useHouseholdCategories } from "../../categories/hooks/useHouseholdCategories"
@@ -538,14 +539,27 @@ export function CreateTransactionForm({
       Alert.alert("Error", "Selecciona una categoría para cada espacio.")
       return
     }
+    if (!memberships) {
+      Alert.alert("Error", "No se pudieron cargar tus espacios.")
+      return
+    }
+
+    const availableHouseholdIds = new Set(
+      memberships.map((membership) => membership.household_id),
+    )
+    if (targets.some((target) => !availableHouseholdIds.has(target.householdId))) {
+      Alert.alert("Error", "No tienes acceso a uno de los espacios seleccionados.")
+      return
+    }
 
     const currencies = new Set(
-      targets.map((target) => {
-        const currency = memberships?.find(
-          (membership) => membership.household_id === target.householdId,
-        )?.household.currency
-        return (currency || "ARS").trim().toUpperCase()
-      }),
+      targets.map((target) =>
+        spaceCurrencyCode(
+          memberships.find(
+            (membership) => membership.household_id === target.householdId,
+          )?.household.currency,
+        ),
+      ),
     )
     if (currencies.size > 1) {
       Alert.alert("Error", "Elige espacios que usen la misma moneda.")
