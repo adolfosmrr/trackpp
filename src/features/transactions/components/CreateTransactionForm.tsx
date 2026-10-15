@@ -15,7 +15,7 @@ import { colors, fonts, layout } from "../../../theme"
 import { Gesture, GestureDetector, TextInput } from "react-native-gesture-handler"
 import { runOnJS, useSharedValue } from "react-native-reanimated"
 
-import { spaceCurrencyCode } from "../../households/data/currencies"
+import { sharedSpaceCurrency } from "../../households/data/currencies"
 import { useHouseholds } from "../../households/hooks/useHouseholds"
 import { useHouseholdStore } from "../../../store/householdStore"
 import { useHouseholdCategories } from "../../categories/hooks/useHouseholdCategories"
@@ -552,16 +552,7 @@ export function CreateTransactionForm({
       return
     }
 
-    const currencies = new Set(
-      targets.map((target) =>
-        spaceCurrencyCode(
-          memberships.find(
-            (membership) => membership.household_id === target.householdId,
-          )?.household.currency,
-        ),
-      ),
-    )
-    if (currencies.size > 1) {
+    if (!sharedSpaceCurrency(targets, memberships)) {
       Alert.alert("Error", "Elige espacios que usen la misma moneda.")
       return
     }

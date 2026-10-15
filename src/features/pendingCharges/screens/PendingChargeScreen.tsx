@@ -23,7 +23,7 @@ import { FieldRow } from "../../../components/inputs/TextField"
 import type { AppStackParamList } from "../../../navigation/types"
 import { useHouseholdStore } from "../../../store/householdStore"
 import { formatPeriodLabel } from "../../fixedExpenses/utils/frequency"
-import { formatMoney } from "../../../utils/formatMoney"
+import { currencyCode, formatMoney } from "../../../utils/formatMoney"
 import { useAssignPendingCharge } from "../hooks/useAssignPendingCharge"
 import { useDismissPendingCharge } from "../hooks/useDismissPendingCharge"
 import { useLinkPendingCharge } from "../hooks/useLinkPendingCharge"
@@ -289,7 +289,7 @@ export function PendingChargeScreen({ navigation, route }: PendingChargeScreenPr
                 {householdId && !currencyMatches ? (
                   <AppText tone="destructive" variant="caption">
                     La moneda del gasto ({charge.currency}) no coincide con la del espacio (
-                    {selectedMembership?.household.currency ?? "ARS"}).
+                    {currencyCode(selectedMembership?.household.currency)}).
                   </AppText>
                 ) : null}
                 {householdId && categoriesQuery.isSuccess && categoriesQuery.data.length === 0 ? (
@@ -327,8 +327,10 @@ function suggestionCurrency(
   memberships: { household: { id: string; currency: string } }[] | undefined,
   householdId: string,
 ) {
-  return memberships?.find((membership) => membership.household.id === householdId)
-    ?.household.currency ?? "ARS"
+  return currencyCode(
+    memberships?.find((membership) => membership.household.id === householdId)
+      ?.household.currency,
+  )
 }
 
 function errorText(error: unknown, fallback: string) {

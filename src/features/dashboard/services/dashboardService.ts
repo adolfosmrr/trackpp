@@ -1,5 +1,5 @@
 import { supabase } from "../../../services/supabase"
-import { toLocalDateString } from "../../../utils/localDate"
+import { parseClockTime, toLocalDateString } from "../../../utils/localDate"
 
 import type {
   Transaction,
@@ -63,9 +63,7 @@ export async function getDashboard(
 
   const transactions = (data ?? []).map((transaction) => ({
     ...transaction,
-    transaction_time: typeof transaction.transaction_time === "string"
-      ? transaction.transaction_time
-      : null,
+    transaction_time: parseClockTime(transaction.transaction_time),
   })) as Transaction[]
 
   const income = transactions

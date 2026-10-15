@@ -7,6 +7,7 @@ import {
 import * as ImagePicker from "expo-image-picker"
 
 import { ApiError, apiFetch } from "../../../services/api"
+import { parseClockTime, parseLocalDate, toLocalDateString } from "../../../utils/localDate"
 import type { ScreenshotImportResult, ScreenshotMovement } from "../types"
 
 const MAX_EDGE = 1600
@@ -160,9 +161,13 @@ function parseMovement(value: unknown): ScreenshotMovement | null {
   if (typeof value.currency !== "string") return null
   const currency = value.currency.trim().toUpperCase()
   if (!/^[A-Z]{3}$/.test(currency)) return null
-  if (typeof value.date !== "string" || !isIsoDate(value.date)) return null
-  const time = parseClockTime(value.time)
-  if (time === undefined) return null
+  if (typeof value.date !== "string") return null
+  const parsedDate = parseLocalDate(value.date)
+  if (!parsedDate || toLocalDateString(parsedDate) !== value.date) return null
+  if (value.time !== null && (typeof value.time !== "string" || parseClockTime(value.time) !== value.time)) {
+    return null
+  }
+  const time = typeof value.time === "string" ? value.time : null
 
   const amount = typeof value.amount === "number" ? value.amount : Number(value.amount)
   if (!Number.isFinite(amount) || amount <= 0) return null
@@ -175,33 +180,6 @@ function parseMovement(value: unknown): ScreenshotMovement | null {
     time,
     type: value.type,
   }
-}
-
-function parseClockTime(value: unknown) {
-  if (value === null) return null
-  if (typeof value !== "string" || !isClockTime(value)) return undefined
-  return value
-}
-
-function isClockTime(value: string) {
-  const match = /^(\d{2}):(\d{2}):(\d{2})$/.exec(value)
-  if (!match) return false
-  const hours = Number(match[1])
-  const minutes = Number(match[2])
-  const seconds = Number(match[3])
-  return hours < 24 && minutes < 60 && seconds < 60
-}
-
-function isIsoDate(value: string) {
-  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value)
-  if (!match) return false
-  const year = Number(match[1])
-  const month = Number(match[2])
-  const day = Number(match[3])
-  const date = new Date(year, month - 1, day)
-  return date.getFullYear() === year
-    && date.getMonth() === month - 1
-    && date.getDate() === day
 }
 
 function releaseNative(resource: { release: () => void } | null) {

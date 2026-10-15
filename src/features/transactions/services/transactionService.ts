@@ -1,4 +1,5 @@
 import { supabase } from "../../../services/supabase"
+import { parseClockTime } from "../../../utils/localDate"
 
 import type {
   CreateLinkedTransactionsInput,
@@ -51,7 +52,7 @@ export async function getTransactions(
 
     return {
       ...transaction,
-      transaction_time: readTransactionTime(transaction.transaction_time),
+      transaction_time: parseClockTime(transaction.transaction_time),
       fixedExpensePayment: payment,
     }
   }) as Transaction[]
@@ -76,9 +77,7 @@ export async function createLinkedTransactions(
         householdId: target.householdId,
         categoryId: target.categoryId,
       })),
-      ...(typeof input.transactionTime === "string" && input.transactionTime.length > 0
-        ? { p_transaction_time: input.transactionTime }
-        : {}),
+      p_transaction_time: parseClockTime(input.transactionTime),
     }
   )
 
@@ -155,7 +154,7 @@ function parseTransactionRpcResult(
     category: parseCategory(value.category),
     creator: parseCreator(value.creator),
     transaction_date: transactionDate,
-    transaction_time: readTransactionTime(value.transaction_time),
+    transaction_time: parseClockTime(value.transaction_time),
     created_at: createdAt,
     updated_at: updatedAt,
     fixedExpensePayment: null,
@@ -217,10 +216,6 @@ function getNullableString(value: unknown) {
   return value === null || value === undefined
     ? null
     : getString(value)
-}
-
-function readTransactionTime(value: unknown) {
-  return typeof value === "string" && value.length > 0 ? value : null
 }
 
 function getNumber(value: unknown) {

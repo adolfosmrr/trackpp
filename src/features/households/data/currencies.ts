@@ -1,3 +1,5 @@
+import { currencyCode } from "../../../utils/formatMoney"
+
 export type CurrencyOption = {
   country: string
   currency: string
@@ -35,8 +37,20 @@ export function currencyChoiceLabel(option: CurrencyOption) {
   return `${option.country} • ${option.currency} (${option.code})`
 }
 
-export function spaceCurrencyCode(currency: string | null | undefined) {
-  return (currency ?? "").trim().toUpperCase() || "ARS"
+export function sharedSpaceCurrency(
+  targets: readonly { householdId: string }[],
+  memberships: readonly { household_id: string; household: { currency: string } }[] | null | undefined,
+) {
+  if (!memberships || targets.length === 0) return null
+
+  const codes = targets.map((target) =>
+    currencyCode(
+      memberships.find((membership) => membership.household_id === target.householdId)
+        ?.household.currency,
+    ),
+  )
+  if (new Set(codes).size !== 1) return null
+  return codes[0] ?? null
 }
 
 function normalizeSearchText(value: string) {

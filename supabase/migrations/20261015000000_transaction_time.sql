@@ -2,22 +2,30 @@
 -- two movements on the same day can be told apart, and threads that time
 -- through create_linked_transactions. Existing rows stay null.
 --
--- CREATE OR REPLACE cannot add a parameter, so the previous 6-argument
--- function is dropped and replaced. The new argument defaults to null.
+-- CREATE OR REPLACE cannot add a parameter. Drop every overload first,
+-- including its grants, then create the single 7-argument function.
+-- p_transaction_time defaults to null.
 
 begin;
 
 alter table public.transactions
   add column if not exists transaction_time time null;
 
-drop function if exists public.create_linked_transactions(
-  text,
-  text,
-  numeric,
-  text,
-  date,
-  jsonb
-);
+do $$
+declare
+  fn record;
+begin
+  for fn in
+    select n.nspname, p.proname, pg_get_function_identity_arguments(p.oid) as args
+    from pg_proc as p
+    join pg_namespace as n on n.oid = p.pronamespace
+    where n.nspname = 'public'
+      and p.proname = 'create_linked_transactions'
+  loop
+    execute format('drop function %I.%I(%s)', fn.nspname, fn.proname, fn.args);
+  end loop;
+end
+$$;
 
 create or replace function public.create_linked_transactions(
   p_type text,

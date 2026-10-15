@@ -7,13 +7,13 @@ import { SheetScaffold } from "../../../components/layout/SheetScaffold"
 import { AppText } from "../../../components/text/AppText"
 import type { AppStackParamList } from "../../../navigation/types"
 import { colors, fonts, layout, radii } from "../../../theme"
-import { formatMoney } from "../../../utils/formatMoney"
-import { spaceCurrencyCode } from "../../households/data/currencies"
+import { currencyCode, formatMoney } from "../../../utils/formatMoney"
+import { sharedSpaceCurrency } from "../../households/data/currencies"
 import { useHouseholds } from "../../households/hooks/useHouseholds"
 import { setLastCategoryId, setLastEntryMode } from "../services/entryPreferences"
 import { formatTransactionDate } from "../utils/transactionFilters"
 import { useCreateLinkedTransactions } from "../hooks/useCreateLinkedTransactions"
-import type { LinkedTransactionTarget, ScreenshotMovement } from "../types"
+import type { ScreenshotMovement } from "../types"
 
 type ImportMovementsScreenProps = NativeStackScreenProps<AppStackParamList, "ImportMovements">
 
@@ -26,9 +26,9 @@ export function ImportMovementsScreen({ navigation, route }: ImportMovementsScre
   const [saving, setSaving] = useState(false)
   const saveLock = useRef(false)
   const alive = useRef(true)
-  const currency = sharedCurrency(targets, memberships)
+  const currency = sharedSpaceCurrency(targets, memberships)
   const insertable = currency
-    ? items.filter((item) => item.type === entryType && sameCurrency(item.currency, currency))
+    ? items.filter((item) => item.type === entryType && currencyCode(item.currency) === currency)
     : []
   const heldBack = items.filter((item) => !insertable.includes(item))
   const pending = insertable.slice(savedCount)
@@ -69,8 +69,8 @@ export function ImportMovementsScreen({ navigation, route }: ImportMovementsScre
           })
           saved += 1
           if (alive.current) setSavedCount(saved)
-        } catch (error) {
-          if (alive.current) Alert.alert("Error", saveErrorMessage(error, saved))
+        } catch {
+          if (alive.current) Alert.alert("Error", partialSaveMessage(saved))
           return
         }
       }
@@ -195,28 +195,6 @@ function MovementRow({
   )
 }
 
-function sharedCurrency(
-  targets: LinkedTransactionTarget[],
-  memberships: ReturnType<typeof useHouseholds>["data"],
-) {
-  if (!memberships || targets.length === 0) return null
-
-  const codes = targets.map((target) =>
-    spaceCurrencyCode(
-      memberships.find((membership) => membership.household_id === target.householdId)
-        ?.household.currency,
-    ),
-  )
-
-  const unique = new Set(codes)
-  if (unique.size !== 1) return null
-  return codes[0] ?? null
-}
-
-function sameCurrency(left: string, right: string) {
-  return left.trim().toUpperCase() === right.trim().toUpperCase()
-}
-
 function heldBackReason(
   movement: ScreenshotMovement,
   entryType: "expense" | "income",
@@ -237,22 +215,6 @@ function partialSaveMessage(saved: number) {
   if (saved === 0) return "No se pudo guardar el movimiento."
   if (saved === 1) return "Se guardó 1 movimiento. No se pudo guardar el resto."
   return `Se guardaron ${saved} movimientos. No se pudo guardar el resto.`
-}
-
-function saveErrorMessage(error: unknown, saved: number) {
-  if (!isMissingTransactionTime(error)) return partialSaveMessage(saved)
-  const detail = "Falta actualizar la base para guardar la hora."
-  if (saved === 0) return detail
-  return `${partialSaveMessage(saved)} ${detail}`
-}
-
-function isMissingTransactionTime(error: unknown) {
-  if (typeof error !== "object" || error === null) return false
-  if (!("code" in error) || !("message" in error)) return false
-  const { code, message } = error
-  return code === "PGRST202"
-    && typeof message === "string"
-    && message.includes("p_transaction_time")
 }
 
 const styles = StyleSheet.create({
