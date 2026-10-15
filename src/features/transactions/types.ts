@@ -1,6 +1,6 @@
 import type { FixedExpense } from "../fixedExpenses/types"
 
-export type TransactionType = "expense" | "income"
+type TransactionType = "expense" | "income"
 
 export type CreateMovementMode = TransactionType | "fixed"
 
@@ -59,7 +59,7 @@ export type TransactionCreator = {
   avatar_url: string | null
 }
 
-export type FixedExpensePaymentReference = {
+type FixedExpensePaymentReference = {
   id: string
   fixed_expense_period_id: string
   fixed_expense_period: {
@@ -82,6 +82,7 @@ export type Transaction = {
   category: TransactionCategory | null
   creator: TransactionCreator | null
   transaction_date: string
+  transaction_time: string | null
   created_at: string
   updated_at: string
   fixedExpensePayment: FixedExpensePaymentReference | null
@@ -98,5 +99,21 @@ export type CreateLinkedTransactionsInput = {
   description?: string
   amount: number
   transactionDate?: string
+  transactionTime?: string | null
   targets: LinkedTransactionTarget[]
+}
+
+export type ScreenshotMovement = {
+  title: string
+  amount: number
+  currency: string
+  date: string
+  time: string | null
+  type: TransactionType
+  categoryId: string | null
+}
+
+export type ScreenshotImportResult = {
+  items: ScreenshotMovement[]
+  duplicates: ScreenshotMovement[]
 }

@@ -45,7 +45,7 @@ export function InvitationsScreen({
       )
     } catch (acceptError) {
       const message = acceptError instanceof Error
-        ? parseApiError(acceptError.message)
+        ? acceptError.message
         : "No se pudo aceptar la invitación."
 
       Alert.alert("Error", message)
@@ -109,18 +109,6 @@ export function InvitationsScreen({
       )}
     </ScrollView>
   )
-}
-
-function parseApiError(message: string) {
-  try {
-    const parsed = JSON.parse(message)
-
-    if (typeof parsed.error === "string") {
-      return parsed.error
-    }
-  } catch {}
-
-  return message
 }
 
 const styles = StyleSheet.create({

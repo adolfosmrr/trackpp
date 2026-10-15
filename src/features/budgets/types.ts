@@ -1,19 +1,7 @@
-export type BudgetCategory = {
+type BudgetCategory = {
   id: string
   name: string
   icon: string | null
-}
-
-export type BudgetConfig = {
-  id: string
-  household_id: string
-  category_id: string
-  name: string
-  amount: number
-  is_active: boolean
-  created_by: string
-  created_at: string
-  updated_at: string
 }
 
 export type Budget = {

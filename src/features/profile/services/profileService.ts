@@ -1,6 +1,7 @@
 import type { User } from "@supabase/supabase-js"
 
 import { supabase } from "../../../services/supabase"
+import { parseLocalDate, toLocalDateString } from "../../../utils/localDate"
 
 export type Profile = {
   id: string
@@ -55,7 +56,10 @@ export async function applySignupProfile(user: User) {
 
   const name = existing?.name?.trim() ? existing.name : given
   const lastName = existing?.last_name?.trim() ? existing.last_name : family
-  const birthDate = existing?.birth_date ?? (isIsoDate(birth) ? birth : null)
+  const parsedBirth = birth ? parseLocalDate(birth) : null
+  const birthDate = existing?.birth_date ?? (
+    parsedBirth && toLocalDateString(parsedBirth) === birth ? birth : null
+  )
   if (
     existing &&
     existing.name === name &&
@@ -107,8 +111,4 @@ function readMeta(metadata: User["user_metadata"], key: string) {
   if (!metadata || typeof metadata !== "object" || !(key in metadata)) return null
   const value = Reflect.get(metadata, key)
   return typeof value === "string" && value.trim() ? value.trim() : null
-}
-
-function isIsoDate(value: string | null): value is string {
-  return value != null && /^\d{4}-\d{2}-\d{2}$/.test(value)
 }

@@ -192,7 +192,7 @@ export function BudgetsScreen({ navigation }: BudgetsScreenProps) {
               style={[
                 styles.budgetContent,
                 {
-                  paddingBottom: Math.max(insets.bottom, 0) + 66,
+                  paddingBottom: Math.max(insets.bottom, 0) + layout.tabBarClearance,
                 },
               ]}
             >
@@ -273,7 +273,7 @@ export function BudgetsScreen({ navigation }: BudgetsScreenProps) {
                     ) : (
                       <EmptyState
                         title="Este mes no armaste presupuestos"
-                        body="Definí un tope por categoría para seguir el gasto."
+                        body="Define un tope por categoría para seguir el gasto."
                         actionLabel="Crear presupuesto"
                         onAction={openCreateBudget}
                       />

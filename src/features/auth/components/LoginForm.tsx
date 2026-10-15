@@ -22,6 +22,7 @@ import { supabase } from "../../../services/supabase"
 import { authTabMotion } from "../authTabMotion"
 import { AUTH_REDIRECT_URL } from "../services/authCallback"
 import { authErrorMessage } from "../services/authErrors"
+import { isEmail } from "../../../utils/isEmail"
 import { AuthEmailField } from "./AuthEmailField"
 
 export type LoginFormHandle = {
@@ -116,7 +117,7 @@ export const LoginForm = forwardRef<LoginFormHandle, LoginFormProps>(
 
     async function handleForgotPassword() {
       const cleanEmail = email.trim().toLowerCase()
-      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanEmail)) {
+      if (!isEmail(cleanEmail)) {
         Alert.alert("Error", "Escribe tu correo para recuperar la contraseña.")
         return
       }

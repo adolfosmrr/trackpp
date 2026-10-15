@@ -1,7 +1,9 @@
+import { currencyCode } from "../../../utils/formatMoney"
+
 export const SPACE_MENU_LABEL = "Cambiar cuenta"
 export const CREATE_SPACE_LABEL = "+ Crear Espacio"
 
-export type SpaceMenuItem = {
+type SpaceMenuItem = {
   id: string
   name: string
   subtitle: string
@@ -18,6 +20,5 @@ export type SpaceMenuProps = {
 
 export function spaceSubtitle(type: string, currency: string) {
   const kind = type === "personal" ? "Personal" : "Compartido"
-  const code = currency.trim().toUpperCase() || "ARS"
-  return `${kind} · ${code}`
+  return `${kind} · ${currencyCode(currency)}`
 }

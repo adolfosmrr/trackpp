@@ -10,7 +10,7 @@ import { StyleSheet, View } from "react-native"
 import { createElement } from "react"
 import type { ComponentType, ReactNode } from "react"
 
-export const TAB_ORDER = [
+const TAB_ORDER = [
   "Home",
   "Transactions",
   "AiChat",
@@ -24,7 +24,7 @@ const SWIPE_VELOCITY = 700
 const HORIZONTAL_INTENT_RATIO = 1.35
 const VERTICAL_FAIL_DISTANCE = 28
 
-export function MainTabsSwipeContainer({ children }: { children: ReactNode }) {
+function MainTabsSwipeContainer({ children }: { children: ReactNode }) {
   const navigation = useNavigation<NavigationProp<ParamListBase>>()
   const activeIndex = useNavigationState((state) => state.index)
   const committed = useSharedValue(false)

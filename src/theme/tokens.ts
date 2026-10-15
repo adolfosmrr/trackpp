@@ -43,10 +43,15 @@ export const colors = {
   transparent: "transparent",
 } as const
 
-/** Multiplier on the dotted field. The pulse curve underneath stays as it was. */
-export const dotOpacity = 0.7
+/**
+ * Resting alpha of GradientBackground dots.
+ * The old ink carried 0.2 and the shader multiplied the finished dot by 0.7.
+ * This is that product. The pulse mixes it toward 0.7, which is
+ * mix(0.2, 1, energy) * 0.7 at full energy. Do not scale it again.
+ */
+export const dotOpacity = 0.14
 
-export const spacing = {
+const spacing = {
   xs: 4,
   sm: 8,
   md: 12,
@@ -57,6 +62,7 @@ export const spacing = {
 
 const HEADER_PILL = 40
 const SHEET_HEADER_TOP = 28
+const TAB_BAR_PILL = 62
 
 export const layout = {
   /** Horizontal inset for list sections. Home's recent movements is the reference. */
@@ -81,7 +87,9 @@ export const layout = {
    * Native tabs render `UITabBar` and do not publish `BottomTabBarHeightContext`.
    * A captured `_UITabBarPlatterView` frame is 62pt tall.
    */
-  tabBarPill: 62,
+  tabBarPill: TAB_BAR_PILL,
+  /** Clearance so the last row sits above that pill. */
+  tabBarClearance: TAB_BAR_PILL + spacing.xs,
   /** Space above every in-screen segmented selector. */
   segmentedOffset: 5,
 } as const

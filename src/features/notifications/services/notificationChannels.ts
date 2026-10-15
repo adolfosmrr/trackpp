@@ -1,7 +1,7 @@
 import { Platform } from "react-native"
 import * as Notifications from "expo-notifications"
 
-export const BANK_CHARGE_CHANNEL_ID = "bank-charges"
+const BANK_CHARGE_CHANNEL_ID = "bank-charges"
 
 export async function ensureBankChargeNotificationChannel() {
   if (Platform.OS !== "android") return

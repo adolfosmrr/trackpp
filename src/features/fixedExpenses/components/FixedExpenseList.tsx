@@ -24,7 +24,7 @@ type FixedExpenseListProps = {
   ) => ReactNode
 }
 
-const EMPTY_BODY = "Sumá alquiler, servicios o suscripciones para seguirlos cada mes."
+const EMPTY_BODY = "Suma alquiler, servicios o suscripciones para seguirlos cada mes."
 
 export function FixedExpenseList({
   onCreate,
@@ -49,7 +49,7 @@ export function FixedExpenseList({
   if (expenses.length === 0) {
     return (
       <EmptyState
-        title="Todavía no tenés gastos fijos"
+        title="Todavía no tienes gastos fijos"
         body={emptyBody}
         actionLabel="Agregar gasto fijo"
         onAction={onCreate}

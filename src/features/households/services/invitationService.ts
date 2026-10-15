@@ -41,11 +41,6 @@ export async function getInvitations(): Promise<
 export async function acceptInvitation(
   invitationId: string
 ) {
-  console.log(
-    "[Invitations] Accepting invitation:",
-    invitationId
-  )
-
   return apiFetch<AcceptInvitationResponse>(
     `/invitations/${invitationId}/accept`,
     {

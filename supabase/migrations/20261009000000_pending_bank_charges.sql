@@ -112,7 +112,7 @@ declare
   v_platform text := lower(trim(coalesce(p_platform, '')));
 begin
   if v_user_id is null then
-    raise exception 'Tenés que iniciar sesión.';
+    raise exception 'Tienes que iniciar sesión.';
   end if;
 
   if v_platform not in ('ios', 'android') then
@@ -173,11 +173,11 @@ declare
   v_transaction_id uuid;
 begin
   if v_actor_id is null then
-    raise exception 'Tenés que iniciar sesión.';
+    raise exception 'Tienes que iniciar sesión.';
   end if;
 
   if p_category_id is null then
-    raise exception 'Elegí una categoría.';
+    raise exception 'Elige una categoría.';
   end if;
 
   select *
@@ -205,7 +205,7 @@ begin
   end if;
 
   if not public.is_household_member(p_household_id) then
-    raise exception 'No pertenecés a ese espacio.';
+    raise exception 'No perteneces a ese espacio.';
   end if;
 
   v_charge_currency := upper(trim(coalesce(nullif(v_charge.currency, ''), 'ARS')));
@@ -295,7 +295,7 @@ declare
   v_charge public.pending_bank_charges;
 begin
   if v_actor_id is null then
-    raise exception 'Tenés que iniciar sesión.';
+    raise exception 'Tienes que iniciar sesión.';
   end if;
 
   select *

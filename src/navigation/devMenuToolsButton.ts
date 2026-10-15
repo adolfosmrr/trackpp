@@ -17,6 +17,7 @@ const FORM_SHEET_ROUTES: ReadonlySet<string> = new Set([
   "CategoryPicker",
   "CreateHousehold",
   "CreateMovement",
+  "ImportMovements",
   "CurrencyPicker",
   "FixedExpenseSchedule",
   "HouseholdPicker",

@@ -21,11 +21,13 @@ import { GradientBackground } from "../../../components/visual/GradientBackgroun
 import type { AuthStackParamList } from "../../../navigation/types"
 import { supabase } from "../../../services/supabase"
 import { colors, layout, radii } from "../../../theme"
+import { isEmail } from "../../../utils/isEmail"
+import { formatLongDate, parseLocalDate, toLocalDateString } from "../../../utils/localDate"
 import { AuthEmailField } from "../components/AuthEmailField"
 import { PrimaryAuthButton } from "../components/PrimaryAuthButton"
 import { useAppIsActive } from "../hooks/useAppIsActive"
 import { AUTH_REDIRECT_URL } from "../services/authCallback"
-import { authErrorMessage } from "../services/authErrors"
+import { SHORT_PASSWORD_MESSAGE, authErrorMessage } from "../services/authErrors"
 
 const PRIVACY_URL = "https://adolfosmrr.github.io/trackpp/privacy.html"
 
@@ -90,7 +92,7 @@ export function SignUpScreen({ navigation }: SignUpScreenProps) {
             full_name: cleanFirstName,
             given_name: cleanFirstName,
             family_name: cleanLastName,
-            birth_date: birthDate ? toIsoDate(birthDate) : null,
+            birth_date: birthDate ? toLocalDateString(birthDate) : null,
           },
         },
       })
@@ -102,8 +104,8 @@ export function SignUpScreen({ navigation }: SignUpScreenProps) {
 
       if (!data.session) {
         Alert.alert(
-          "Revisá tu correo",
-          "Te enviamos un enlace para confirmar la cuenta. Abrilo en este dispositivo.",
+          "Revisa tu correo",
+          "Te enviamos un enlace para confirmar la cuenta. Ábrelo en este dispositivo.",
         )
       }
     } finally {
@@ -150,14 +152,14 @@ export function SignUpScreen({ navigation }: SignUpScreenProps) {
             {Platform.OS === "web" ? (
               <TextField
                 autoCapitalize="none"
-                onChangeText={(value) => setBirthDate(parseDateInput(value))}
+                onChangeText={(value) => setBirthDate(parseLocalDate(value))}
                 placeholder="Fecha de nacimiento (AAAA-MM-DD)"
-                value={birthDate ? toIsoDate(birthDate) : ""}
+                value={birthDate ? toLocalDateString(birthDate) : ""}
               />
             ) : (
               <FieldRow accessibilityLabel="Fecha de nacimiento" onPress={openBirthDate}>
                 <AppText tone={birthDate ? "default" : "muted"} variant="subtitle">
-                  {birthDate ? formatBirthDate(birthDate) : "Fecha de nacimiento"}
+                  {birthDate ? formatLongDate(birthDate) : "Fecha de nacimiento"}
                 </AppText>
               </FieldRow>
             )}
@@ -209,7 +211,7 @@ export function SignUpScreen({ navigation }: SignUpScreenProps) {
             }}
           />
           <AppText style={styles.policies} tone="muted" variant="caption">
-            Al crear la cuenta aceptás nuestras{" "}
+            Al crear la cuenta aceptas nuestras{" "}
             <AppText
               accessibilityRole="link"
               onPress={() => {
@@ -248,39 +250,15 @@ function registerProblem(input: {
   birthDate: Date | null
 }) {
   const email = input.email.trim().toLowerCase()
-  if (!input.firstName.trim()) return "Escribí tu nombre."
-  if (!input.lastName.trim()) return "Escribí tu apellido."
-  if (!input.birthDate) return "Elegí tu fecha de nacimiento."
-  if (!email) return "Escribí tu correo."
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return "El correo no es válido."
-  if (!input.password) return "Escribí una contraseña."
-  if (input.password.length < 6) return "La contraseña es demasiado corta. Usá al menos 6 caracteres."
+  if (!input.firstName.trim()) return "Escribe tu nombre."
+  if (!input.lastName.trim()) return "Escribe tu apellido."
+  if (!input.birthDate) return "Elige tu fecha de nacimiento."
+  if (!email) return "Escribe tu correo."
+  if (!isEmail(email)) return "El correo no es válido."
+  if (!input.password) return "Escribe una contraseña."
+  if (input.password.length < 6) return SHORT_PASSWORD_MESSAGE
   if (input.password !== input.repeatPassword) return "Las contraseñas no coinciden."
   return null
-}
-
-function toIsoDate(value: Date) {
-  const month = String(value.getMonth() + 1).padStart(2, "0")
-  const day = String(value.getDate()).padStart(2, "0")
-  return `${value.getFullYear()}-${month}-${day}`
-}
-
-function formatBirthDate(value: Date) {
-  return new Intl.DateTimeFormat("es-AR", {
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-  }).format(value)
-}
-
-function parseDateInput(value: string) {
-  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value)
-  if (!match) return null
-  const year = Number(match[1])
-  const month = Number(match[2])
-  const day = Number(match[3])
-  if (!Number.isInteger(year) || month < 1 || month > 12 || day < 1 || day > 31) return null
-  return new Date(year, month - 1, day)
 }
 
 const styles = StyleSheet.create({

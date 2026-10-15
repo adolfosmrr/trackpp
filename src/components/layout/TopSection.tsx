@@ -21,7 +21,7 @@ type TopSectionProps = {
     overlay?: boolean
 }
 
-export type TopSectionMode = "interactive" | "collapsed"
+type TopSectionMode = "interactive" | "collapsed"
 
 export function TopSection({
     children,

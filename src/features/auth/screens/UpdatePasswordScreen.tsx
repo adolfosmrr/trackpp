@@ -6,7 +6,7 @@ import { AppText } from "../../../components/text/AppText"
 import { supabase } from "../../../services/supabase"
 import { colors, layout, typography } from "../../../theme"
 import { PrimaryAuthButton } from "../components/PrimaryAuthButton"
-import { authErrorMessage } from "../services/authErrors"
+import { SHORT_PASSWORD_MESSAGE, authErrorMessage } from "../services/authErrors"
 
 type UpdatePasswordScreenProps = {
   onDone: () => void
@@ -19,7 +19,7 @@ export function UpdatePasswordScreen({ onDone }: UpdatePasswordScreenProps) {
 
   async function save() {
     if (password.length < 6) {
-      Alert.alert("Error", "La contraseña es demasiado corta. Usá al menos 6 caracteres.")
+      Alert.alert("Error", SHORT_PASSWORD_MESSAGE)
       return
     }
     if (password !== repeatPassword) {
@@ -42,7 +42,7 @@ export function UpdatePasswordScreen({ onDone }: UpdatePasswordScreenProps) {
 
   return (
     <View style={styles.container}>
-      <AppText style={styles.title}>Elegí una contraseña nueva</AppText>
+      <AppText style={styles.title}>Elige una contraseña nueva</AppText>
       <TextField
         onChangeText={setPassword}
         placeholder="Contraseña nueva"

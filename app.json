@@ -35,6 +35,14 @@
       "expo-font",
       "expo-asset",
       [
+        "expo-image-picker",
+        {
+          "photosPermission": "Trackpp usa las capturas que elijas para cargar movimientos.",
+          "cameraPermission": false,
+          "microphonePermission": false
+        }
+      ],
+      [
         "expo-splash-screen",
         {
           "backgroundColor": "#000000",

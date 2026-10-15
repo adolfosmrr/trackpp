@@ -20,14 +20,14 @@ export function PendingChargesBanner({ onPress }: PendingChargesBannerProps) {
   }
 
   const title = count === 1
-    ? "Tenés un gasto de tarjeta para cargar"
-    : `Tenés ${count} gastos de tarjeta para cargar`
+    ? "Tienes un gasto de tarjeta para cargar"
+    : `Tienes ${count} gastos de tarjeta para cargar`
 
   return (
     <ListSection>
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel={`${title}. Elegí el espacio y la categoría.`}
+      accessibilityLabel={`${title}. Elige el espacio y la categoría.`}
       onPress={onPress}
       style={styles.card}
     >
@@ -36,7 +36,7 @@ export function PendingChargesBanner({ onPress }: PendingChargesBannerProps) {
       </View>
       <View style={styles.copy}>
         <AppText variant="subtitle">{title}</AppText>
-        <AppText tone="muted" variant="caption">Elegí el espacio y la categoría</AppText>
+        <AppText tone="muted" variant="caption">Elige el espacio y la categoría</AppText>
       </View>
     </Pressable>
     </ListSection>

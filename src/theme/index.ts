@@ -6,7 +6,6 @@ export {
   layout,
   radii,
   refreshControlColors,
-  spacing,
   typography,
 } from "./tokens"
 export type { GradientName, GradientPalette } from "./tokens"

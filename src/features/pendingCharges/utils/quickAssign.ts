@@ -38,7 +38,7 @@ export async function assignChargeToPersonal(input: {
 }) {
   const personal = findPersonalHousehold(input.memberships, input.selectedHouseholdId)
   if (!personal) {
-    throw new Error("No tenés un espacio Personal.")
+    throw new Error("No tienes un espacio Personal.")
   }
   if (!currenciesMatch(personal.household.currency, input.charge.currency)) {
     throw new Error("La moneda no coincide con tu espacio Personal.")

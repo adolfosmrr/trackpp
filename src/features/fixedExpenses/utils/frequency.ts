@@ -1,3 +1,5 @@
+import { parseLocalDate } from "../../../utils/localDate"
+
 export type FixedExpenseFrequency =
   | "monthly"
   | "bimonthly"
@@ -47,9 +49,9 @@ export function autoDebitSourceLabel(source: AutoDebitSource) {
 }
 
 export function formatPeriodLabel(period: string) {
-  const match = /^(\d{4})-(\d{2})-\d{2}/.exec(period)
-  if (!match) return period
-  const date = new Date(Number(match[1]), Number(match[2]) - 1, 1)
+  const parsed = parseLocalDate(period)
+  if (!parsed) return period
+  const date = new Date(parsed.getFullYear(), parsed.getMonth(), 1)
   const label = new Intl.DateTimeFormat("es-AR", {
     month: "long",
     year: "numeric",
