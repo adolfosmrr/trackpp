@@ -1,10 +1,16 @@
 import type { NavigatorScreenParams } from "@react-navigation/native"
 
 import type { BudgetSheetRequest } from "../features/budgets/types"
-import type { TransactionFilters, TransactionSheetRequest } from "../features/transactions/types"
+import type {
+  LinkedTransactionTarget,
+  ScreenshotMovement,
+  TransactionFilters,
+  TransactionSheetRequest,
+} from "../features/transactions/types"
 
 export type AuthStackParamList = {
   Auth: undefined
+  SignUp: undefined
 }
 
 export type MainTabsParamList = {
@@ -28,13 +34,29 @@ export type HouseholdSelection = {
   householdIds: string[]
 }
 
+type FixedExpenseScheduleSelection = {
+  token: string
+  startsOn: string | null
+  endsOn: string | null
+  startReminderDays: number[]
+}
+
+type ImportMovementsParams = {
+  entryType: "expense" | "income"
+  householdId: string
+  targets: LinkedTransactionTarget[]
+  items: ScreenshotMovement[]
+  duplicates: ScreenshotMovement[]
+}
+
 export type CreateMovementParams = {
   request?: TransactionSheetRequest
   categorySelection?: CategorySelection
   householdSelection?: HouseholdSelection
+  scheduleSelection?: FixedExpenseScheduleSelection
 }
 
-export type CategoryPickerParams =
+type CategoryPickerParams =
   | {
       returnTo: "CreateMovement"
       householdId: string
@@ -58,12 +80,13 @@ export type CategoryPickerParams =
       selectedCategoryId: string | null
     }
 
-export type HouseholdPickerParams =
+type HouseholdPickerParams =
   | {
       returnTo: "CreateMovement"
       selectedHouseholdIds: string[]
       selectionMode: "multiple"
       title: string
+      createdHouseholdId?: string
     }
   | {
       returnTo: "PendingCharge"
@@ -71,14 +94,15 @@ export type HouseholdPickerParams =
       selectedHouseholdIds: string[]
       selectionMode: "single"
       title: string
+      createdHouseholdId?: string
     }
 
-export type BudgetEditorParams = {
+type BudgetEditorParams = {
   request?: BudgetSheetRequest
   categorySelection?: CategorySelection
 }
 
-export type CurrencySelection = {
+type CurrencySelection = {
   token: string
   code: string
   country: string
@@ -87,7 +111,16 @@ export type CurrencySelection = {
 
 export type AppStackParamList = {
   Main: NavigatorScreenParams<MainTabsParamList> | undefined
-  CreateHousehold: { currencySelection?: CurrencySelection } | undefined
+  CreateHousehold: {
+    currencySelection?: CurrencySelection
+    returnToHouseholdPicker?: boolean
+    householdPicker?: HouseholdPickerParams
+  } | undefined
+  FixedExpenseSchedule: {
+    startsOn: string | null
+    endsOn: string | null
+    startReminderDays: number[]
+  }
   CurrencyPicker: { selectedCode: string; selectedCountry: string }
   InviteMember: undefined
   Invitations: undefined
@@ -102,6 +135,7 @@ export type AppStackParamList = {
     householdSelection?: HouseholdSelection
   }
   CreateMovement: CreateMovementParams
+  ImportMovements: ImportMovementsParams
   CategoryPicker: CategoryPickerParams
   HouseholdPicker: HouseholdPickerParams
   TransactionFilters: { filters: TransactionFilters }

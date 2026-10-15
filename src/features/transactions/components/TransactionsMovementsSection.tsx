@@ -38,7 +38,7 @@ export function TransactionsMovementsSection({
   onOpenFilters,
 }: TransactionsMovementsSectionProps) {
   const insets = useSafeAreaInsets()
-  const bottomPadding = Math.max(insets.bottom, 0) + 66
+  const bottomPadding = Math.max(insets.bottom, 0) + layout.tabBarClearance
   const filteredTransactions = useMemo(
     () => filterAndSortTransactions(transactions, filters),
     [transactions, filters]
@@ -87,14 +87,14 @@ export function TransactionsMovementsSection({
           ) : transactions.length && !hasFilteredResults ? (
             <EmptyState
               title="Nada coincide con estos filtros"
-              body="Probá con otro período o limpiá los filtros para ver todos los movimientos."
+              body="Prueba con otro período o limpia los filtros para ver todos los movimientos."
               actionLabel="Limpiar filtros"
               onAction={onClearFilters}
             />
           ) : (
             <EmptyState
               title="Todavía no cargaste movimientos"
-              body="Anotá un gasto, un ingreso o un gasto fijo desde el botón + Movimiento."
+              body="Anota un gasto, un ingreso o un gasto fijo desde el botón + Movimiento."
               actionLabel="Agregar movimiento"
               onAction={onCreate}
             />
@@ -107,10 +107,6 @@ export function TransactionsMovementsSection({
 
 const styles = StyleSheet.create({
   section: {
-    backgroundColor: colors.transparent,
-    borderTopColor: colors.border,
-    borderTopWidth: 1,
-    marginHorizontal: 0,
     marginTop: layout.belowTopSection,
   },
   transactionGroups: {
@@ -128,11 +124,5 @@ const styles = StyleSheet.create({
     fontSize: 12,
     lineHeight: 16,
     marginBottom: 10,
-  },
-  empty: {
-    color: colors.mutedForeground,
-    fontFamily: fonts.sans,
-    marginTop: 40,
-    textAlign: "center",
   },
 })

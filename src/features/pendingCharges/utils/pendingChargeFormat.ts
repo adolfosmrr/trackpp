@@ -1,8 +1,8 @@
-import { formatMoney } from "../../../utils/formatMoney"
-
+import { currencyCode } from "../../../utils/formatMoney"
+import { parseLocalDate } from "../../../utils/localDate"
 import type { BankChargeSource, PendingBankCharge } from "../types"
 
-export function sourceLabel(source: BankChargeSource) {
+function sourceLabel(source: BankChargeSource) {
   switch (source) {
     case "naranja":
       return "Naranja"
@@ -24,22 +24,18 @@ export function chargeTitle(charge: Pick<PendingBankCharge, "merchant">) {
   return charge.merchant?.trim() || "Gasto con tarjeta"
 }
 
-export function formatChargeAmount(amount: number, currency = "ARS") {
-  return formatMoney(amount, currency)
-}
-
 export function formatChargeDate(value: string | null) {
   if (!value) return null
-  const match = /^(\d{4})-(\d{2})-(\d{2})/.exec(value)
-  if (!match) return value
-  return `${match[3]}/${match[2]}/${match[1]}`
+  const parsed = parseLocalDate(value)
+  if (!parsed) return value
+  const day = String(parsed.getDate()).padStart(2, "0")
+  const month = String(parsed.getMonth() + 1).padStart(2, "0")
+  return `${day}/${month}/${parsed.getFullYear()}`
 }
 
 export function currenciesMatch(
   householdCurrency: string | null | undefined,
   chargeCurrency: string,
 ) {
-  const household = (householdCurrency || "ARS").trim().toUpperCase()
-  const charge = (chargeCurrency || "ARS").trim().toUpperCase()
-  return household === charge
+  return currencyCode(householdCurrency) === currencyCode(chargeCurrency)
 }

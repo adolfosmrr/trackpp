@@ -2,18 +2,19 @@ import { Pressable, StyleSheet, Text } from "react-native"
 import { colors, fonts, radii } from "../../../theme"
 
 import { MatrixTextMorph } from "../../../components/text/MatrixTextMorph"
+import { authTabMotion } from "../authTabMotion"
 
 type PrimaryAuthButtonProps = {
   label: string
-  loading: boolean
-  loadingLabel: string
+  loading?: boolean
+  loadingLabel?: string
   disabled?: boolean
   onPress: () => void
 }
 
 export function PrimaryAuthButton({
   label,
-  loading,
+  loading = false,
   loadingLabel,
   disabled = false,
   onPress,
@@ -25,11 +26,11 @@ export function PrimaryAuthButton({
       disabled={loading || disabled}
     >
       {loading ? (
-        <Text style={styles.buttonText}>{loadingLabel}</Text>
+        <Text style={styles.buttonText}>{loadingLabel ?? label}</Text>
       ) : (
         <MatrixTextMorph
           text={label}
-          stepDuration={30}
+          stepDuration={authTabMotion.labelStep}
           style={styles.buttonText}
         />
       )}

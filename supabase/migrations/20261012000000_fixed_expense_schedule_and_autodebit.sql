@@ -471,7 +471,7 @@ begin
   end if;
 
   if p_period > (date_trunc('month', current_date)::date + interval '24 months')::date then
-    raise exception 'Elegí un período más cercano.';
+    raise exception 'Elige un período más cercano.';
   end if;
 
   insert into public.fixed_expense_amount_changes (
@@ -585,7 +585,7 @@ begin
   if v_auto_debit then
     if v_auto_debit_source is null
        or v_auto_debit_source not in ('naranja', 'galicia', 'other') then
-      raise exception 'Elegí la tarjeta del débito automático.';
+      raise exception 'Elige la tarjeta del débito automático.';
     end if;
   else
     v_auto_debit_source := null;
@@ -774,7 +774,7 @@ begin
   if v_auto_debit then
     if v_auto_debit_source is null
        or v_auto_debit_source not in ('naranja', 'galicia', 'other') then
-      raise exception 'Elegí la tarjeta del débito automático.';
+      raise exception 'Elige la tarjeta del débito automático.';
     end if;
   else
     v_auto_debit_source := null;
@@ -1217,7 +1217,7 @@ declare
   v_paid numeric;
 begin
   if v_actor_id is null then
-    raise exception 'Tenés que iniciar sesión.';
+    raise exception 'Tienes que iniciar sesión.';
   end if;
 
   select *
@@ -1276,7 +1276,7 @@ declare
   v_transaction_id uuid;
 begin
   if v_actor_id is null then
-    raise exception 'Tenés que iniciar sesión.';
+    raise exception 'Tienes que iniciar sesión.';
   end if;
 
   select *
@@ -1305,7 +1305,7 @@ begin
   end if;
 
   if not public.is_household_member(v_period.household_id) then
-    raise exception 'No pertenecés a ese espacio.';
+    raise exception 'No perteneces a ese espacio.';
   end if;
 
   if not public.pending_charge_matches_period(v_charge, v_period.id) then

@@ -43,10 +43,8 @@ export function MainTabsNavigator() {
             screenOptions={{
                 headerShown: false,
                 tabBarActiveTintColor: colors.brand,
-                tabBarInactiveTintColor: colors.mutedForeground,
-                tabBarStyle: {
-                    backgroundColor: colors.background,
-                },
+                tabBarInactiveTintColor: "#FFFFFF",
+                tabBarBlurEffect: "systemDefault",
             }}
         >
             <Tab.Screen

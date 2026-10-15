@@ -1,10 +1,14 @@
-import type { NativeSyntheticEvent } from "react-native"
+import { Platform, StyleSheet, View, type NativeSyntheticEvent } from "react-native"
 import SegmentedControl, {
   type FontStyle,
   type NativeSegmentedControlIOSChangeEvent,
 } from "@react-native-segmented-control/segmented-control"
+import { GlassView, isGlassEffectAPIAvailable, isLiquidGlassAvailable } from "expo-glass-effect"
 
-import { colors, fonts, layout } from "../../theme"
+import { colors, fonts, layout, radii } from "../../theme"
+
+const trackBlurEnabled =
+  Platform.OS === "ios" && isLiquidGlassAvailable() && isGlassEffectAPIAvailable()
 
 type SegmentedToggleOption<T extends string> = {
   value: T
@@ -49,16 +53,45 @@ export function SegmentedToggle<T extends string>({
     onChange(option.value)
   }
 
-  return (
+  const control = (
     <SegmentedControl
       activeFontStyle={selectedSegmentFont}
       appearance="dark"
+      {...(trackBlurEnabled ? { backgroundColor: colors.transparent } : null)}
       fontStyle={segmentFont}
       onChange={handleChange}
       selectedIndex={selectedIndex}
-      style={{ height: layout.tabBarPill, width }}
+      style={styles.control}
       tintColor={colors.brand}
       values={options.map((option) => option.label)}
     />
   )
+
+  return (
+    <View style={[styles.shift, { width }]}>
+      {trackBlurEnabled ? (
+        <GlassView colorScheme="dark" glassEffectStyle="regular" style={styles.track}>
+          {control}
+        </GlassView>
+      ) : (
+        control
+      )}
+    </View>
+  )
 }
+
+const styles = StyleSheet.create({
+  shift: {
+    marginTop: layout.segmentedOffset,
+  },
+  track: {
+    borderRadius: radii.pill,
+    height: layout.tabBarPill,
+    overflow: "hidden",
+    width: "100%",
+  },
+  control: {
+    height: layout.tabBarPill,
+    width: "100%",
+  },
+})

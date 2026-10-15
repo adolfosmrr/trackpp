@@ -53,7 +53,7 @@ export function FixedExpenseHistoryScreen({
     if (!history || !selectedPeriod || recordAmount.isPending) return
     const parsedAmount = Number(amount.replace(",", "."))
     if (!Number.isFinite(parsedAmount) || parsedAmount <= 0) {
-      Alert.alert("Monto", "Escribí un monto mayor a cero.")
+      Alert.alert("Monto", "Escribe un monto mayor a cero.")
       return
     }
 
@@ -68,7 +68,7 @@ export function FixedExpenseHistoryScreen({
     } catch (error) {
       Alert.alert(
         "No se pudo ajustar el monto",
-        error instanceof Error ? error.message : "Probá de nuevo en un momento.",
+        error instanceof Error ? error.message : "Prueba de nuevo en un momento.",
       )
     }
   }

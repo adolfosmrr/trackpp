@@ -94,7 +94,7 @@ function getActivityTransaction(item: ActivityItemData) {
   }
 }
 
-export function getActivityMessage(
+function getActivityMessage(
   item: ActivityItemData,
   currentUserId: string | undefined,
   format: (amount: number) => string,

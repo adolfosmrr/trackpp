@@ -59,7 +59,7 @@ export function TransactionFiltersScreen({ navigation, route }: TransactionFilte
   }
 
   function apply() {
-    navigation.navigate("Main", {
+    navigation.popTo("Main", {
       screen: "Transactions",
       params: {
         appliedFilters: {
@@ -67,7 +67,7 @@ export function TransactionFiltersScreen({ navigation, route }: TransactionFilte
           creatorId: householdType === "couple" ? filters.creatorId : null,
         },
       },
-    })
+    }, { merge: true })
   }
 
   return (

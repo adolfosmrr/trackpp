@@ -1,0 +1,130 @@
+diff --git a/ios/tabs/RNSTabBarAppearanceCoordinator.h b/ios/tabs/RNSTabBarAppearanceCoordinator.h
+index a473c848b762527e5248a97f8a32f5886333c48c..5e8c9846dd94ac433addb07ff583cce4cc1510fa 100644
+--- a/ios/tabs/RNSTabBarAppearanceCoordinator.h
++++ b/ios/tabs/RNSTabBarAppearanceCoordinator.h
+@@ -31,6 +31,13 @@ NS_ASSUME_NONNULL_BEGIN
+            withHostComponentView:(nullable RNSTabsHostComponentView *)hostComponentView
+             tabScreenControllers:(nullable NSArray<RNSTabsScreenViewController *> *)tabScreenCtrls
+                      imageLoader:(nullable RCTImageLoader *)imageLoader;
++
++/**
++ * Re-applies the iOS 26 unselected-symbol color if UIKit replaced the image during layout.
++ * No-op when the unselected image is already AlwaysOriginal.
++ */
++- (void)rebakeUnselectedSymbolsForTabScreenControllers:
++    (nullable NSArray<RNSTabsScreenViewController *> *)tabScreenCtrls;
+ #endif // defined(__cplusplus)
+ 
+ /**
+diff --git a/ios/tabs/RNSTabBarAppearanceCoordinator.mm b/ios/tabs/RNSTabBarAppearanceCoordinator.mm
+index fee81a8fa60e462050bc6019ffb2fa376c10b4b6..3e008c6de3143ebf795db2b43f0562aca1ba57fd 100644
+--- a/ios/tabs/RNSTabBarAppearanceCoordinator.mm
++++ b/ios/tabs/RNSTabBarAppearanceCoordinator.mm
+@@ -8,6 +8,26 @@
+ #import "RNSTabsHostComponentView.h"
+ #import "RNSTabsScreenViewController.h"
+ 
++// iOS 26 liquid glass ignores normal.iconColor on template SF Symbols.
++// A pre-tinted AlwaysOriginal image keeps the requested color. The selected
++// image stays a template so tabBar.tintColor still paints the active tab.
++static UIImage *_Nullable RNSUnselectedTabSymbolImage(NSString *name, UITabBarItem *tabBarItem)
++{
++  UIImage *symbol = [UIImage systemImageNamed:name];
++  if (symbol == nil) {
++    return nil;
++  }
++
++  if (@available(iOS 26.0, *)) {
++    UIColor *iconColor = tabBarItem.standardAppearance.stackedLayoutAppearance.normal.iconColor;
++    if (iconColor != nil) {
++      return [symbol imageWithTintColor:iconColor renderingMode:UIImageRenderingModeAlwaysOriginal];
++    }
++  }
++
++  return symbol;
++}
++
+ @implementation RNSTabBarAppearanceCoordinator
+ 
+ - (void)updateAppearanceOfTabBar:(nullable UITabBar *)tabBar
+@@ -42,6 +62,35 @@
+   }
+ }
+ 
++- (void)rebakeUnselectedSymbolsForTabScreenControllers:
++    (nullable NSArray<RNSTabsScreenViewController *> *)tabScreenCtrls
++{
++  if (tabScreenCtrls == nil) {
++    return;
++  }
++
++  for (RNSTabsScreenViewController *tabScreenCtrl in tabScreenCtrls) {
++    if (tabScreenCtrl == nil) {
++      continue;
++    }
++
++    RNSTabsScreenComponentView *screenView = tabScreenCtrl.tabScreenComponentView;
++    if (screenView.iconType != RNSTabsIconTypeSfSymbol || screenView.iconResourceName == nil) {
++      continue;
++    }
++
++    UITabBarItem *tabBarItem = tabScreenCtrl.tabBarItem;
++    if (tabBarItem.image.renderingMode == UIImageRenderingModeAlwaysOriginal) {
++      continue;
++    }
++
++    UIImage *image = RNSUnselectedTabSymbolImage(screenView.iconResourceName, tabBarItem);
++    if (image != nil && image.renderingMode == UIImageRenderingModeAlwaysOriginal) {
++      tabBarItem.image = image;
++    }
++  }
++}
++
+ - (void)configureTabBarItemForTabScreenController:(nonnull RNSTabsScreenViewController *)tabScreenCtrl
+                                       imageLoader:(nullable RCTImageLoader *)imageLoader
+ {
+@@ -62,7 +111,7 @@
+   if (screenView.iconType == RNSTabsIconTypeSfSymbol || screenView.iconType == RNSTabsIconTypeXcasset) {
+     if (screenView.iconResourceName != nil) {
+       if (screenView.iconType == RNSTabsIconTypeSfSymbol) {
+-        tabBarItem.image = [UIImage systemImageNamed:screenView.iconResourceName];
++        tabBarItem.image = RNSUnselectedTabSymbolImage(screenView.iconResourceName, tabBarItem);
+       } else {
+         tabBarItem.image = [UIImage imageNamed:screenView.iconResourceName];
+       }
+diff --git a/ios/tabs/host/RNSTabBarController.mm b/ios/tabs/host/RNSTabBarController.mm
+index 481a9e6d5367ff6cad083b001d8b1dd780918b47..298b9d75d9916f7c38aca9609900668f45a4d9b9 100644
+--- a/ios/tabs/host/RNSTabBarController.mm
++++ b/ios/tabs/host/RNSTabBarController.mm
+@@ -86,6 +86,8 @@ static void rns_pushViewController(__unsafe_unretained id self,
+   /// delegate handling). Setter overrides skip reconciliation while this flag is set.
+   BOOL _isHandlingExplicitSelectionUpdate;
+ 
++  BOOL _isRebakingUnselectedSymbols;
++
+   RNSTabsNavigationStateObserverRegistry *_observerRegistry;
+ 
+   RNSParentContainerItemRegistry *_Nonnull _parentContainerRegistry;
+@@ -594,6 +596,22 @@ static void rns_pushViewController(__unsafe_unretained id self,
+   }
+ }
+ 
++- (void)viewDidLayoutSubviews
++{
++  [super viewDidLayoutSubviews];
++
++  // UIKit can replace tab images during layout on iOS 26. Re-bake only when the
++  // unselected symbol is no longer AlwaysOriginal, and ignore the layout that
++  // assigning the image itself schedules.
++  if (_isRebakingUnselectedSymbols || _tabScreenControllers == nil) {
++    return;
++  }
++
++  _isRebakingUnselectedSymbols = YES;
++  [_tabBarAppearanceCoordinator rebakeUnselectedSymbolsForTabScreenControllers:_tabScreenControllers];
++  _isRebakingUnselectedSymbols = NO;
++}
++
+ - (void)updateTabBarAppearanceIfNeeded
+ {
+   if (_needsUpdateOfTabBarAppearance) {

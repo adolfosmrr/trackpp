@@ -64,7 +64,6 @@ export function HomeAiSection() {
               <HomeInsightCard
                 actionDetails={actionDetailsQuery.actionDetails}
                 insight={narrative}
-                variant="card"
               />
             ) : null}
           </View>

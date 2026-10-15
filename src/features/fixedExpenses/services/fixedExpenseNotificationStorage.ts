@@ -1,12 +1,17 @@
 import AsyncStorage from "@react-native-async-storage/async-storage"
 
 export type FixedExpenseNotificationType =
+  | "charge_in_7_days"
   | "charge_in_5_days"
+  | "charge_in_3_days"
   | "charge_tomorrow"
   | "charge_today"
   | "due_in_3_days"
   | "due_tomorrow"
   | "due_today"
+  | "start_in_7_days"
+  | "start_in_3_days"
+  | "start_in_1_day"
 
 export type ScheduledFixedExpenseNotification = {
   notificationId: string

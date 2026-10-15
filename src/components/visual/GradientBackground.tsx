@@ -1,6 +1,5 @@
-import { memo, useEffect, useMemo, useState, type ComponentProps } from "react"
+import { memo, useMemo, useState, type ComponentProps } from "react"
 import {
-  AccessibilityInfo,
   StyleSheet,
   View,
   type LayoutChangeEvent,
@@ -24,7 +23,8 @@ import {
   useSharedValue,
 } from "react-native-reanimated"
 
-import { gradients, type GradientName, type GradientPalette } from "../../theme"
+import { useReduceMotion } from "../../hooks/useReduceMotion"
+import { colors, dotOpacity, gradients, type GradientName, type GradientPalette } from "../../theme"
 
 type GradientBackgroundProps = {
   token?: GradientName
@@ -56,9 +56,28 @@ type FieldProps = {
   style?: StyleProp<ViewStyle>
 }
 
+function hexToRgba(value: string): [number, number, number, number] {
+  const hex = value.replace("#", "")
+  const parsed = Number.parseInt(hex, 16)
+
+  if (!Number.isFinite(parsed) || hex.length !== 6) {
+    return [0, 0, 0, 1]
+  }
+
+  return [
+    ((parsed >> 16) & 255) / 255,
+    ((parsed >> 8) & 255) / 255,
+    (parsed & 255) / 255,
+    1,
+  ]
+}
+
 const DOT_RADIUS = 1.15
-// Same ink as colors.gridLine, a little stronger so a small dot still reads.
-const DOT_COLOR: DotField["color"] = [237 / 255, 239 / 255, 238 / 255, 0.2]
+// Black resting dots. Alpha is dotOpacity, the only opacity on the ink.
+const DOT_COLOR: DotField["color"] = [0, 0, 0, dotOpacity]
+// mix(0.2, 1, 1) * 0.7. Ceiling of the pulse, not a second scale on the rest.
+const DOT_PULSE_PEAK = 0.7
+const BRAND_INK = hexToRgba(colors.brand)
 const NO_DOTS: DotField = { spacing: 0, radius: 0, color: [0, 0, 0, 0] }
 
 const DRIFT_SPEED = 0.2
@@ -155,60 +174,22 @@ half4 main(float2 fragCoord) {
   if (dotMotion > 0.5) {
     // energy 0 keeps the static dot (radius, edge, ink, alpha) computed above.
     // A 0.3x floor made outer coverage smaller than a pixel and swapped in a
-    // dark green, so dots between patches vanished. The pulse peak is unchanged.
+    // dark green, so dots between patches vanished. Radius still grows to the
+    // full pulse. Alpha must keep sweeping: a constant alpha parks the field.
+    // The ceiling is the old composite peak, mix(0.2, 1, 1) * 0.7.
     float energy = dotEnergy(uv, aspect);
     float pulseRadius = dotRadius * 1.8;
     float pulseEdge = 1.4;
     inner = mix(inner, max(pulseRadius - pulseEdge, 0.0), energy);
     outer = mix(outer, pulseRadius + pulseEdge, energy);
-    ink = mix(ink, float3(0.243137, 0.811765, 0.556863), energy);
-    inkAlpha = mix(inkAlpha, 1.0, energy);
+    ink = mix(ink, float3(${BRAND_INK[0]}, ${BRAND_INK[1]}, ${BRAND_INK[2]}), energy);
+    inkAlpha = mix(inkAlpha, ${DOT_PULSE_PEAK}, energy);
   }
   float dotMask = (1.0 - smoothstep(inner, outer, gridDist)) * step(0.5, dotSpacing);
   col = mix(col, ink, dotMask * inkAlpha);
   return half4(col, 1.0);
 }
 `)
-
-function hexToRgba(value: string): [number, number, number, number] {
-  const hex = value.replace("#", "")
-  const parsed = Number.parseInt(hex, 16)
-
-  if (!Number.isFinite(parsed) || hex.length !== 6) {
-    return [0, 0, 0, 1]
-  }
-
-  return [
-    ((parsed >> 16) & 255) / 255,
-    ((parsed >> 8) & 255) / 255,
-    (parsed & 255) / 255,
-    1,
-  ]
-}
-
-function usePrefersReducedMotion() {
-  const [reduceMotion, setReduceMotion] = useState(false)
-
-  useEffect(() => {
-    let mounted = true
-
-    void AccessibilityInfo.isReduceMotionEnabled().then((enabled) => {
-      if (mounted) setReduceMotion(enabled === true)
-    })
-
-    const subscription = AccessibilityInfo.addEventListener(
-      "reduceMotionChanged",
-      (enabled) => setReduceMotion(enabled === true)
-    )
-
-    return () => {
-      mounted = false
-      subscription.remove()
-    }
-  }, [])
-
-  return reduceMotion
-}
 
 function useFieldSize() {
   const [size, setSize] = useState({ width: 1, height: 1 })
@@ -365,7 +346,7 @@ const AnimatedGradient = memo(function AnimatedGradient({
 }: FieldProps) {
   const { width, height, onLayout } = useFieldSize()
   const colors = usePaletteColors(palette)
-  const reduceMotion = usePrefersReducedMotion()
+  const reduceMotion = useReduceMotion()
   const time = useSharedValue(0)
   const motionEnabled = !reduceMotion
 
@@ -444,7 +425,7 @@ const PulsingGradient = memo(function PulsingGradient({
 })
 
 function MotionDots(props: FieldProps) {
-  const reduceMotion = usePrefersReducedMotion()
+  const reduceMotion = useReduceMotion()
   if (reduceMotion) return <StaticGradient {...props} />
   return <PulsingGradient {...props} />
 }
@@ -486,5 +467,3 @@ const styles = StyleSheet.create({
     overflow: "hidden",
   },
 })
-
-export type { GradientBackgroundProps }

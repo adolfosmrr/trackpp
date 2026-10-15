@@ -5,8 +5,8 @@ import { useFormatMoney } from "../../households/hooks/useFormatMoney"
 import { colors, fonts, radii } from "../../../theme"
 import type { Transaction, TransactionCategory } from "../types"
 
-export type TransactionCardContext = "home" | "transactions"
-export type TransactionCardHouseholdType = "personal" | "couple"
+type TransactionCardContext = "home" | "transactions"
+type TransactionCardHouseholdType = "personal" | "couple"
 
 type TransactionCardTransaction = Pick<
   Transaction,

@@ -42,10 +42,22 @@ export function CreateHouseholdScreen({ navigation, route }: CreateHouseholdScre
     navigation.setParams({ currencySelection: undefined })
   }, [navigation, route.params?.currencySelection])
 
+  function finishCreatedHousehold(householdId: string) {
+    const pickerParams = route.params?.householdPicker
+    if (route.params?.returnToHouseholdPicker && pickerParams) {
+      navigation.popTo("HouseholdPicker", {
+        ...pickerParams,
+        createdHouseholdId: householdId,
+      }, { merge: true })
+      return
+    }
+    navigation.goBack()
+  }
+
   async function handleCreate() {
     const cleanName = name.trim()
     if (!cleanName) {
-      Alert.alert("Error", "Escribí un nombre para el espacio.")
+      Alert.alert("Error", "Escribe un nombre para el espacio.")
       return
     }
 
@@ -57,7 +69,11 @@ export function CreateHouseholdScreen({ navigation, route }: CreateHouseholdScre
         type: kind,
         currency: currency.code,
       })
-      setSelectedHouseholdId(household.id)
+      const pickerParams = route.params?.householdPicker
+      const returnToPicker = route.params?.returnToHouseholdPicker === true && pickerParams
+      if (!returnToPicker) {
+        setSelectedHouseholdId(household.id)
+      }
 
       if (kind === "couple" && email) {
         try {
@@ -68,14 +84,14 @@ export function CreateHouseholdScreen({ navigation, route }: CreateHouseholdScre
             : "No se pudo enviar la invitación."
           Alert.alert(
             "Espacio creado",
-            `${message} Podés invitar desde el perfil.`,
+            `${message} Puedes invitar desde el perfil.`,
           )
-          navigation.goBack()
+          finishCreatedHousehold(household.id)
           return
         }
       }
 
-      navigation.goBack()
+      finishCreatedHousehold(household.id)
     } catch (error) {
       const message = error instanceof Error
         ? error.message
@@ -124,7 +140,7 @@ export function CreateHouseholdScreen({ navigation, route }: CreateHouseholdScre
           <View style={styles.section}>
             <AppText variant="sectionTitle">Invitar ahora</AppText>
             <AppText tone="muted" variant="caption">
-              Opcional. Si lo dejás vacío, podés invitar a otras personas más tarde desde Perfil.
+              Opcional. Si lo dejas vacío, puedes invitar a otras personas más tarde desde Perfil.
             </AppText>
             <TextField
               autoCapitalize="none"

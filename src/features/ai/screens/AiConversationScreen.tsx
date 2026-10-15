@@ -30,7 +30,8 @@ import { useHouseholdStore } from "../../../store/householdStore"
 import { fieldStyles } from "../../../components/inputs/TextField"
 import { GradientBackground } from "../../../components/visual/GradientBackground"
 import { THINKING_PLACEHOLDER, useFinancialChat } from "../hooks/useFinancialChat"
-import { useReduceMotion, useTypewriter } from "../hooks/useTypewriter"
+import { useReduceMotion } from "../../../hooks/useReduceMotion"
+import { useTypewriter } from "../hooks/useTypewriter"
 import type { AiMessage } from "../types"
 import { GlassButton } from "../../../components/buttons/GlassButton"
 import { BackLink } from "../../../components/navigation/BackLink"
@@ -296,7 +297,7 @@ const styles = StyleSheet.create({
     width: "100%",
   },
   input: {
-    backgroundColor: "transparent",
+    backgroundColor: colors.transparent,
     color: colors.foreground,
     flex: 1,
     fontFamily: fonts.sans,

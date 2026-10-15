@@ -18,6 +18,7 @@ import {
 import { InviteMemberScreen } from "../features/households/screens/InviteMemberScreen"
 import { AiConversationScreen } from "../features/ai/screens/AiConversationScreen"
 import { FixedExpenseHistoryScreen } from "../features/fixedExpenses/screens/FixedExpenseHistoryScreen"
+import { FixedExpenseScheduleScreen } from "../features/fixedExpenses/screens/FixedExpenseScheduleScreen"
 import { PayFixedExpensePeriodScreen } from "../features/fixedExpenses/screens/PayFixedExpensePeriodScreen"
 import { CorrectFixedExpensePaymentScreen } from "../features/fixedExpenses/screens/CorrectFixedExpensePaymentScreen"
 import { PendingChargeScreen } from "../features/pendingCharges/screens/PendingChargeScreen"
@@ -26,6 +27,7 @@ import { BudgetEditorScreen } from "../features/budgets/screens/BudgetEditorScre
 import { ProfileScreen } from "../features/profile/screens/ProfileScreen"
 import { CategoryPickerScreen } from "../features/transactions/screens/CategoryPickerScreen"
 import { CreateMovementScreen } from "../features/transactions/screens/CreateMovementScreen"
+import { ImportMovementsScreen } from "../features/transactions/screens/ImportMovementsScreen"
 import { HouseholdPickerScreen } from "../features/transactions/screens/HouseholdPickerScreen"
 import { TransactionFiltersScreen } from "../features/transactions/screens/TransactionFiltersScreen"
 import { colors } from "../theme"
@@ -114,6 +116,16 @@ export function AppNavigator() {
         name="CreateMovement"
         component={CreateMovementScreen}
         options={formSheetOptions("fitToContents")}
+      />
+      <Stack.Screen
+        name="ImportMovements"
+        component={ImportMovementsScreen}
+        options={formSheetOptions([0.92])}
+      />
+      <Stack.Screen
+        name="FixedExpenseSchedule"
+        component={FixedExpenseScheduleScreen}
+        options={formSheetOptions([0.92])}
       />
       <Stack.Screen
         name="CategoryPicker"

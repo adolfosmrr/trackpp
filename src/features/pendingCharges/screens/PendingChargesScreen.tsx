@@ -27,10 +27,10 @@ import {
 import { usePendingCharges } from "../hooks/usePendingCharges"
 import { useDismissPendingCharge } from "../hooks/useDismissPendingCharge"
 import { assignChargeToPersonal } from "../utils/quickAssign"
+import { formatMoney } from "../../../utils/formatMoney"
 import {
   chargeOrigin,
   chargeTitle,
-  formatChargeAmount,
   formatChargeDate,
 } from "../utils/pendingChargeFormat"
 import type { PendingBankCharge } from "../types"
@@ -131,7 +131,7 @@ export function PendingChargesScreen({ navigation }: PendingChargesScreenProps) 
       <BackLink onPress={() => navigation.goBack()} />
       <AppText variant="title">Gastos de tarjeta</AppText>
       <AppText tone="muted" variant="body">
-        Deslizá a la derecha para cargarlo en Personal, o a la izquierda para descartarlo.
+        Desliza a la derecha para cargarlo en Personal, o a la izquierda para descartarlo.
       </AppText>
 
       {chargesQuery.isLoading ? (
@@ -139,7 +139,7 @@ export function PendingChargesScreen({ navigation }: PendingChargesScreenProps) 
       ) : chargesQuery.isError ? (
         <EmptyState
           title="No se pudieron cargar"
-          body="Probá de nuevo en un momento."
+          body="Prueba de nuevo en un momento."
           actionLabel="Reintentar"
           onAction={() => {
             void chargesQuery.refetch()
@@ -161,7 +161,7 @@ export function PendingChargesScreen({ navigation }: PendingChargesScreenProps) 
         </View>
       ) : (
         <EmptyState
-          title="No tenés gastos de tarjeta pendientes"
+          title="No tienes gastos de tarjeta pendientes"
           body="Cuando llegue un consumo, lo vas a ver acá para cargarlo o descartarlo."
           actionLabel="Volver al inicio"
           onAction={() => {
@@ -213,8 +213,8 @@ function PendingChargeRow({
       <Pressable
         accessibilityRole="button"
         accessibilityHint={charge.suggestedPeriodId
-          ? "Abrilo para confirmar el débito automático, o deslizá a la izquierda para descartarlo."
-          : "Deslizá a la derecha para cargarlo en Personal o a la izquierda para descartarlo."}
+          ? "Ábrelo para confirmar el débito automático, o desliza a la izquierda para descartarlo."
+          : "Desliza a la derecha para cargarlo en Personal o a la izquierda para descartarlo."}
         accessibilityActions={charge.suggestedPeriodId
           ? [{ name: "dismiss", label: "Descartar" }]
           : [
@@ -231,7 +231,7 @@ function PendingChargeRow({
         <View style={styles.cardHeader}>
           <AppText style={styles.merchant} variant="subtitle">{chargeTitle(charge)}</AppText>
           <Text style={styles.amount}>
-            {formatChargeAmount(charge.amount, charge.currency)}
+            {formatMoney(charge.amount, charge.currency)}
           </Text>
         </View>
         <AppText tone="muted" variant="caption">

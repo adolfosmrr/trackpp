@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react"
 import { Text, type StyleProp, type TextStyle } from "react-native"
+import { useReducedMotion } from "react-native-reanimated"
 
 type MatrixTextMorphProps = {
   text: string
@@ -7,29 +8,49 @@ type MatrixTextMorphProps = {
   stepDuration?: number
 }
 
-function getNextText(current: string, target: string) {
+function stepToward(current: string, target: string) {
   const currentCharacters = Array.from(current)
   const targetCharacters = Array.from(target)
-  const sharedLength = Math.min(currentCharacters.length, targetCharacters.length)
-  const firstDifference = currentCharacters.findIndex(
-    (character, index) => index < sharedLength && character !== targetCharacters[index]
-  )
 
-  if (targetCharacters.length < currentCharacters.length) {
-    if (firstDifference >= 0 && firstDifference < currentCharacters.length - 1) {
-      currentCharacters[firstDifference] = targetCharacters[firstDifference]
-    }
+  if (currentCharacters.length > targetCharacters.length) {
     currentCharacters.pop()
     return currentCharacters.join("")
   }
 
-  if (firstDifference >= 0) {
-    currentCharacters[firstDifference] = targetCharacters[firstDifference]
-  } else if (currentCharacters.length < targetCharacters.length) {
-    currentCharacters.push(targetCharacters[currentCharacters.length])
+  const firstDifference = currentCharacters.findIndex(
+    (character, index) => character !== targetCharacters[index],
+  )
+  const replacement = targetCharacters[firstDifference]
+  if (firstDifference >= 0 && replacement !== undefined) {
+    currentCharacters[firstDifference] = replacement
+    return currentCharacters.join("")
+  }
+
+  const appended = targetCharacters[currentCharacters.length]
+  if (appended !== undefined) {
+    currentCharacters.push(appended)
   }
 
   return currentCharacters.join("")
+}
+
+function buildMorphFrames(from: string, to: string) {
+  const frames = [from]
+  let current = from
+  const limit = Array.from(from).length + Array.from(to).length
+
+  while (current !== to && frames.length <= limit) {
+    const next = stepToward(current, to)
+    if (next === current) break
+    current = next
+    frames.push(current)
+  }
+
+  if (frames[frames.length - 1] !== to) {
+    frames.push(to)
+  }
+
+  return frames
 }
 
 export function MatrixTextMorph({
@@ -37,37 +58,65 @@ export function MatrixTextMorph({
   style,
   stepDuration = 30,
 }: MatrixTextMorphProps) {
+  const reducedMotion = useReducedMotion() === true
   const [displayText, setDisplayText] = useState(text)
   const displayTextRef = useRef(text)
-  const targetTextRef = useRef(text)
+  const framesRef = useRef<string[]>([text])
+  const indexRef = useRef(0)
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   useEffect(() => {
-    targetTextRef.current = text
-
     if (timeoutRef.current !== null) {
       clearTimeout(timeoutRef.current)
       timeoutRef.current = null
+    }
+
+    if (reducedMotion) {
+      displayTextRef.current = text
+      framesRef.current = [text]
+      indexRef.current = 0
+      setDisplayText(text)
+      return
     }
 
     if (displayTextRef.current === text) {
       return
     }
 
-    const step = () => {
-      const current = displayTextRef.current
-      const target = targetTextRef.current
+    const showing = displayTextRef.current
+    let path = framesRef.current
+    const onPath = text === path[0] || text === path[path.length - 1]
+    const at = onPath ? path.indexOf(showing) : -1
+    if (!onPath || at < 0) {
+      path = buildMorphFrames(showing, text)
+      framesRef.current = path
+      indexRef.current = 0
+    } else {
+      indexRef.current = at
+    }
 
-      if (current === target) {
+    const targetIndex = text === path[path.length - 1] ? path.length - 1 : 0
+    if (indexRef.current === targetIndex) {
+      displayTextRef.current = text
+      setDisplayText(text)
+      return
+    }
+
+    const direction = targetIndex > indexRef.current ? 1 : -1
+
+    const step = () => {
+      const nextIndex = indexRef.current + direction
+      const next = path[nextIndex]
+      if (next === undefined) {
         timeoutRef.current = null
         return
       }
 
-      const next = getNextText(current, target)
+      indexRef.current = nextIndex
       displayTextRef.current = next
       setDisplayText(next)
 
-      if (next !== targetTextRef.current) {
+      if (nextIndex !== targetIndex) {
         timeoutRef.current = setTimeout(step, Math.max(0, stepDuration))
       } else {
         timeoutRef.current = null
@@ -82,15 +131,7 @@ export function MatrixTextMorph({
         timeoutRef.current = null
       }
     }
-  }, [stepDuration, text])
-
-  useEffect(() => {
-    return () => {
-      if (timeoutRef.current !== null) {
-        clearTimeout(timeoutRef.current)
-      }
-    }
-  }, [])
+  }, [reducedMotion, stepDuration, text])
 
   return <Text style={style}>{displayText}</Text>
 }

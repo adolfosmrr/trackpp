@@ -5,7 +5,6 @@ import type { NativeBottomTabScreenProps } from "@react-navigation/bottom-tabs/u
 import type { NativeStackScreenProps } from "@react-navigation/native-stack"
 
 import {
-  AccessibilityInfo,
   LayoutChangeEvent,
   RefreshControl,
   View,
@@ -60,6 +59,7 @@ import { HomeIncomeExpenseSummary } from "../components/HomeIncomeExpenseSummary
 import { DueSoonCard } from "../components/DueSoonCard"
 import { HomeAiSection } from "../components/HomeAiSection"
 import { MovementsSection } from "../components/MovementsSection"
+import { useReduceMotion } from "../../../hooks/useReduceMotion"
 import { colors, fonts, layout, radii, refreshControlColors } from "../../../theme"
 import {
   settleTopSectionProgress,
@@ -87,7 +87,7 @@ export function HomeScreen({ navigation }: HomeScreenProps) {
   )
   const [isCollapsed, setIsCollapsed] = useState(false)
   const [expandedTopSectionHeight, setExpandedTopSectionHeight] = useState(0)
-  const [reduceMotionEnabled, setReduceMotionEnabled] = useState(false)
+  const reduceMotionEnabled = useReduceMotion()
   const [refreshing, setRefreshing] = useState(false)
   const isCollapsedRef = useRef(false)
   const collapseProgress = useSharedValue(0)
@@ -113,24 +113,6 @@ export function HomeScreen({ navigation }: HomeScreenProps) {
   const lastScrollContentHeight = useSharedValue(0)
   const contentJustShrank = useSharedValue(false)
   const scrollRef = useAnimatedRef<Animated.ScrollView>()
-
-  useEffect(() => {
-    let mounted = true
-
-    void AccessibilityInfo.isReduceMotionEnabled().then((enabled) => {
-      if (mounted) setReduceMotionEnabled(enabled)
-    })
-
-    const subscription = AccessibilityInfo.addEventListener(
-      "reduceMotionChanged",
-      setReduceMotionEnabled
-    )
-
-    return () => {
-      mounted = false
-      subscription.remove()
-    }
-  }, [])
 
   useEffect(() => {
     reduceMotionShared.value = reduceMotionEnabled

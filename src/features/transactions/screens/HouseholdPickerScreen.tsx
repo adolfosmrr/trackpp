@@ -1,8 +1,9 @@
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { Pressable, StyleSheet, View } from "react-native"
 import type { NativeStackScreenProps } from "@react-navigation/native-stack"
 
 import { Button } from "../../../components/buttons/Button"
+import { CircleAddButton } from "../../../components/buttons/CircleAddButton"
 import { SheetScaffold } from "../../../components/layout/SheetScaffold"
 import { AppText } from "../../../components/text/AppText"
 import { useHouseholds } from "../../households/hooks/useHouseholds"
@@ -16,6 +17,18 @@ export function HouseholdPickerScreen({ navigation, route }: HouseholdPickerScre
   const params = route.params
   const { data: memberships } = useHouseholds()
   const [selectedHouseholdIds, setSelectedHouseholdIds] = useState(params.selectedHouseholdIds)
+
+  useEffect(() => {
+    const createdHouseholdId = params.createdHouseholdId
+    if (!createdHouseholdId) return
+    setSelectedHouseholdIds((current) => {
+      if (params.selectionMode === "single") return [createdHouseholdId]
+      return current.includes(createdHouseholdId)
+        ? current
+        : [...current, createdHouseholdId]
+    })
+    navigation.setParams({ createdHouseholdId: undefined })
+  }, [navigation, params.createdHouseholdId, params.selectionMode])
 
   function toggleHousehold(householdId: string) {
     if (params.selectionMode === "single") {
@@ -76,6 +89,15 @@ export function HouseholdPickerScreen({ navigation, route }: HouseholdPickerScre
             </Pressable>
           )
         })}
+        <CircleAddButton
+          accessibilityLabel="Crear espacio"
+          onPress={() => {
+            navigation.navigate("CreateHousehold", {
+              returnToHouseholdPicker: true,
+              householdPicker: params,
+            })
+          }}
+        />
       </View>
       <Button label="Listo" onPress={commit} tone="brand" />
     </SheetScaffold>
@@ -86,6 +108,7 @@ const styles = StyleSheet.create({
   householdsWrap: {
     flexDirection: "row",
     flexWrap: "wrap",
+    alignItems: "center",
     gap: 10,
   },
   option: {

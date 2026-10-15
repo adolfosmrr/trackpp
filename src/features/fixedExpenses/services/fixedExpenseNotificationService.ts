@@ -1,12 +1,18 @@
 import * as Notifications from "expo-notifications"
 import { Platform } from "react-native"
 
+import {
+  planFromExpense,
+  type FixedExpensePlan,
+} from "./fixedExpensePlan"
 import { nextReminderPeriod } from "../utils/frequency"
+import { LEGACY_CHARGE_REMINDER_DAYS } from "../utils/reminders"
 import { resolveMonthlyDay } from "../utils/monthlyDate"
 import type { FixedExpense, FixedExpensePeriod } from "../types"
 import {
   getNotificationPermissionStatus,
 } from "../../notifications/services/notificationPermissionService"
+import { toLocalDateString } from "../../../utils/localDate"
 import {
   loadScheduledFixedExpenseNotifications,
   saveScheduledFixedExpenseNotifications,
@@ -33,55 +39,6 @@ type NotificationCandidate = {
   triggerAt: Date
   body: string
   priority: number
-}
-
-export async function scheduleFixedExpensePeriodNotifications(
-  userId: string,
-  householdId: string,
-  period: FixedExpensePeriod
-) {
-  return syncFixedExpenseNotifications({
-    userId,
-    householdId,
-    periods: [period],
-    fixedExpenses: [],
-  })
-}
-
-export async function cancelFixedExpensePeriodNotifications(
-  userId: string,
-  householdId: string,
-  periodId: string
-) {
-  const stored = await loadScheduledFixedExpenseNotifications(userId)
-  const matching = stored.filter(
-    (item) => item.householdId === householdId &&
-      item.fixedExpensePeriodId === periodId
-  )
-
-  await Promise.all(
-    matching.map((item) =>
-      Notifications.cancelScheduledNotificationAsync(item.notificationId)
-    )
-  )
-
-  if (__DEV__) {
-    console.log("[Notifications] cancel", { householdId, periodId })
-  }
-
-  await saveScheduledFixedExpenseNotifications(
-    userId,
-    stored.filter((item) => !matching.includes(item))
-  )
-}
-
-export async function rescheduleFixedExpensePeriodNotifications(
-  userId: string,
-  householdId: string,
-  period: FixedExpensePeriod
-) {
-  await cancelFixedExpensePeriodNotifications(userId, householdId, period.id)
-  return scheduleFixedExpensePeriodNotifications(userId, householdId, period)
 }
 
 export async function syncFixedExpenseNotifications({
@@ -111,13 +68,34 @@ export async function syncFixedExpenseNotifications({
     )
   }
 
+  const plans = new Map(
+    fixedExpenses.map((expense) => [expense.id, planFromExpense(expense)]),
+  )
+  const legacyPlan: FixedExpensePlan = {
+    startsOn: null,
+    endsOn: null,
+    chargeReminderDays: null,
+    startReminderDays: [],
+  }
   const candidates = [
-    ...periods.map((period) => buildPeriodCandidates(householdId, period)),
+    ...periods.map((period) => buildPeriodCandidates(
+      householdId,
+      period,
+      plans.get(period.fixedExpenseId) ?? legacyPlan,
+    )),
     ...buildUpcomingOccurrenceCandidates(
       householdId,
       fixedExpenses,
       new Set(periods.map((period) => period.fixedExpenseId)),
+      plans,
+      legacyPlan,
     ),
+    ...fixedExpenses
+      .filter((expense) => expense.is_active)
+      .flatMap((expense) => buildStartCandidates(
+        expense,
+        plans.get(expense.id) ?? legacyPlan,
+      )),
   ].flat()
   const desired = new Map(candidates.map((candidate) => [candidate.logicalKey, candidate]))
   const stored = await loadScheduledFixedExpenseNotifications(userId)
@@ -180,54 +158,15 @@ export async function syncFixedExpenseNotifications({
       body: candidate.body,
     })
     await saveScheduledFixedExpenseNotifications(userId, nextStored)
-
-    if (__DEV__) {
-      console.log("[Notifications] schedule", {
-        householdId,
-        reminderType: candidate.reminderType,
-      })
-    }
   }
 
   await saveScheduledFixedExpenseNotifications(userId, nextStored)
-
-  if (__DEV__) {
-    console.log("[Notifications] sync", {
-      householdId,
-      count: nextStored.filter((item) => item.householdId === householdId).length,
-    })
-  }
-}
-
-export async function scheduleTestNotification(seconds = 5) {
-  if (!__DEV__) {
-    return null
-  }
-
-  return Notifications.scheduleNotificationAsync({
-    content: {
-      title: "Prueba de recordatorios",
-      body: "Las notificaciones locales están activas.",
-      data: { type: "fixed_expense", userId: "development" },
-      sound: "default",
-    },
-    trigger: {
-      type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
-      seconds,
-    },
-  })
-}
-
-if (__DEV__) {
-  const debugGlobal = globalThis as typeof globalThis & {
-    scheduleTestNotification?: typeof scheduleTestNotification
-  }
-  debugGlobal.scheduleTestNotification = scheduleTestNotification
 }
 
 function buildPeriodCandidates(
   householdId: string,
-  period: FixedExpensePeriod
+  period: FixedExpensePeriod,
+  plan: FixedExpensePlan,
 ) {
   if (period.status === "paid" || period.remaining <= 0) {
     return []
@@ -240,7 +179,8 @@ function buildPeriodCandidates(
     period.period,
     period.chargeDate,
     period.dueDate,
-    period.name
+    period.name,
+    plan,
   )
 }
 
@@ -248,6 +188,8 @@ function buildUpcomingOccurrenceCandidates(
   householdId: string,
   fixedExpenses: FixedExpense[],
   coveredExpenseIds: Set<string>,
+  plans: Map<string, FixedExpensePlan>,
+  legacyPlan: FixedExpensePlan,
 ) {
   const today = new Date()
   const year = today.getFullYear()
@@ -265,10 +207,10 @@ function buildUpcomingOccurrenceCandidates(
       )
       if (!next) return []
 
-      const chargeDate = toDateString(
+      const chargeDate = toLocalDateString(
         resolveMonthlyDay(next.year, next.month, expense.charge_day)
       )
-      const dueDate = toDateString(
+      const dueDate = toLocalDateString(
         resolveMonthlyDay(next.year, next.month, expense.due_day)
       )
 
@@ -279,7 +221,8 @@ function buildUpcomingOccurrenceCandidates(
         next.period,
         chargeDate,
         dueDate,
-        expense.name
+        expense.name,
+        plans.get(expense.id) ?? legacyPlan,
       )
     })
 }
@@ -291,7 +234,8 @@ function buildCandidates(
   targetPeriod: string,
   chargeDate: string,
   dueDate: string,
-  name: string
+  name: string,
+  plan: FixedExpensePlan,
 ) {
   const events: Array<{
     reminderType: FixedExpenseNotificationType
@@ -299,50 +243,41 @@ function buildCandidates(
     title: string
     body: string
     priority: number
-  }> = [
-    {
-      reminderType: "charge_in_5_days",
-      date: shiftDate(chargeDate, -5),
-      title: "Pago próximo",
-      body: `En 5 días comienza el cobro de ${name}.`,
-      priority: 7,
-    },
-    {
-      reminderType: "charge_tomorrow",
-      date: shiftDate(chargeDate, -1),
-      title: "Pago mañana",
-      body: `Mañana comienza el cobro de ${name}.`,
-      priority: 6,
-    },
-    {
-      reminderType: "charge_today",
-      date: chargeDate,
-      title: "Pago disponible",
-      body: `Hoy comienza el cobro de ${name}.`,
-      priority: 5,
-    },
-    {
-      reminderType: "due_in_3_days",
-      date: shiftDate(dueDate, -3),
-      title: "Vencimiento próximo",
-      body: `${name} vence en 3 días.`,
-      priority: 4,
-    },
-    {
-      reminderType: "due_tomorrow",
-      date: shiftDate(dueDate, -1),
-      title: "Vence mañana",
-      body: `${name} vence mañana.`,
-      priority: 3,
-    },
-    {
-      reminderType: "due_today",
-      date: dueDate,
-      title: "Vence hoy",
-      body: `${name} vence hoy.`,
-      priority: 2,
-    },
-  ]
+  }> = []
+
+  if (dateInWindow(chargeDate, plan)) {
+    for (const days of plan.chargeReminderDays ?? LEGACY_CHARGE_REMINDER_DAYS) {
+      const event = chargeReminderEvent(days, chargeDate, name)
+      if (event) events.push(event)
+    }
+  }
+
+  if (dateInWindow(dueDate, plan)) {
+    events.push(
+      {
+        reminderType: "due_in_3_days",
+        date: shiftDate(dueDate, -3),
+        title: "Vencimiento próximo",
+        body: `${name} vence en 3 días.`,
+        priority: 4,
+      },
+      {
+        reminderType: "due_tomorrow",
+        date: shiftDate(dueDate, -1),
+        title: "Vence mañana",
+        body: `${name} vence mañana.`,
+        priority: 3,
+      },
+      {
+        reminderType: "due_today",
+        date: dueDate,
+        title: "Vence hoy",
+        body: `${name} vence hoy.`,
+        priority: 2,
+      },
+    )
+  }
+
   const candidatesByDate = new Map<string, typeof events[number]>()
 
   for (const event of events) {
@@ -351,9 +286,10 @@ function buildCandidates(
       continue
     }
 
-    const previous = candidatesByDate.get(triggerAt.toISOString())
+    const key = `${event.reminderType}:${event.date}`
+    const previous = candidatesByDate.get(key)
     if (!previous || event.priority < previous.priority) {
-      candidatesByDate.set(triggerAt.toISOString(), event)
+      candidatesByDate.set(key, event)
     }
   }
 
@@ -374,18 +310,126 @@ function buildCandidates(
   })
 }
 
+function chargeReminderEvent(days: number, chargeDate: string, name: string) {
+  switch (days) {
+    case 0:
+      return {
+        reminderType: "charge_today" as const,
+        date: chargeDate,
+        title: "Pago disponible",
+        body: `Hoy comienza el cobro de ${name}.`,
+        priority: 5,
+      }
+    case 1:
+      return {
+        reminderType: "charge_tomorrow" as const,
+        date: shiftDate(chargeDate, -1),
+        title: "Pago mañana",
+        body: `Mañana comienza el cobro de ${name}.`,
+        priority: 6,
+      }
+    case 3:
+      return {
+        reminderType: "charge_in_3_days" as const,
+        date: shiftDate(chargeDate, -3),
+        title: "Pago próximo",
+        body: `En 3 días comienza el cobro de ${name}.`,
+        priority: 8,
+      }
+    case 5:
+      return {
+        reminderType: "charge_in_5_days" as const,
+        date: shiftDate(chargeDate, -5),
+        title: "Pago próximo",
+        body: `En 5 días comienza el cobro de ${name}.`,
+        priority: 7,
+      }
+    case 7:
+      return {
+        reminderType: "charge_in_7_days" as const,
+        date: shiftDate(chargeDate, -7),
+        title: "Pago próximo",
+        body: `En una semana comienza el cobro de ${name}.`,
+        priority: 9,
+      }
+    default:
+      return null
+  }
+}
+
+function buildStartCandidates(expense: FixedExpense, plan: FixedExpensePlan) {
+  if (!expense.is_active || !plan.startsOn) return []
+
+  return plan.startReminderDays.flatMap((days) => {
+    const reminder = startReminderEvent(days, plan.startsOn ?? "", expense.name)
+    if (!reminder) return []
+    const triggerAt = createLocalNotificationDate(reminder.date)
+    if (triggerAt.getTime() <= Date.now()) return []
+    return [{
+      logicalKey: `start:${expense.id}:${days}`,
+      householdId: expense.household_id,
+      fixedExpensePeriodId: undefined,
+      fixedExpenseId: expense.id,
+      targetPeriod: plan.startsOn ?? reminder.date,
+      reminderType: reminder.reminderType,
+      triggerAt,
+      body: reminder.body,
+      priority: reminder.priority,
+    }]
+  })
+}
+
+function startReminderEvent(days: number, startsOn: string, name: string) {
+  switch (days) {
+    case 1:
+      return {
+        reminderType: "start_in_1_day" as const,
+        date: shiftDate(startsOn, -1),
+        body: `${name} empieza mañana.`,
+        priority: 10,
+      }
+    case 3:
+      return {
+        reminderType: "start_in_3_days" as const,
+        date: shiftDate(startsOn, -3),
+        body: `${name} empieza en 3 días.`,
+        priority: 11,
+      }
+    case 7:
+      return {
+        reminderType: "start_in_7_days" as const,
+        date: shiftDate(startsOn, -7),
+        body: `${name} empieza en una semana.`,
+        priority: 12,
+      }
+    default:
+      return null
+  }
+}
+
+function dateInWindow(date: string, plan: FixedExpensePlan) {
+  if (plan.startsOn && date < plan.startsOn) return false
+  if (plan.endsOn && date > plan.endsOn) return false
+  return true
+}
+
 function getNotificationTitle(type: FixedExpenseNotificationType) {
   switch (type) {
+    case "charge_in_7_days": return "Pago próximo"
     case "charge_in_5_days": return "Pago próximo"
+    case "charge_in_3_days": return "Pago próximo"
     case "charge_tomorrow": return "Pago mañana"
     case "charge_today": return "Pago disponible"
     case "due_in_3_days": return "Vencimiento próximo"
     case "due_tomorrow": return "Vence mañana"
     case "due_today": return "Vence hoy"
+    case "start_in_7_days": return "Gasto fijo por empezar"
+    case "start_in_3_days": return "Gasto fijo por empezar"
+    case "start_in_1_day": return "Gasto fijo por empezar"
   }
 }
 
-export function createLocalNotificationDate(dateString: string, hour = 9) {
+function createLocalNotificationDate(dateString: string, hour = 9) {
   const [year, month, day] = dateString.slice(0, 10).split("-").map(Number)
   return new Date(year, month - 1, day, hour, 0, 0, 0)
 }
@@ -393,9 +437,5 @@ export function createLocalNotificationDate(dateString: string, hour = 9) {
 function shiftDate(dateString: string, days: number) {
   const date = createLocalNotificationDate(dateString, 12)
   date.setDate(date.getDate() + days)
-  return toDateString(date)
-}
-
-function toDateString(date: Date) {
-  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`
+  return toLocalDateString(date)
 }

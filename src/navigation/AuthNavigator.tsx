@@ -1,6 +1,7 @@
 import { createNativeStackNavigator } from "@react-navigation/native-stack"
 
 import { AuthScreen } from "../features/auth/screens/AuthScreen"
+import { SignUpScreen } from "../features/auth/screens/SignUpScreen"
 import { colors } from "../theme"
 import type { AuthStackParamList } from "./types"
 
@@ -15,6 +16,7 @@ export function AuthNavigator() {
       }}
     >
       <Stack.Screen name="Auth" component={AuthScreen} />
+      <Stack.Screen name="SignUp" component={SignUpScreen} />
     </Stack.Navigator>
   )
 }

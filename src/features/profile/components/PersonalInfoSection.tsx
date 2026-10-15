@@ -8,6 +8,8 @@ import { FieldRow, TextField } from "../../../components/inputs/TextField"
 import { AppText } from "../../../components/text/AppText"
 import { supabase } from "../../../services/supabase"
 import { colors, layout, radii } from "../../../theme"
+import { isEmail } from "../../../utils/isEmail"
+import { formatLongDate, parseLocalDate, toLocalDateString } from "../../../utils/localDate"
 import { useAuth } from "../../auth/context/AuthContext"
 import { aliasFormatError, normalizeAlias } from "../alias"
 import { updateProfile, type Profile } from "../services/profileService"
@@ -21,8 +23,9 @@ export function PersonalInfoSection({ profile, email }: PersonalInfoSectionProps
   const { user } = useAuth()
   const queryClient = useQueryClient()
   const [name, setName] = useState(profile.name ?? "")
+  const [lastName, setLastName] = useState(profile.last_name ?? "")
   const [alias, setAlias] = useState(profile.alias ?? "")
-  const [birthDate, setBirthDate] = useState<Date | null>(parseDateInput(profile.birth_date))
+  const [birthDate, setBirthDate] = useState<Date | null>(parseLocalDate(profile.birth_date))
   const [nextEmail, setNextEmail] = useState(email)
   const [pickerOpen, setPickerOpen] = useState(false)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
@@ -30,9 +33,10 @@ export function PersonalInfoSection({ profile, email }: PersonalInfoSectionProps
 
   useEffect(() => {
     setName(profile.name ?? "")
+    setLastName(profile.last_name ?? "")
     setAlias(profile.alias ?? "")
-    setBirthDate(parseDateInput(profile.birth_date))
-  }, [profile.alias, profile.birth_date, profile.name])
+    setBirthDate(parseLocalDate(profile.birth_date))
+  }, [profile.alias, profile.birth_date, profile.last_name, profile.name])
 
   useEffect(() => {
     setNextEmail(email)
@@ -49,7 +53,8 @@ export function PersonalInfoSection({ profile, email }: PersonalInfoSectionProps
 
       await updateProfile(user.id, {
         name: name.trim() || null,
-        birthDate: birthDate ? toDateInput(birthDate) : null,
+        lastName: lastName.trim() || null,
+        birthDate: birthDate ? toLocalDateString(birthDate) : null,
         alias: normalizeAlias(alias) || null,
       })
 
@@ -68,7 +73,7 @@ export function PersonalInfoSection({ profile, email }: PersonalInfoSectionProps
       setPickerOpen(false)
       setNotice(
         confirmedEmail
-          ? `Te enviamos un correo a ${confirmedEmail} para confirmar el cambio. Hasta que lo confirmes, seguís entrando con el correo actual.`
+          ? `Te enviamos un correo a ${confirmedEmail} para confirmar el cambio. Hasta que lo confirmes, sigues entrando con el correo actual.`
           : "Guardamos tus datos.",
       )
     },
@@ -103,9 +108,16 @@ export function PersonalInfoSection({ profile, email }: PersonalInfoSectionProps
         placeholder="Nombre"
         value={name}
       />
+      <TextField
+        accessibilityLabel="Apellido"
+        autoCapitalize="words"
+        onChangeText={setLastName}
+        placeholder="Apellido"
+        value={lastName}
+      />
       <FieldRow accessibilityLabel="Fecha de nacimiento" onPress={openBirthDate}>
         <AppText tone={birthDate ? "default" : "muted"} variant="subtitle">
-          {birthDate ? formatBirthDate(birthDate) : "Fecha de nacimiento"}
+          {birthDate ? formatLongDate(birthDate) : "Fecha de nacimiento"}
         </AppText>
       </FieldRow>
       {pickerOpen && Platform.OS === "ios" ? (
@@ -126,9 +138,9 @@ export function PersonalInfoSection({ profile, email }: PersonalInfoSectionProps
         <TextField
           accessibilityLabel="Fecha de nacimiento"
           autoCapitalize="none"
-          onChangeText={(value) => setBirthDate(parseDateInput(value))}
+          onChangeText={(value) => setBirthDate(parseLocalDate(value))}
           placeholder="AAAA-MM-DD"
-          value={birthDate ? toDateInput(birthDate) : ""}
+          value={birthDate ? toLocalDateString(birthDate) : ""}
         />
       ) : null}
       {birthDate ? (
@@ -151,7 +163,7 @@ export function PersonalInfoSection({ profile, email }: PersonalInfoSectionProps
         value={alias}
       />
       <AppText tone="muted" variant="caption">
-        De 3 a 20 caracteres y único: empieza con una letra y seguí con letras, números o _. Sirve para que otras personas te inviten.
+        De 3 a 20 caracteres y único: empieza con una letra y sigue con letras, números o _. Sirve para que otras personas te inviten.
       </AppText>
       <TextField
         accessibilityLabel="Correo"
@@ -163,7 +175,7 @@ export function PersonalInfoSection({ profile, email }: PersonalInfoSectionProps
         value={nextEmail}
       />
       <AppText tone="muted" variant="caption">
-        Si cambiás el correo, te mandamos un mensaje para confirmarlo. Hasta que lo confirmes, seguís con el correo actual.
+        Si cambias el correo, te mandamos un mensaje para confirmarlo. Hasta que lo confirmes, sigues con el correo actual.
       </AppText>
       {errorMessage ? (
         <AppText tone="destructive" variant="caption">{errorMessage}</AppText>
@@ -182,38 +194,9 @@ export function PersonalInfoSection({ profile, email }: PersonalInfoSectionProps
   )
 }
 
-function formatBirthDate(value: Date) {
-  return new Intl.DateTimeFormat("es-AR", {
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-  }).format(value)
-}
-
-function toDateInput(value: Date) {
-  const month = String(value.getMonth() + 1).padStart(2, "0")
-  const day = String(value.getDate()).padStart(2, "0")
-  return `${value.getFullYear()}-${month}-${day}`
-}
-
-function parseDateInput(value: string | null | undefined) {
-  if (!value) return null
-  const match = /^(\d{4})-(\d{2})-(\d{2})/.exec(value)
-  if (!match) return null
-  const year = Number(match[1])
-  const month = Number(match[2])
-  const day = Number(match[3])
-  if (!Number.isInteger(year) || month < 1 || month > 12 || day < 1 || day > 31) return null
-  return new Date(year, month - 1, day)
-}
-
-function isEmail(value: string) {
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)
-}
-
 function profileErrorMessage(error: unknown) {
   if (hasCode(error, "23505")) return "Ese alias ya está en uso."
-  if (hasCode(error, "23514")) return "Revisá el alias o la fecha de nacimiento."
+  if (hasCode(error, "23514")) return "Revisa el alias o la fecha de nacimiento."
   if (error instanceof Error && error.message) return error.message
   return "No se pudo guardar."
 }

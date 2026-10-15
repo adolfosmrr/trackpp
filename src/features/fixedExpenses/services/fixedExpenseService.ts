@@ -16,13 +16,6 @@ import type {
 export async function getFixedExpenses(
   householdId: string
 ): Promise<FixedExpense[]> {
-  if (__DEV__) {
-    console.log("[FixedExpenses] request", {
-      householdId,
-      source: "fixed_expenses",
-    })
-  }
-
   const { data, error } = await supabase
     .from("fixed_expenses")
     .select(`
@@ -37,11 +30,6 @@ export async function getFixedExpenses(
     .eq("is_active", true)
     .order("due_day", { ascending: true })
     .order("name", { ascending: true })
-
-  if (__DEV__) {
-    console.log("[FixedExpenses] data", data)
-    console.log("[FixedExpenses] error", error)
-  }
 
   if (error) {
     throw error
@@ -80,14 +68,6 @@ export async function getFixedExpensePeriods(
   householdId: string,
   period: string
 ): Promise<FixedExpensePeriod[]> {
-  if (__DEV__) {
-    console.log("[FixedExpenses] request", {
-      householdId,
-      period,
-      source: "get_fixed_expense_periods",
-    })
-  }
-
   const { data, error } = await supabase.rpc(
     "get_fixed_expense_periods",
     {
@@ -95,13 +75,6 @@ export async function getFixedExpensePeriods(
       p_period: period,
     }
   )
-
-  if (__DEV__) {
-    console.log("[FixedExpenses] householdId", householdId)
-    console.log("[FixedExpenses] period", period)
-    console.log("[FixedExpenses] data", data)
-    console.log("[FixedExpenses] error", error)
-  }
 
   if (error) {
     throw error
@@ -153,10 +126,6 @@ export async function updateFixedExpense(
   input: FixedExpenseInput,
   period: string
 ) {
-  if (__DEV__) {
-    console.log("[FixedExpenses] update", { fixedExpenseId, period })
-  }
-
   const { data, error } = await supabase.rpc(
     "update_fixed_expense_with_activity",
     {
@@ -272,7 +241,24 @@ function parseFixedExpense(value: unknown): FixedExpense {
     throw new Error("La API devolvió un gasto fijo incompleto.")
   }
 
-  return fixedExpense as FixedExpense
+  const parsed = fixedExpense as FixedExpense
+  parsed.starts_on = optionalDate(value.starts_on)
+  parsed.ends_on = optionalDate(value.ends_on)
+  parsed.charge_reminder_days = optionalDayList(value.charge_reminder_days)
+  parsed.start_reminder_days = optionalDayList(value.start_reminder_days) ?? []
+  return parsed
+}
+
+function optionalDate(value: unknown) {
+  if (typeof value !== "string" || value.length < 10) return null
+  return value.slice(0, 10)
+}
+
+function optionalDayList(value: unknown) {
+  if (!Array.isArray(value)) return null
+  return value.filter((item): item is number =>
+    typeof item === "number" && Number.isInteger(item)
+  )
 }
 
 function parseCategory(value: unknown): FixedExpense["category"] {

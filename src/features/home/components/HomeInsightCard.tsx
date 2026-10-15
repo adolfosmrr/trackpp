@@ -14,18 +14,16 @@ import {
 import { colors, radii } from "../../../theme"
 import { HomeInsightGroup } from "./HomeInsightGroup"
 
-export type HomeInsightCardProps = {
+type HomeInsightCardProps = {
   insight: HomeAiInsight
   actionDetails?: Record<string, InsightActionDetail | undefined>
   isCollapsed?: boolean
-  variant?: "card" | "plain"
 }
 
 export function HomeInsightCard({
   insight,
   actionDetails,
   isCollapsed = false,
-  variant = "card",
 }: HomeInsightCardProps) {
   const [selectedAction, setSelectedAction] = useState<HomeAiInsightAction | null>(null)
 
@@ -34,22 +32,18 @@ export function HomeInsightCard({
   }, [isCollapsed])
 
   return (
-    <View style={[styles.card, variant === "plain" && styles.plainCard]}>
-      <AppText
-        tone={variant === "plain" ? "muted" : "default"}
-        variant={variant === "plain" ? "title" : "body"}
-      >
+    <View style={styles.card}>
+      <AppText variant="body">
         {insight.intro.trim()}
         {insight.groups.map((group, index) => (
           <Fragment key={group.id}>
-            <AppText variant={variant === "plain" ? "title" : "body"}>
+            <AppText variant="body">
               {getGroupSeparator(insight.groups.length, index)}
             </AppText>
             <HomeInsightGroup
               actions={insight.actions}
               group={group}
               onActionPress={(action) => setSelectedAction((current) => current?.id === action.id ? null : action)}
-              variant={variant}
             />
           </Fragment>
         ))}
@@ -80,11 +74,5 @@ const styles = StyleSheet.create({
     borderRadius: radii.md,
     borderWidth: 1,
     padding: 12,
-  },
-  plainCard: {
-    backgroundColor: "transparent",
-    borderRadius: 0,
-    padding: 0,
-    position: "relative",
   },
 })

@@ -43,7 +43,15 @@ export const colors = {
   transparent: "transparent",
 } as const
 
-export const spacing = {
+/**
+ * Resting alpha of GradientBackground dots.
+ * The old ink carried 0.2 and the shader multiplied the finished dot by 0.7.
+ * This is that product. The pulse mixes it toward 0.7, which is
+ * mix(0.2, 1, energy) * 0.7 at full energy. Do not scale it again.
+ */
+export const dotOpacity = 0.14
+
+const spacing = {
   xs: 4,
   sm: 8,
   md: 12,
@@ -54,6 +62,7 @@ export const spacing = {
 
 const HEADER_PILL = 40
 const SHEET_HEADER_TOP = 28
+const TAB_BAR_PILL = 62
 
 export const layout = {
   /** Horizontal inset for list sections. Home's recent movements is the reference. */
@@ -78,7 +87,11 @@ export const layout = {
    * Native tabs render `UITabBar` and do not publish `BottomTabBarHeightContext`.
    * A captured `_UITabBarPlatterView` frame is 62pt tall.
    */
-  tabBarPill: 62,
+  tabBarPill: TAB_BAR_PILL,
+  /** Clearance so the last row sits above that pill. */
+  tabBarClearance: TAB_BAR_PILL + spacing.xs,
+  /** Space above every in-screen segmented selector. */
+  segmentedOffset: 5,
 } as const
 
 const RADIUS_XL = 16
@@ -105,10 +118,15 @@ export const fonts = {
 } as const
 
 /**
- * Roles for screen copy. Numeric display (balances, hero greetings) stays
- * outside this scale because those sizes are part of the motion layout.
+ * Roles for screen copy. Sizes that belong to a motion layout (balances)
+ * stay outside this scale.
  */
 export const typography = {
+  display: {
+    fontFamily: fonts.sansSemibold,
+    fontSize: 32,
+    lineHeight: 34,
+  },
   title: {
     fontFamily: fonts.sansSemibold,
     fontSize: 22,
@@ -136,7 +154,7 @@ export const typography = {
   },
 } as const
 
-export const meshColors = {
+const meshColors = {
   auth: ["#0C1210", "#16382A", "#3ECF8E", "#101614"] as [
     string,
     string,

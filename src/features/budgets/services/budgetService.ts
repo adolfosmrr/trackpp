@@ -90,7 +90,7 @@ export async function getBudgets(
   })
 }
 
-export async function ensureBudgetSnapshots(
+async function ensureBudgetSnapshots(
   householdId: string,
   month: string
 ): Promise<void> {
@@ -110,16 +110,6 @@ export async function ensureBudgetSnapshots(
 export async function createBudget(
   input: CreateBudgetInput
 ): Promise<Budget> {
-  if (__DEV__) {
-    console.log("[Budget] create input:", {
-      householdId: input.householdId,
-      categoryId: input.categoryId,
-      name: input.name,
-      amount: input.amount,
-      month: input.month,
-    })
-  }
-
   const { data, error } = await supabase.rpc(
     "create_budget_with_activity",
     {
@@ -142,10 +132,6 @@ export async function createBudget(
       }
     )
     throw error
-  }
-
-  if (__DEV__) {
-    console.log("[Budget] create_budget_with_activity data:", data)
   }
 
   return parseBudgetRpcResult(data)
